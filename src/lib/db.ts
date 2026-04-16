@@ -25,6 +25,7 @@ export async function initDB() {
       name TEXT NOT NULL,
       avatar TEXT DEFAULT '🎬',
       age INTEGER,
+      max_rating TEXT,
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (family_id) REFERENCES families(id)
     )`,
@@ -81,6 +82,7 @@ export async function initDB() {
     "ALTER TABLE liked_movies ADD COLUMN category TEXT DEFAULT 'general'",
     "ALTER TABLE disliked_movies ADD COLUMN category TEXT DEFAULT 'general'",
     "ALTER TABLE members ADD COLUMN age INTEGER",
+    "ALTER TABLE members ADD COLUMN max_rating TEXT",
   ];
   for (const sql of migrations) {
     try {

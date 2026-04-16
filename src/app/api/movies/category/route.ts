@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveAISuggestions } from "@/lib/tmdb";
 import { getCategoryRecommendationsAI } from "@/lib/openai";
-import { getMemberAge } from "@/lib/member";
+import { getMemberRestrictions } from "@/lib/member";
 import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
 
@@ -13,8 +13,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const [age, watchedRows, dislikedRows] = await Promise.all([
-      getMemberAge(memberId),
+    const [{ maxRating }, watchedRows, dislikedRows] = await Promise.all([
+      getMemberRestrictions(memberId),
       db.execute({
         sql: "SELECT title FROM watched_movies WHERE member_id = ?",
         args: [memberId],
@@ -28,9 +28,9 @@ export async function GET(req: NextRequest) {
     const watchedTitles = watchedRows.rows.map((r) => String(r.title));
     const dislikedTitles = dislikedRows.rows.map((r) => String(r.title));
 
-    const suggestions = await getCategoryRecommendationsAI(category, watchedTitles, dislikedTitles, age);
+    const suggestions = await getCategoryRecommendationsAI(category, watchedTitles, dislikedTitles, maxRating);
     const allMovies = await resolveAISuggestions(suggestions);
-    const movies = allMovies.filter((m) => isMovieAllowed(m.certification, age)).slice(0, 5);
+    const movies = allMovies.filter((m) => isMovieAllowed(m.certification, maxRating)).slice(0, 5);
 
     await db.execute({
       sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND category = ?",

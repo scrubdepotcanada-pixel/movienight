@@ -21,6 +21,7 @@ interface Member {
   name: string;
   avatar: string;
   age?: number | null;
+  max_rating?: string | null;
 }
 
 interface SidebarMovie {
@@ -162,12 +163,12 @@ export default function Home() {
     setLoading(false);
   };
 
-  const handleAddMember = async (name: string, avatar: string, age: number | null) => {
+  const handleAddMember = async (name: string, avatar: string, age: number | null, maxRating: string) => {
     try {
       const res = await fetch("/api/members", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, avatar, age }),
+        body: JSON.stringify({ name, avatar, age, maxRating }),
       });
       const member = await res.json();
       setMembers((prev) => [...prev, member]);
@@ -176,12 +177,12 @@ export default function Home() {
     }
   };
 
-  const handleUpdateAge = async (memberId: number, age: number | null) => {
+  const handleUpdateMember = async (memberId: number, updates: { age?: number | null; maxRating?: string }) => {
     try {
       const res = await fetch("/api/members", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberId, age }),
+        body: JSON.stringify({ memberId, ...updates }),
       });
       const updated = await res.json();
       setMembers((prev) => prev.map((m) => (m.id === memberId ? updated : m)));
@@ -563,7 +564,7 @@ export default function Home() {
               onSelect={handleSelectMember}
               onAdd={handleAddMember}
               onDelete={handleDeleteMember}
-              onUpdateAge={handleUpdateAge}
+              onUpdateMember={handleUpdateMember}
               viewingAll={viewingAll}
               onViewAll={handleViewAll}
             />

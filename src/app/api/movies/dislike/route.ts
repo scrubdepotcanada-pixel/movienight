@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveAISuggestions } from "@/lib/tmdb";
 import { getReplacementMoviesAI } from "@/lib/openai";
-import { getMemberAge } from "@/lib/member";
+import { getMemberRestrictions } from "@/lib/member";
 import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
 
@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
     args: [memberId, movie.id],
   });
 
-  const [age, likedRows, watchedRows, dislikedRows, recsRows] = await Promise.all([
-    getMemberAge(memberId),
+  const [{ maxRating }, likedRows, watchedRows, dislikedRows, recsRows] = await Promise.all([
+    getMemberRestrictions(memberId),
     db.execute({
       sql: "SELECT DISTINCT title FROM liked_movies WHERE member_id = ? AND category = ? ORDER BY created_at DESC LIMIT 2",
       args: [memberId, category],
@@ -61,11 +61,11 @@ export async function POST(req: NextRequest) {
     watchedTitles,
     dislikedTitles,
     1,
-    age
+    maxRating
   );
 
   const movies = await resolveAISuggestions(suggestions);
-  const allowed = movies.filter((m) => isMovieAllowed(m.certification, age));
+  const allowed = movies.filter((m) => isMovieAllowed(m.certification, maxRating));
   const replacement = allowed[0] || null;
 
   if (replacement) {

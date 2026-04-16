@@ -1,39 +1,64 @@
+// MPAA ratings in order from most restrictive to least
+const RATING_ORDER = ["G", "PG", "PG-13", "R", "NC-17"] as const;
+export type MaxRating = typeof RATING_ORDER[number] | "ALL";
+
 /**
- * Maps a member's age to a list of acceptable MPAA certifications.
- * Stricter for younger viewers.
+ * Default max rating based on age when none is explicitly set.
+ * Parents can always override this when creating/editing a member.
  */
-export function allowedCertifications(age: number | null | undefined): string[] {
-  if (age == null) return ["G", "PG", "PG-13", "R", "NC-17", "NR"]; // no filter
-  if (age < 7) return ["G"];
-  if (age < 13) return ["G", "PG"];
-  if (age < 17) return ["G", "PG", "PG-13"];
-  return ["G", "PG", "PG-13", "R", "NC-17", "NR"];
+export function defaultMaxRatingForAge(age: number | null | undefined): MaxRating {
+  if (age == null) return "ALL";
+  if (age < 7) return "G";
+  if (age < 10) return "PG";
+  if (age < 14) return "PG-13";
+  if (age < 17) return "R";
+  return "ALL";
 }
 
 /**
- * Human-readable description of what the age allows, used in OpenAI prompts.
+ * Which certifications are allowed for this max rating?
  */
-export function ageRestrictionPrompt(age: number | null | undefined): string {
-  if (age == null) return "";
-  if (age < 7) {
-    return `\n\nIMPORTANT: The viewer is ${age} years old. ONLY suggest G-rated movies suitable for young children. Absolutely NO PG, PG-13, R, or NC-17 content. Only wholesome, family-friendly films.`;
+export function allowedCertifications(maxRating: MaxRating | null | undefined): string[] {
+  if (!maxRating || maxRating === "ALL") {
+    return ["G", "PG", "PG-13", "R", "NC-17", "NR"];
   }
-  if (age < 13) {
-    return `\n\nIMPORTANT: The viewer is ${age} years old. ONLY suggest movies rated G or PG. DO NOT suggest anything rated PG-13, R, or NC-17. No violent, scary, or mature content.`;
-  }
-  if (age < 17) {
-    return `\n\nIMPORTANT: The viewer is ${age} years old. ONLY suggest movies rated G, PG, or PG-13. DO NOT suggest anything rated R or NC-17. No explicit violence, sex, drugs, or strong language.`;
-  }
-  return "";
+  const maxIdx = RATING_ORDER.indexOf(maxRating);
+  if (maxIdx === -1) return ["G", "PG", "PG-13", "R", "NC-17", "NR"];
+  return RATING_ORDER.slice(0, maxIdx + 1) as string[];
 }
 
 /**
- * Is a movie's certification allowed for this age?
+ * Human-readable description for OpenAI prompts.
  */
-export function isMovieAllowed(certification: string | undefined, age: number | null | undefined): boolean {
-  const allowed = allowedCertifications(age);
+export function ratingRestrictionPrompt(maxRating: MaxRating | null | undefined): string {
+  if (!maxRating || maxRating === "ALL") return "";
+
+  const allowed = allowedCertifications(maxRating);
+  const ratingsStr = allowed.filter((r) => r !== "NR").join(", ");
+  const excluded = RATING_ORDER.filter((r) => !allowed.includes(r)).join(", ");
+
+  const excludedBlock = excluded.length > 0
+    ? ` DO NOT suggest anything rated ${excluded}.`
+    : "";
+
+  const guidance =
+    maxRating === "G" ? "Only wholesome, family-friendly films. No violence, scary content, or mature themes." :
+    maxRating === "PG" ? "No violent, scary, or mature content. Mild themes only." :
+    maxRating === "PG-13" ? "No explicit violence, sex, drugs, or strong language." :
+    maxRating === "R" ? "No NC-17 / explicit adult content." :
+    "";
+
+  return `\n\nIMPORTANT CONTENT RATING LIMIT: Only suggest movies rated ${ratingsStr}.${excludedBlock} ${guidance}`.trim();
+}
+
+/**
+ * Is a movie's certification allowed for this max rating?
+ */
+export function isMovieAllowed(certification: string | undefined, maxRating: MaxRating | null | undefined): boolean {
+  if (!maxRating || maxRating === "ALL") return true;
+  const allowed = allowedCertifications(maxRating);
   const cert = certification || "NR";
-  // For strict ages (under 17), exclude NR as we can't verify it
-  if (age != null && age < 17 && cert === "NR") return false;
+  // Block unrated content for anyone with a restriction
+  if (cert === "NR") return false;
   return allowed.includes(cert);
 }

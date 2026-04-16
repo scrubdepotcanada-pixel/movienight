@@ -7,25 +7,45 @@ interface Member {
   name: string;
   avatar: string;
   age?: number | null;
+  max_rating?: string | null;
 }
 
 const AVATARS = ["🎬", "🍿", "🎭", "🎪", "🌟", "🎵", "🎮", "🦸", "👻", "🤖", "🧙", "🐱"];
 
-function ageBadge(age: number | null | undefined): { label: string; color: string } | null {
-  if (age == null) return null;
-  if (age < 7) return { label: "G", color: "bg-green-600" };
-  if (age < 13) return { label: "PG", color: "bg-blue-600" };
-  if (age < 17) return { label: "PG-13", color: "bg-yellow-600" };
-  return { label: "All", color: "bg-gray-600" };
+const RATING_OPTIONS: { value: string; label: string; hint: string; color: string }[] = [
+  { value: "G", label: "G", hint: "Kids", color: "bg-green-600" },
+  { value: "PG", label: "PG", hint: "Family", color: "bg-blue-600" },
+  { value: "PG-13", label: "PG-13", hint: "Teens", color: "bg-yellow-600" },
+  { value: "R", label: "R", hint: "Adult", color: "bg-red-600" },
+  { value: "ALL", label: "All", hint: "No limit", color: "bg-gray-600" },
+];
+
+function defaultMaxRatingForAge(age: number | null): string {
+  if (age == null) return "ALL";
+  if (age < 7) return "G";
+  if (age < 10) return "PG";
+  if (age < 14) return "PG-13";
+  if (age < 17) return "R";
+  return "ALL";
+}
+
+function getMaxRating(member: Member): string {
+  if (member.max_rating) return member.max_rating;
+  return defaultMaxRatingForAge(member.age ?? null);
+}
+
+function ratingBadge(rating: string): { color: string; label: string } {
+  const opt = RATING_OPTIONS.find((r) => r.value === rating);
+  return { color: opt?.color ?? "bg-gray-600", label: opt?.label ?? rating };
 }
 
 interface MemberSelectorProps {
   members: Member[];
   selectedMember: Member | null;
   onSelect: (member: Member) => void;
-  onAdd: (name: string, avatar: string, age: number | null) => void;
+  onAdd: (name: string, avatar: string, age: number | null, maxRating: string) => void;
   onDelete: (memberId: number) => void;
-  onUpdateAge: (memberId: number, age: number | null) => void;
+  onUpdateMember: (memberId: number, updates: { age?: number | null; maxRating?: string }) => void;
   viewingAll: boolean;
   onViewAll: () => void;
 }
@@ -36,7 +56,7 @@ export default function MemberSelector({
   onSelect,
   onAdd,
   onDelete,
-  onUpdateAge,
+  onUpdateMember,
   viewingAll,
   onViewAll,
 }: MemberSelectorProps) {
@@ -44,27 +64,47 @@ export default function MemberSelector({
   const [newName, setNewName] = useState("");
   const [selectedAvatar, setSelectedAvatar] = useState("🎬");
   const [newAge, setNewAge] = useState<string>("");
-  const [editingAgeFor, setEditingAgeFor] = useState<number | null>(null);
+  const [newMaxRating, setNewMaxRating] = useState<string>("ALL");
+  const [maxRatingTouched, setMaxRatingTouched] = useState(false);
+
+  const [editingMember, setEditingMember] = useState<number | null>(null);
   const [editAge, setEditAge] = useState<string>("");
+  const [editMaxRating, setEditMaxRating] = useState<string>("ALL");
+
+  // Auto-update the default max rating from age, unless user has manually picked one
+  const handleAgeChange = (value: string) => {
+    setNewAge(value);
+    if (!maxRatingTouched) {
+      const ageNum = parseInt(value, 10);
+      setNewMaxRating(defaultMaxRatingForAge(!isNaN(ageNum) ? ageNum : null));
+    }
+  };
 
   const handleAdd = () => {
     if (newName.trim()) {
       const ageNum = newAge.trim() ? parseInt(newAge, 10) : null;
       const validAge = ageNum && !isNaN(ageNum) && ageNum > 0 && ageNum < 130 ? ageNum : null;
-      onAdd(newName.trim(), selectedAvatar, validAge);
+      onAdd(newName.trim(), selectedAvatar, validAge, newMaxRating);
       setNewName("");
       setSelectedAvatar("🎬");
       setNewAge("");
+      setNewMaxRating("ALL");
+      setMaxRatingTouched(false);
       setShowAdd(false);
     }
   };
 
-  const handleSaveAge = (memberId: number) => {
+  const startEditing = (member: Member) => {
+    setEditingMember(member.id);
+    setEditAge(member.age?.toString() || "");
+    setEditMaxRating(getMaxRating(member));
+  };
+
+  const saveEdit = (memberId: number) => {
     const ageNum = editAge.trim() ? parseInt(editAge, 10) : null;
     const validAge = ageNum && !isNaN(ageNum) && ageNum > 0 && ageNum < 130 ? ageNum : null;
-    onUpdateAge(memberId, validAge);
-    setEditingAgeFor(null);
-    setEditAge("");
+    onUpdateMember(memberId, { age: validAge, maxRating: editMaxRating });
+    setEditingMember(null);
   };
 
   return (
@@ -75,7 +115,7 @@ export default function MemberSelector({
 
       <div className="flex flex-wrap justify-center gap-4 mb-4">
         {members.map((member) => {
-          const badge = ageBadge(member.age);
+          const badge = ratingBadge(getMaxRating(member));
           return (
             <div key={member.id} className="relative group">
               <button
@@ -90,22 +130,17 @@ export default function MemberSelector({
                 {member.age != null && (
                   <span className="text-gray-400 text-xs">Age {member.age}</span>
                 )}
-                {badge && (
-                  <span className={`absolute -top-1 -left-1 ${badge.color} text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow`}>
-                    {badge.label}
-                  </span>
-                )}
+                <span className={`absolute -top-1 -left-1 ${badge.color} text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow`}>
+                  {badge.label}
+                </span>
               </button>
 
               {/* Action buttons */}
               <div className="absolute -top-1 -right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
-                  onClick={() => {
-                    setEditingAgeFor(member.id);
-                    setEditAge(member.age?.toString() || "");
-                  }}
+                  onClick={() => startEditing(member)}
                   className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-5 h-5 text-[10px] flex items-center justify-center"
-                  title="Edit age"
+                  title="Edit settings"
                 >
                   ✎
                 </button>
@@ -118,42 +153,58 @@ export default function MemberSelector({
                 </button>
               </div>
 
-              {/* Edit age inline form */}
-              {editingAgeFor === member.id && (
-                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 rounded-lg p-3 shadow-xl z-10 w-56">
-                  <p className="text-gray-300 text-xs mb-2">Set age for {member.name}</p>
+              {/* Edit form */}
+              {editingMember === member.id && (
+                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 rounded-lg p-4 shadow-xl z-20 w-72">
+                  <p className="text-white text-sm font-medium mb-3">Edit {member.name}</p>
+
+                  <label className="block text-gray-300 text-xs mb-1 uppercase tracking-wider">Age</label>
+                  <input
+                    type="number"
+                    value={editAge}
+                    onChange={(e) => setEditAge(e.target.value)}
+                    placeholder="e.g. 12"
+                    min="1"
+                    max="120"
+                    className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500 mb-3"
+                  />
+
+                  <label className="block text-gray-300 text-xs mb-2 uppercase tracking-wider">Max rating allowed</label>
+                  <div className="grid grid-cols-5 gap-1 mb-3">
+                    {RATING_OPTIONS.map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setEditMaxRating(opt.value)}
+                        className={`px-1 py-1.5 rounded text-xs font-bold transition-all
+                          ${editMaxRating === opt.value
+                            ? `${opt.color} text-white ring-2 ring-white/50`
+                            : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="flex gap-2">
-                    <input
-                      type="number"
-                      value={editAge}
-                      onChange={(e) => setEditAge(e.target.value)}
-                      placeholder="Age"
-                      min="1"
-                      max="120"
-                      className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                      autoFocus
-                      onKeyDown={(e) => e.key === "Enter" && handleSaveAge(member.id)}
-                    />
                     <button
-                      onClick={() => handleSaveAge(member.id)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-xs font-medium"
+                      onClick={() => saveEdit(member.id)}
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-1.5 rounded text-sm font-medium"
                     >
                       Save
                     </button>
+                    <button
+                      onClick={() => setEditingMember(null)}
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1.5 rounded text-sm font-medium"
+                    >
+                      Cancel
+                    </button>
                   </div>
-                  <button
-                    onClick={() => { setEditingAgeFor(null); setEditAge(""); }}
-                    className="text-gray-400 hover:text-white text-xs mt-2 underline"
-                  >
-                    Cancel
-                  </button>
                 </div>
               )}
             </div>
           );
         })}
 
-        {/* View All button */}
         {members.length > 1 && (
           <button
             onClick={onViewAll}
@@ -167,7 +218,6 @@ export default function MemberSelector({
           </button>
         )}
 
-        {/* Add member button */}
         <button
           onClick={() => setShowAdd(true)}
           className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-800/40 hover:bg-gray-700/40 border-2 border-dashed border-gray-600 hover:border-purple-500 transition-all"
@@ -181,37 +231,54 @@ export default function MemberSelector({
       {showAdd && (
         <div className="bg-gray-800/80 backdrop-blur rounded-xl p-6 max-w-sm mx-auto">
           <h3 className="text-white font-medium mb-3">Add Family Member</h3>
+
           <input
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Name"
             className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-3"
-            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             autoFocus
           />
 
           <label className="block text-gray-300 text-xs mb-1 uppercase tracking-wider">
-            Age (keeps recommendations age-appropriate)
+            Age (optional)
           </label>
           <input
             type="number"
             value={newAge}
-            onChange={(e) => setNewAge(e.target.value)}
+            onChange={(e) => handleAgeChange(e.target.value)}
             placeholder="e.g. 12"
             min="1"
             max="120"
             className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-3"
-            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           />
 
-          <p className="text-gray-400 text-xs mb-3 leading-relaxed">
-            {newAge && !isNaN(parseInt(newAge, 10)) ? (
-              parseInt(newAge, 10) < 7 ? "Only G-rated movies will be suggested." :
-              parseInt(newAge, 10) < 13 ? "Only G and PG movies will be suggested." :
-              parseInt(newAge, 10) < 17 ? "G, PG, and PG-13 movies only — no R-rated content." :
-              "All movie ratings allowed."
-            ) : "No age filter (adult account)."}
+          <label className="block text-gray-300 text-xs mb-2 uppercase tracking-wider">
+            What can they watch?
+          </label>
+          <div className="grid grid-cols-5 gap-1 mb-2">
+            {RATING_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => { setNewMaxRating(opt.value); setMaxRatingTouched(true); }}
+                className={`flex flex-col items-center px-1 py-2 rounded text-xs font-bold transition-all
+                  ${newMaxRating === opt.value
+                    ? `${opt.color} text-white ring-2 ring-white/50`
+                    : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}
+              >
+                <span>{opt.label}</span>
+                <span className="text-[9px] font-normal opacity-75 mt-0.5">{opt.hint}</span>
+              </button>
+            ))}
+          </div>
+
+          <p className="text-gray-400 text-xs mb-4 leading-relaxed">
+            {newMaxRating === "G" && "Only G-rated movies will be suggested."}
+            {newMaxRating === "PG" && "Only G and PG movies will be suggested."}
+            {newMaxRating === "PG-13" && "G, PG, and PG-13 — no R-rated content."}
+            {newMaxRating === "R" && "Up to R — no NC-17 explicit content."}
+            {newMaxRating === "ALL" && "No content filter applied."}
           </p>
 
           <div className="flex flex-wrap gap-2 mb-4">
@@ -235,7 +302,10 @@ export default function MemberSelector({
               Add
             </button>
             <button
-              onClick={() => setShowAdd(false)}
+              onClick={() => {
+                setShowAdd(false);
+                setMaxRatingTouched(false);
+              }}
               className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg font-medium transition-colors"
             >
               Cancel

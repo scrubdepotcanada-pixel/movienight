@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOrCreateFamily } from "@/lib/session";
 import db from "@/lib/db";
 
+const VALID_RATINGS = ["G", "PG", "PG-13", "R", "NC-17", "ALL"];
+
+function sanitizeMaxRating(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  return VALID_RATINGS.includes(value) ? value : null;
+}
+
 // Get all family members
 export async function GET() {
   const familyId = await getOrCreateFamily();
@@ -17,17 +24,18 @@ export async function GET() {
 // Create a new family member
 export async function POST(req: NextRequest) {
   const familyId = await getOrCreateFamily();
-  const { name, avatar, age } = await req.json();
+  const { name, avatar, age, maxRating } = await req.json();
 
   if (!name || !name.trim()) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
 
   const ageValue = typeof age === "number" && age > 0 && age < 130 ? age : null;
+  const maxRatingValue = sanitizeMaxRating(maxRating);
 
   const result = await db.execute({
-    sql: "INSERT INTO members (family_id, name, avatar, age) VALUES (?, ?, ?, ?)",
-    args: [familyId, name.trim(), avatar || "🎬", ageValue],
+    sql: "INSERT INTO members (family_id, name, avatar, age, max_rating) VALUES (?, ?, ?, ?, ?)",
+    args: [familyId, name.trim(), avatar || "🎬", ageValue, maxRatingValue],
   });
 
   const member = await db.execute({
@@ -38,10 +46,10 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(member.rows[0]);
 }
 
-// Update a family member (age, name, avatar)
+// Update a family member (age, name, avatar, maxRating)
 export async function PATCH(req: NextRequest) {
   const familyId = await getOrCreateFamily();
-  const { memberId, name, avatar, age } = await req.json();
+  const { memberId, name, avatar, age, maxRating } = await req.json();
 
   const existing = await db.execute({
     sql: "SELECT id FROM members WHERE id = ? AND family_id = ?",
@@ -65,6 +73,10 @@ export async function PATCH(req: NextRequest) {
   if (age !== undefined) {
     updates.push("age = ?");
     args.push(typeof age === "number" && age > 0 && age < 130 ? age : null);
+  }
+  if (maxRating !== undefined) {
+    updates.push("max_rating = ?");
+    args.push(sanitizeMaxRating(maxRating));
   }
 
   if (updates.length === 0) {
@@ -90,7 +102,6 @@ export async function DELETE(req: NextRequest) {
   const familyId = await getOrCreateFamily();
   const { memberId } = await req.json();
 
-  // Verify member belongs to this family
   const member = await db.execute({
     sql: "SELECT id FROM members WHERE id = ? AND family_id = ?",
     args: [memberId, familyId],
@@ -100,7 +111,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Member not found" }, { status: 404 });
   }
 
-  // Delete all related data
   await db.batch([
     { sql: "DELETE FROM recommendations WHERE member_id = ?", args: [memberId] },
     { sql: "DELETE FROM watched_movies WHERE member_id = ?", args: [memberId] },
