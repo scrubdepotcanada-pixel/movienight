@@ -17,6 +17,10 @@ export async function initDB() {
   await db.batch([
     `CREATE TABLE IF NOT EXISTS families (
       id TEXT PRIMARY KEY,
+      google_id TEXT UNIQUE,
+      email TEXT,
+      name TEXT,
+      avatar TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     )`,
     `CREATE TABLE IF NOT EXISTS members (
@@ -83,6 +87,10 @@ export async function initDB() {
     "ALTER TABLE disliked_movies ADD COLUMN category TEXT DEFAULT 'general'",
     "ALTER TABLE members ADD COLUMN age INTEGER",
     "ALTER TABLE members ADD COLUMN max_rating TEXT",
+    "ALTER TABLE families ADD COLUMN google_id TEXT",
+    "ALTER TABLE families ADD COLUMN email TEXT",
+    "ALTER TABLE families ADD COLUMN name TEXT",
+    "ALTER TABLE families ADD COLUMN avatar TEXT",
   ];
   for (const sql of migrations) {
     try {
