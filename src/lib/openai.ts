@@ -41,17 +41,26 @@ async function askForMovies(prompt: string, count: number): Promise<MovieSuggest
   }
 }
 
+function buildExcludeBlock(watchedTitles: string[], dislikedTitles: string[]): string {
+  let block = "";
+  if (watchedTitles.length > 0) {
+    block += `\n\nDo NOT suggest any of these movies (already watched): ${watchedTitles.join(", ")}`;
+  }
+  if (dislikedTitles.length > 0) {
+    block += `\n\nThe user DISLIKED these movies, so do NOT suggest anything similar to them: ${dislikedTitles.join(", ")}. Avoid movies with a similar tone, style, or themes to the disliked ones.`;
+  }
+  return block;
+}
+
 export async function getSimilarMoviesAI(
   movieTitle: string,
-  watchedTitles: string[]
+  watchedTitles: string[],
+  dislikedTitles: string[] = []
 ): Promise<MovieSuggestion[]> {
-  const excludeList =
-    watchedTitles.length > 0
-      ? `\n\nDo NOT suggest any of these movies (already watched): ${watchedTitles.join(", ")}`
-      : "";
+  const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
 
   return askForMovies(
-    `The user loves the movie "${movieTitle}". Suggest 3 movies that are similar in tone, genre, and style. These should be movies that someone who loved "${movieTitle}" would also enjoy.${excludeList}\n\nReturn exactly 3 movies.`,
+    `The user loves the movie "${movieTitle}". Suggest 3 movies that are similar in tone, genre, and style. These should be movies that someone who loved "${movieTitle}" would also enjoy.${excludeBlock}\n\nReturn exactly 3 movies.`,
     3
   );
 }
@@ -59,15 +68,13 @@ export async function getSimilarMoviesAI(
 export async function getRecommendationsAI(
   likedMovie1: string,
   likedMovie2: string,
-  watchedTitles: string[]
+  watchedTitles: string[],
+  dislikedTitles: string[] = []
 ): Promise<MovieSuggestion[]> {
-  const excludeList =
-    watchedTitles.length > 0
-      ? `\n\nDo NOT suggest any of these movies (already watched): ${watchedTitles.join(", ")}`
-      : "";
+  const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
 
   return askForMovies(
-    `The user loves these two movies: "${likedMovie1}" and "${likedMovie2}". Based on their taste across both movies, suggest 5 movies they would love for movie night. Consider the common themes, genres, mood, and style across both picks. Mix popular and lesser-known gems.${excludeList}\n\nDo NOT include "${likedMovie1}" or "${likedMovie2}" in your suggestions. Return exactly 5 movies.`,
+    `The user loves these two movies: "${likedMovie1}" and "${likedMovie2}". Based on their taste across both movies, suggest 5 movies they would love for movie night. Consider the common themes, genres, mood, and style across both picks. Mix popular and lesser-known gems.${excludeBlock}\n\nDo NOT include "${likedMovie1}" or "${likedMovie2}" in your suggestions. Return exactly 5 movies.`,
     5
   );
 }
@@ -77,12 +84,18 @@ export async function getReplacementMoviesAI(
   likedMovie2: string,
   currentRecommendations: string[],
   watchedTitles: string[],
+  dislikedTitles: string[],
   count: number
 ): Promise<MovieSuggestion[]> {
   const allExclude = [...new Set([...watchedTitles, ...currentRecommendations, likedMovie1, likedMovie2])];
 
+  let dislikeBlock = "";
+  if (dislikedTitles.length > 0) {
+    dislikeBlock = `\n\nThe user DISLIKED these movies, so avoid anything similar in tone, style, or themes: ${dislikedTitles.join(", ")}`;
+  }
+
   return askForMovies(
-    `The user loves "${likedMovie1}" and "${likedMovie2}". They need ${count} new movie recommendations to replace movies they've already watched. Suggest movies similar in taste.\n\nDo NOT suggest any of these movies: ${allExclude.join(", ")}\n\nReturn exactly ${count} movies.`,
+    `The user loves "${likedMovie1}" and "${likedMovie2}". They need ${count} new movie recommendations to replace movies they've already watched or didn't like. Suggest movies similar in taste to their liked movies.${dislikeBlock}\n\nDo NOT suggest any of these movies: ${allExclude.join(", ")}\n\nReturn exactly ${count} movies.`,
     count
   );
 }

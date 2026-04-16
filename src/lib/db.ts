@@ -60,6 +60,15 @@ export async function initDB() {
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (member_id) REFERENCES members(id)
     )`,
+    `CREATE TABLE IF NOT EXISTS disliked_movies (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      member_id INTEGER NOT NULL,
+      tmdb_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (member_id) REFERENCES members(id),
+      UNIQUE(member_id, tmdb_id)
+    )`,
   ]);
 }
 

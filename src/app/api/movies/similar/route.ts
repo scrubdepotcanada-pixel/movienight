@@ -10,17 +10,21 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing movieTitle or memberId" }, { status: 400 });
   }
 
-  // Get movies this member already watched
-  const watchedRows = await db.execute({
-    sql: "SELECT title FROM watched_movies WHERE member_id = ?",
-    args: [memberId],
-  });
+  const [watchedRows, dislikedRows] = await Promise.all([
+    db.execute({
+      sql: "SELECT title FROM watched_movies WHERE member_id = ?",
+      args: [memberId],
+    }),
+    db.execute({
+      sql: "SELECT title FROM disliked_movies WHERE member_id = ?",
+      args: [memberId],
+    }),
+  ]);
+
   const watchedTitles = watchedRows.rows.map((r) => String(r.title));
+  const dislikedTitles = dislikedRows.rows.map((r) => String(r.title));
 
-  // Ask OpenAI for similar movies
-  const suggestions = await getSimilarMoviesAI(movieTitle, watchedTitles);
-
-  // Look up each suggestion on TMDB for poster, rating, certification
+  const suggestions = await getSimilarMoviesAI(movieTitle, watchedTitles, dislikedTitles);
   const movies = await resolveAISuggestions(suggestions);
 
   return NextResponse.json(movies);

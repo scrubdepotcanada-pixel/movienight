@@ -50,6 +50,7 @@ export default function Home() {
   // Recommendations state
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [watchedSelection, setWatchedSelection] = useState<Set<number>>(new Set());
+  const [dislikeLoadingId, setDislikeLoadingId] = useState<number | null>(null);
 
   // Load members on mount
   useEffect(() => {
@@ -256,6 +257,33 @@ export default function Home() {
     setStep("recommendations");
   };
 
+  const handleDislike = async (movie: Movie) => {
+    setDislikeLoadingId(movie.id);
+    try {
+      const res = await fetch("/api/movies/dislike", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId: selectedMember!.id,
+          movie,
+        }),
+      });
+      const data = await res.json();
+
+      // Replace the disliked movie with the new suggestion
+      setRecommendations((prev) => {
+        const updated = prev.filter((m) => m.id !== movie.id);
+        if (data.replacement) {
+          updated.push(data.replacement);
+        }
+        return updated;
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    setDislikeLoadingId(null);
+  };
+
   const handleStartFresh = () => {
     setSearchResults([]);
     setSimilarMovies([]);
@@ -384,7 +412,7 @@ export default function Home() {
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">Your Top Picks</h2>
               <p className="text-gray-400">
-                Mark any you&apos;ve already watched and we&apos;ll suggest replacements
+                Mark watched or dislike to get better suggestions
               </p>
             </div>
 
@@ -401,6 +429,9 @@ export default function Home() {
                       onClick={() => toggleWatched(movie.id)}
                       showWatchedToggle
                       onWatchedToggle={() => toggleWatched(movie.id)}
+                      showDislike
+                      onDislike={() => handleDislike(movie)}
+                      dislikeLoading={dislikeLoadingId === movie.id}
                     />
                   ))}
                 </div>
@@ -451,6 +482,9 @@ export default function Home() {
                       onClick={() => toggleWatched(movie.id)}
                       showWatchedToggle
                       onWatchedToggle={() => toggleWatched(movie.id)}
+                      showDislike
+                      onDislike={() => handleDislike(movie)}
+                      dislikeLoading={dislikeLoadingId === movie.id}
                     />
                   ))}
                 </div>

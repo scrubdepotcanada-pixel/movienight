@@ -15,7 +15,10 @@ interface MovieCardProps {
   watched?: boolean;
   onClick?: () => void;
   onWatchedToggle?: () => void;
+  onDislike?: () => void;
   showWatchedToggle?: boolean;
+  showDislike?: boolean;
+  dislikeLoading?: boolean;
 }
 
 function ratingColor(rating: number): string {
@@ -47,7 +50,10 @@ export default function MovieCard({
   watched,
   onClick,
   onWatchedToggle,
+  onDislike,
   showWatchedToggle,
+  showDislike,
+  dislikeLoading,
 }: MovieCardProps) {
   const posterSrc = movie.poster_path
     ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`
@@ -136,22 +142,48 @@ export default function MovieCard({
         </div>
       </div>
 
-      {/* Watched toggle button */}
-      {showWatchedToggle && (
-        <button
-          className={`absolute bottom-16 right-2 z-10 rounded-full p-1.5 transition-colors
-            ${watched ? "bg-green-600 hover:bg-green-700" : "bg-gray-700/80 hover:bg-gray-600"}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onWatchedToggle?.();
-          }}
-          title={watched ? "Mark as unwatched" : "Mark as watched"}
-        >
-          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-        </button>
+      {/* Action buttons */}
+      {(showWatchedToggle || showDislike) && (
+        <div className="absolute bottom-16 right-2 z-10 flex flex-col gap-1.5">
+          {showWatchedToggle && (
+            <button
+              className={`rounded-full p-1.5 transition-colors
+                ${watched ? "bg-green-600 hover:bg-green-700" : "bg-gray-700/80 hover:bg-gray-600"}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onWatchedToggle?.();
+              }}
+              title={watched ? "Mark as unwatched" : "Mark as watched"}
+            >
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          )}
+          {showDislike && (
+            <button
+              className="rounded-full p-1.5 bg-gray-700/80 hover:bg-red-600 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDislike?.();
+              }}
+              disabled={dislikeLoading}
+              title="Don't like this — replace it"
+            >
+              {dislikeLoading ? (
+                <svg className="w-4 h-4 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                </svg>
+              )}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );

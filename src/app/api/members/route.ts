@@ -55,6 +55,8 @@ export async function DELETE(req: NextRequest) {
   await db.batch([
     { sql: "DELETE FROM recommendations WHERE member_id = ?", args: [memberId] },
     { sql: "DELETE FROM watched_movies WHERE member_id = ?", args: [memberId] },
+    { sql: "DELETE FROM disliked_movies WHERE member_id = ?", args: [memberId] },
+    { sql: "DELETE FROM liked_movies WHERE member_id = ?", args: [memberId] },
     { sql: "DELETE FROM members WHERE id = ?", args: [memberId] },
   ]);
 
