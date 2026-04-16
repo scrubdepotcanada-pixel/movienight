@@ -1,5 +1,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
+import { getMemberRestrictions } from "@/lib/member";
+import { isMovieAllowed } from "@/lib/ageRating";
+
+/**
+ * Filter active recommendations by the member's current max_rating and
+ * deactivate any that don't pass so they don't clog the pool next time.
+ */
+async function filterAndPruneRecs(
+  memberId: string,
+  rows: Record<string, unknown>[],
+  maxRating: string | null
+) {
+  if (!maxRating || maxRating === "ALL") return rows;
+
+  const allowed: Record<string, unknown>[] = [];
+  const toDeactivate: number[] = [];
+
+  for (const rec of rows) {
+    const cert = rec.certification ? String(rec.certification) : undefined;
+    if (isMovieAllowed(cert, maxRating as "G" | "PG" | "PG-13" | "R" | "NC-17")) {
+      allowed.push(rec);
+    } else {
+      toDeactivate.push(Number(rec.id));
+    }
+  }
+
+  // Deactivate filtered-out recs so future loads are clean
+  for (const id of toDeactivate) {
+    await db.execute({
+      sql: "UPDATE recommendations SET is_active = 0 WHERE id = ?",
+      args: [id],
+    });
+  }
+
+  return allowed;
+}
 
 export async function GET(req: NextRequest) {
   const memberId = req.nextUrl.searchParams.get("memberId");
@@ -7,6 +43,8 @@ export async function GET(req: NextRequest) {
   if (!memberId) {
     return NextResponse.json({ error: "Missing memberId" }, { status: 400 });
   }
+
+  const { maxRating } = await getMemberRestrictions(memberId);
 
   // If category provided, return category-specific data
   if (category) {
@@ -25,9 +63,11 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
+    const filteredRecs = await filterAndPruneRecs(memberId, activeRecs.rows, maxRating);
+
     return NextResponse.json({
-      hasHistory: activeRecs.rows.length > 0,
-      activeRecommendations: activeRecs.rows,
+      hasHistory: filteredRecs.length > 0,
+      activeRecommendations: filteredRecs,
       dislikedInCategory: dislikedRows.rows,
       likedInCategory: likedRows.rows,
     });
@@ -45,9 +85,11 @@ export async function GET(req: NextRequest) {
     }),
   ]);
 
+  const filteredRecs = await filterAndPruneRecs(memberId, activeRecs.rows, maxRating);
+
   return NextResponse.json({
-    hasHistory: activeRecs.rows.length > 0 || Number(watchedCount.rows[0].count) > 0,
-    activeRecommendations: activeRecs.rows,
+    hasHistory: filteredRecs.length > 0 || Number(watchedCount.rows[0].count) > 0,
+    activeRecommendations: filteredRecs,
     totalWatched: Number(watchedCount.rows[0].count),
   });
 }
