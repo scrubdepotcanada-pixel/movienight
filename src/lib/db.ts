@@ -49,6 +49,7 @@ export async function initDB() {
       certification TEXT,
       overview TEXT,
       base_movie_id INTEGER,
+      category TEXT DEFAULT 'general',
       is_active INTEGER DEFAULT 1,
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (member_id) REFERENCES members(id)
@@ -57,6 +58,7 @@ export async function initDB() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       member_id INTEGER NOT NULL,
       title TEXT NOT NULL,
+      category TEXT DEFAULT 'general',
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (member_id) REFERENCES members(id)
     )`,
@@ -65,6 +67,7 @@ export async function initDB() {
       member_id INTEGER NOT NULL,
       tmdb_id INTEGER NOT NULL,
       title TEXT NOT NULL,
+      category TEXT DEFAULT 'general',
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (member_id) REFERENCES members(id),
       UNIQUE(member_id, tmdb_id)

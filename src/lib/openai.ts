@@ -79,23 +79,49 @@ export async function getRecommendationsAI(
   );
 }
 
+export async function getCategoryRecommendationsAI(
+  category: string,
+  watchedTitles: string[],
+  dislikedTitles: string[]
+): Promise<MovieSuggestion[]> {
+  const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
+
+  return askForMovies(
+    `Suggest 5 must-watch ${category} movies for a movie night. Include a mix of all-time classics and great recent films in the ${category} genre. Pick movies that best represent what makes ${category} great — the ones that fans of the genre absolutely need to see.${excludeBlock}\n\nReturn exactly 5 movies.`,
+    5
+  );
+}
+
 export async function getReplacementMoviesAI(
-  likedMovie1: string,
-  likedMovie2: string,
+  context: { likedMovie1?: string; likedMovie2?: string; category?: string },
   currentRecommendations: string[],
   watchedTitles: string[],
   dislikedTitles: string[],
   count: number
 ): Promise<MovieSuggestion[]> {
-  const allExclude = [...new Set([...watchedTitles, ...currentRecommendations, likedMovie1, likedMovie2])];
+  const allExclude = [...new Set([
+    ...watchedTitles,
+    ...currentRecommendations,
+    ...(context.likedMovie1 ? [context.likedMovie1] : []),
+    ...(context.likedMovie2 ? [context.likedMovie2] : []),
+  ])];
 
   let dislikeBlock = "";
   if (dislikedTitles.length > 0) {
     dislikeBlock = `\n\nThe user DISLIKED these movies, so avoid anything similar in tone, style, or themes: ${dislikedTitles.join(", ")}`;
   }
 
+  let tasteContext: string;
+  if (context.category && context.category !== "general") {
+    tasteContext = `The user wants ${context.category} movies for movie night. Suggest ${count} great ${context.category} movies they haven't seen.`;
+  } else if (context.likedMovie1 && context.likedMovie2) {
+    tasteContext = `The user loves "${context.likedMovie1}" and "${context.likedMovie2}". They need ${count} new movie recommendations to replace movies they've already watched or didn't like. Suggest movies similar in taste to their liked movies.`;
+  } else {
+    tasteContext = `Suggest ${count} great movies for movie night.`;
+  }
+
   return askForMovies(
-    `The user loves "${likedMovie1}" and "${likedMovie2}". They need ${count} new movie recommendations to replace movies they've already watched or didn't like. Suggest movies similar in taste to their liked movies.${dislikeBlock}\n\nDo NOT suggest any of these movies: ${allExclude.join(", ")}\n\nReturn exactly ${count} movies.`,
+    `${tasteContext}${dislikeBlock}\n\nDo NOT suggest any of these movies: ${allExclude.join(", ")}\n\nReturn exactly ${count} movies.`,
     count
   );
 }

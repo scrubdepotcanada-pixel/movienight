@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import SearchBar from "@/components/SearchBar";
 import MovieCard from "@/components/MovieCard";
 import MemberSelector from "@/components/MemberSelector";
+import GenreSelector, { GENRES } from "@/components/GenreSelector";
+import CategorySidebar from "@/components/CategorySidebar";
 
 interface Movie {
   id: number;
@@ -20,13 +22,20 @@ interface Member {
   avatar: string;
 }
 
+interface SidebarMovie {
+  title: string;
+  tmdb_id?: number;
+}
+
 type Step =
   | "select-member"
   | "search"
   | "pick-similar"
   | "recommendations"
   | "returning"
-  | "all-members";
+  | "all-members"
+  | "category-recs"
+  | "category-returning";
 
 export default function Home() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -52,12 +61,29 @@ export default function Home() {
   const [watchedSelection, setWatchedSelection] = useState<Set<number>>(new Set());
   const [dislikeLoadingId, setDislikeLoadingId] = useState<number | null>(null);
 
+  // Category state
+  const [activeCategory, setActiveCategory] = useState<string>("general");
+  const [categoryLiked, setCategoryLiked] = useState<SidebarMovie[]>([]);
+  const [categoryDisliked, setCategoryDisliked] = useState<SidebarMovie[]>([]);
+
   // Load members on mount
   useEffect(() => {
     fetch("/api/members")
       .then((r) => r.json())
       .then(setMembers)
       .catch(console.error);
+  }, []);
+
+  const loadCategoryHistory = useCallback(async (memberId: number, category: string) => {
+    try {
+      const res = await fetch(`/api/session?memberId=${memberId}&category=${encodeURIComponent(category)}`);
+      const data = await res.json();
+      setCategoryLiked((data.likedInCategory || []).map((r: Record<string, unknown>) => ({ title: String(r.title) })));
+      setCategoryDisliked((data.dislikedInCategory || []).map((r: Record<string, unknown>) => ({ title: String(r.title), tmdb_id: Number(r.tmdb_id) })));
+    } catch {
+      setCategoryLiked([]);
+      setCategoryDisliked([]);
+    }
   }, []);
 
   const loadMemberSession = useCallback(async (member: Member) => {
@@ -76,6 +102,7 @@ export default function Home() {
           overview: r.overview as string,
         }));
         setRecommendations(recs);
+        setActiveCategory("general");
         setStep("returning");
       } else {
         setStep("search");
@@ -95,6 +122,9 @@ export default function Home() {
     setSimilarMovies([]);
     setSelectedSearchMovie(null);
     setSelectedSimilar(null);
+    setActiveCategory("general");
+    setCategoryLiked([]);
+    setCategoryDisliked([]);
     loadMemberSession(member);
   };
 
@@ -190,14 +220,59 @@ export default function Home() {
   const handlePickSimilar = async (movie: Movie) => {
     setSelectedSimilar(movie);
     setLoading(true);
+    setActiveCategory("general");
     try {
       const res = await fetch(
-        `/api/movies/recommendations?likedMovie1=${encodeURIComponent(selectedSearchMovie!.title)}&likedMovie2=${encodeURIComponent(movie.title)}&memberId=${selectedMember!.id}`
+        `/api/movies/recommendations?likedMovie1=${encodeURIComponent(selectedSearchMovie!.title)}&likedMovie2=${encodeURIComponent(movie.title)}&memberId=${selectedMember!.id}&category=general`
       );
       const data = await res.json();
       setRecommendations(data.movies);
       setWatchedSelection(new Set());
       setStep("recommendations");
+    } catch (err) {
+      console.error(err);
+    }
+    setLoading(false);
+  };
+
+  // Category selection
+  const handleSelectCategory = async (genreId: string) => {
+    setActiveCategory(genreId);
+    setLoading(true);
+    setCategoryLiked([]);
+    setCategoryDisliked([]);
+
+    try {
+      // Check if there are existing recs for this category
+      const sessionRes = await fetch(
+        `/api/session?memberId=${selectedMember!.id}&category=${encodeURIComponent(genreId)}`
+      );
+      const sessionData = await sessionRes.json();
+
+      if (sessionData.hasHistory && sessionData.activeRecommendations.length > 0) {
+        const recs = sessionData.activeRecommendations.map((r: Record<string, unknown>) => ({
+          id: Number(r.tmdb_id),
+          title: r.title as string,
+          poster_path: r.poster_path as string | null,
+          vote_average: Number(r.vote_average),
+          certification: r.certification as string,
+          overview: r.overview as string,
+        }));
+        setRecommendations(recs);
+        setCategoryLiked((sessionData.likedInCategory || []).map((r: Record<string, unknown>) => ({ title: String(r.title) })));
+        setCategoryDisliked((sessionData.dislikedInCategory || []).map((r: Record<string, unknown>) => ({ title: String(r.title), tmdb_id: Number(r.tmdb_id) })));
+        setWatchedSelection(new Set());
+        setStep("category-returning");
+      } else {
+        // Fresh category — get new recommendations
+        const res = await fetch(
+          `/api/movies/category?category=${encodeURIComponent(genreId)}&memberId=${selectedMember!.id}`
+        );
+        const data = await res.json();
+        setRecommendations(data.movies);
+        setWatchedSelection(new Set());
+        setStep("category-recs");
+      }
     } catch (err) {
       console.error(err);
     }
@@ -235,6 +310,7 @@ export default function Home() {
         body: JSON.stringify({
           memberId: selectedMember!.id,
           count: watchedSelection.size,
+          category: activeCategory,
         }),
       });
       const replacements = await res.json();
@@ -250,11 +326,11 @@ export default function Home() {
 
   const handleReturningWatched = async () => {
     if (watchedSelection.size === 0) {
-      setStep("recommendations");
+      setStep(activeCategory !== "general" ? "category-recs" : "recommendations");
       return;
     }
     await handleSubmitWatched();
-    setStep("recommendations");
+    setStep(activeCategory !== "general" ? "category-recs" : "recommendations");
   };
 
   const handleDislike = async (movie: Movie) => {
@@ -266,11 +342,11 @@ export default function Home() {
         body: JSON.stringify({
           memberId: selectedMember!.id,
           movie,
+          category: activeCategory,
         }),
       });
       const data = await res.json();
 
-      // Replace the disliked movie with the new suggestion
       setRecommendations((prev) => {
         const updated = prev.filter((m) => m.id !== movie.id);
         if (data.replacement) {
@@ -278,6 +354,14 @@ export default function Home() {
         }
         return updated;
       });
+
+      // Update sidebar
+      setCategoryDisliked((prev) => [...prev, { title: movie.title, tmdb_id: movie.id }]);
+
+      // Refresh sidebar history
+      if (selectedMember) {
+        loadCategoryHistory(selectedMember.id, activeCategory);
+      }
     } catch (err) {
       console.error(err);
     }
@@ -291,35 +375,98 @@ export default function Home() {
     setSelectedSimilar(null);
     setRecommendations([]);
     setWatchedSelection(new Set());
+    setActiveCategory("general");
+    setCategoryLiked([]);
+    setCategoryDisliked([]);
     setStep("search");
   };
+
+  const genreLabel = GENRES.find((g) => g.id === activeCategory)?.label || activeCategory;
+  const genreIcon = GENRES.find((g) => g.id === activeCategory)?.icon || "";
+  const isCategoryStep = step === "category-recs" || step === "category-returning";
+
+  // Shared recommendation grid used in multiple steps
+  const renderRecommendationGrid = () => (
+    <div className={`flex gap-6 ${isCategoryStep ? "" : "justify-center"}`}>
+      {/* Sidebar for category views */}
+      {isCategoryStep && (
+        <div className="hidden lg:block w-56 flex-shrink-0">
+          <CategorySidebar
+            category={genreLabel}
+            likedMovies={categoryLiked}
+            dislikedMovies={categoryDisliked}
+          />
+        </div>
+      )}
+
+      {/* Movie grid */}
+      <div className="flex-1 max-w-5xl">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+          {recommendations.map((movie) => (
+            <MovieCard
+              key={movie.id}
+              movie={movie}
+              watched={watchedSelection.has(movie.id)}
+              onClick={() => toggleWatched(movie.id)}
+              showWatchedToggle
+              onWatchedToggle={() => toggleWatched(movie.id)}
+              showDislike
+              onDislike={() => handleDislike(movie)}
+              dislikeLoading={dislikeLoadingId === movie.id}
+            />
+          ))}
+        </div>
+
+        {/* Mobile sidebar */}
+        {isCategoryStep && (categoryLiked.length > 0 || categoryDisliked.length > 0) && (
+          <div className="mt-6 lg:hidden">
+            <CategorySidebar
+              category={genreLabel}
+              likedMovies={categoryLiked}
+              dislikedMovies={categoryDisliked}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-purple-950 text-white">
       {/* Header */}
       <header className="border-b border-gray-800/50 bg-black/20 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <button onClick={() => { setStep("select-member"); setSelectedMember(null); setViewingAll(false); }}>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               MovieNight
             </h1>
           </button>
-          {selectedMember && (
-            <div className="flex items-center gap-2 text-sm text-gray-300">
-              <span className="text-xl">{selectedMember.avatar}</span>
-              <span>{selectedMember.name}</span>
+          <div className="flex items-center gap-3">
+            {isCategoryStep && (
               <button
-                onClick={() => { setStep("select-member"); setSelectedMember(null); }}
-                className="ml-2 text-purple-400 hover:text-purple-300 underline text-xs"
+                onClick={handleStartFresh}
+                className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg transition-colors"
               >
-                Switch
+                Change category
               </button>
-            </div>
-          )}
+            )}
+            {selectedMember && (
+              <div className="flex items-center gap-2 text-sm text-gray-300">
+                <span className="text-xl">{selectedMember.avatar}</span>
+                <span>{selectedMember.name}</span>
+                <button
+                  onClick={() => { setStep("select-member"); setSelectedMember(null); }}
+                  className="ml-2 text-purple-400 hover:text-purple-300 underline text-xs"
+                >
+                  Switch
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {/* STEP: Select Member */}
         {step === "select-member" && (
           <div className="pt-12">
@@ -366,6 +513,12 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+            {searchResults.length === 0 && (
+              <div className="mt-10">
+                <GenreSelector onSelect={handleSelectCategory} loading={loading} />
+              </div>
+            )}
           </div>
         )}
 
@@ -406,7 +559,7 @@ export default function Home() {
           </div>
         )}
 
-        {/* STEP: Recommendations */}
+        {/* STEP: Recommendations (general) */}
         {step === "recommendations" && selectedMember && (
           <div className="pt-8">
             <div className="text-center mb-8">
@@ -420,21 +573,7 @@ export default function Home() {
               <LoadingSpinner />
             ) : (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 max-w-5xl mx-auto">
-                  {recommendations.map((movie) => (
-                    <MovieCard
-                      key={movie.id}
-                      movie={movie}
-                      watched={watchedSelection.has(movie.id)}
-                      onClick={() => toggleWatched(movie.id)}
-                      showWatchedToggle
-                      onWatchedToggle={() => toggleWatched(movie.id)}
-                      showDislike
-                      onDislike={() => handleDislike(movie)}
-                      dislikeLoading={dislikeLoadingId === movie.id}
-                    />
-                  ))}
-                </div>
+                {renderRecommendationGrid()}
 
                 <div className="flex flex-col items-center gap-4 mt-8">
                   {watchedSelection.size > 0 && (
@@ -457,7 +596,46 @@ export default function Home() {
           </div>
         )}
 
-        {/* STEP: Returning User */}
+        {/* STEP: Category Recommendations */}
+        {step === "category-recs" && selectedMember && (
+          <div className="pt-8">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-2">
+                {genreIcon} Top {genreLabel} Picks
+              </h2>
+              <p className="text-gray-400">
+                Mark watched or dislike to get better {genreLabel.toLowerCase()} suggestions
+              </p>
+            </div>
+
+            {loading ? (
+              <LoadingSpinner />
+            ) : (
+              <>
+                {renderRecommendationGrid()}
+
+                <div className="flex flex-col items-center gap-4 mt-8">
+                  {watchedSelection.size > 0 && (
+                    <button
+                      onClick={handleSubmitWatched}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl font-medium text-lg transition-colors"
+                    >
+                      I&apos;ve watched {watchedSelection.size} — suggest replacements
+                    </button>
+                  )}
+                  <button
+                    onClick={handleStartFresh}
+                    className="text-gray-400 hover:text-white text-sm underline"
+                  >
+                    Browse a different category
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* STEP: Returning User (general) */}
         {step === "returning" && selectedMember && (
           <div className="pt-8">
             <div className="text-center mb-8">
@@ -473,21 +651,7 @@ export default function Home() {
               <LoadingSpinner />
             ) : (
               <>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 max-w-5xl mx-auto">
-                  {recommendations.map((movie) => (
-                    <MovieCard
-                      key={movie.id}
-                      movie={movie}
-                      watched={watchedSelection.has(movie.id)}
-                      onClick={() => toggleWatched(movie.id)}
-                      showWatchedToggle
-                      onWatchedToggle={() => toggleWatched(movie.id)}
-                      showDislike
-                      onDislike={() => handleDislike(movie)}
-                      dislikeLoading={dislikeLoadingId === movie.id}
-                    />
-                  ))}
-                </div>
+                {renderRecommendationGrid()}
 
                 <div className="flex flex-col items-center gap-4 mt-8">
                   <button
@@ -503,6 +667,45 @@ export default function Home() {
                     className="text-gray-400 hover:text-white text-sm underline"
                   >
                     Start fresh with a new movie
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* STEP: Category Returning */}
+        {step === "category-returning" && selectedMember && (
+          <div className="pt-8">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-2">
+                {genreIcon} Your {genreLabel} List
+              </h2>
+              <p className="text-gray-400">
+                Did you watch any of these? Tap the ones you&apos;ve seen.
+              </p>
+            </div>
+
+            {loading ? (
+              <LoadingSpinner />
+            ) : (
+              <>
+                {renderRecommendationGrid()}
+
+                <div className="flex flex-col items-center gap-4 mt-8">
+                  <button
+                    onClick={handleReturningWatched}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl font-medium text-lg transition-colors"
+                  >
+                    {watchedSelection.size > 0
+                      ? `I watched ${watchedSelection.size} — update my list`
+                      : "I haven't watched any yet"}
+                  </button>
+                  <button
+                    onClick={handleStartFresh}
+                    className="text-gray-400 hover:text-white text-sm underline"
+                  >
+                    Browse a different category
                   </button>
                 </div>
               </>

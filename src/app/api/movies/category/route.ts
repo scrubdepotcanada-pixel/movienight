@@ -1,17 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveAISuggestions } from "@/lib/tmdb";
-import { getRecommendationsAI } from "@/lib/openai";
+import { getCategoryRecommendationsAI } from "@/lib/openai";
 import db from "@/lib/db";
 
 export async function GET(req: NextRequest) {
-  const likedMovie1 = req.nextUrl.searchParams.get("likedMovie1");
-  const likedMovie2 = req.nextUrl.searchParams.get("likedMovie2");
+  const category = req.nextUrl.searchParams.get("category");
   const memberId = req.nextUrl.searchParams.get("memberId");
-  const category = req.nextUrl.searchParams.get("category") || "general";
-  if (!likedMovie1 || !likedMovie2 || !memberId) {
-    return NextResponse.json({ error: "Missing required params" }, { status: 400 });
+  if (!category || !memberId) {
+    return NextResponse.json({ error: "Missing category or memberId" }, { status: 400 });
   }
 
+  // Get watched and disliked movies for this category only
   const [watchedRows, dislikedRows] = await Promise.all([
     db.execute({
       sql: "SELECT title FROM watched_movies WHERE member_id = ?",
@@ -26,16 +25,8 @@ export async function GET(req: NextRequest) {
   const watchedTitles = watchedRows.rows.map((r) => String(r.title));
   const dislikedTitles = dislikedRows.rows.map((r) => String(r.title));
 
-  const suggestions = await getRecommendationsAI(likedMovie1, likedMovie2, watchedTitles, dislikedTitles);
+  const suggestions = await getCategoryRecommendationsAI(category, watchedTitles, dislikedTitles);
   const movies = await resolveAISuggestions(suggestions);
-
-  // Save the liked movies for future context
-  for (const title of [likedMovie1, likedMovie2]) {
-    await db.execute({
-      sql: "INSERT INTO liked_movies (member_id, title, category) VALUES (?, ?, ?)",
-      args: [memberId, title, category],
-    });
-  }
 
   // Clear old active recommendations for this category and save new ones
   await db.execute({
