@@ -50,7 +50,6 @@ export default function Home() {
   // Recommendations state
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [watchedSelection, setWatchedSelection] = useState<Set<number>>(new Set());
-  const [baseMovieId, setBaseMovieId] = useState<number | null>(null);
 
   // Load members on mount
   useEffect(() => {
@@ -76,7 +75,6 @@ export default function Home() {
           overview: r.overview as string,
         }));
         setRecommendations(recs);
-        setBaseMovieId(data.baseMovieId ? Number(data.baseMovieId) : null);
         setStep("returning");
       } else {
         setStep("search");
@@ -177,7 +175,7 @@ export default function Home() {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/movies/similar?movieId=${movie.id}&memberId=${selectedMember!.id}`
+        `/api/movies/similar?movieTitle=${encodeURIComponent(movie.title)}&memberId=${selectedMember!.id}`
       );
       const data = await res.json();
       setSimilarMovies(data);
@@ -193,11 +191,10 @@ export default function Home() {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/movies/recommendations?movieId=${movie.id}&memberId=${selectedMember!.id}`
+        `/api/movies/recommendations?likedMovie1=${encodeURIComponent(selectedSearchMovie!.title)}&likedMovie2=${encodeURIComponent(movie.title)}&memberId=${selectedMember!.id}`
       );
       const data = await res.json();
       setRecommendations(data.movies);
-      setBaseMovieId(data.baseMovieId);
       setWatchedSelection(new Set());
       setStep("recommendations");
     } catch (err) {
@@ -236,7 +233,6 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           memberId: selectedMember!.id,
-          baseMovieId,
           count: watchedSelection.size,
         }),
       });
@@ -267,7 +263,6 @@ export default function Home() {
     setSelectedSimilar(null);
     setRecommendations([]);
     setWatchedSelection(new Set());
-    setBaseMovieId(null);
     setStep("search");
   };
 

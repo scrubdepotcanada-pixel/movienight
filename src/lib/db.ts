@@ -53,6 +53,13 @@ export async function initDB() {
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (member_id) REFERENCES members(id)
     )`,
+    `CREATE TABLE IF NOT EXISTS liked_movies (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      member_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (member_id) REFERENCES members(id)
+    )`,
   ]);
 }
 

@@ -32,23 +32,6 @@ export async function searchMovies(query: string): Promise<Movie[]> {
   return data.results || [];
 }
 
-export async function getSimilarMovies(movieId: number): Promise<Movie[]> {
-  const res = await fetch(
-    `${TMDB_BASE}/movie/${movieId}/similar?language=en-US&page=1`,
-    { headers: headers() }
-  );
-  const data = await res.json();
-  return data.results || [];
-}
-
-export async function getRecommendedMovies(movieId: number): Promise<Movie[]> {
-  const res = await fetch(
-    `${TMDB_BASE}/movie/${movieId}/recommendations?language=en-US&page=1`,
-    { headers: headers() }
-  );
-  const data = await res.json();
-  return data.results || [];
-}
 
 export async function getMovieCertification(movieId: number): Promise<string> {
   const res = await fetch(
@@ -85,4 +68,40 @@ export async function enrichWithCertifications(movies: Movie[]): Promise<(Movie 
     })
   );
   return enriched;
+}
+
+/**
+ * Look up a movie by title and optional year via TMDB search,
+ * then enrich it with certification. Used to hydrate OpenAI suggestions
+ * with poster images, ratings, and age ratings.
+ */
+export async function lookupMovie(
+  title: string,
+  year?: number
+): Promise<(Movie & { certification: string }) | null> {
+  const yearParam = year ? `&year=${year}` : "";
+  const res = await fetch(
+    `${TMDB_BASE}/search/movie?query=${encodeURIComponent(title)}${yearParam}&include_adult=false&language=en-US&page=1`,
+    { headers: headers() }
+  );
+  const data = await res.json();
+  const results: Movie[] = data.results || [];
+  if (results.length === 0) return null;
+
+  const movie = results[0];
+  const cert = await getMovieCertification(movie.id);
+  return { ...movie, certification: cert };
+}
+
+/**
+ * Take an array of {title, year} from OpenAI and resolve them
+ * to full Movie objects with posters, ratings, and certifications.
+ */
+export async function resolveAISuggestions(
+  suggestions: { title: string; year: number }[]
+): Promise<(Movie & { certification: string })[]> {
+  const results = await Promise.all(
+    suggestions.map((s) => lookupMovie(s.title, s.year))
+  );
+  return results.filter((m): m is Movie & { certification: string } => m !== null);
 }

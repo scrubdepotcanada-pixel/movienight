@@ -1,36 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRecommendedMovies, getSimilarMovies, enrichWithCertifications } from "@/lib/tmdb";
+import { resolveAISuggestions } from "@/lib/tmdb";
+import { getRecommendationsAI } from "@/lib/openai";
 import db from "@/lib/db";
 
 export async function GET(req: NextRequest) {
-  const movieId = req.nextUrl.searchParams.get("movieId");
+  const likedMovie1 = req.nextUrl.searchParams.get("likedMovie1");
+  const likedMovie2 = req.nextUrl.searchParams.get("likedMovie2");
   const memberId = req.nextUrl.searchParams.get("memberId");
-  if (!movieId || !memberId) {
-    return NextResponse.json({ error: "Missing movieId or memberId" }, { status: 400 });
+  if (!likedMovie1 || !likedMovie2 || !memberId) {
+    return NextResponse.json({ error: "Missing required params" }, { status: 400 });
   }
 
   // Get movies this member already watched
   const watchedRows = await db.execute({
-    sql: "SELECT tmdb_id FROM watched_movies WHERE member_id = ?",
+    sql: "SELECT title FROM watched_movies WHERE member_id = ?",
     args: [memberId],
   });
-  const watchedIds = new Set(watchedRows.rows.map((r) => Number(r.tmdb_id)));
+  const watchedTitles = watchedRows.rows.map((r) => String(r.title));
 
-  const [recommended, similar] = await Promise.all([
-    getRecommendedMovies(Number(movieId)),
-    getSimilarMovies(Number(movieId)),
-  ]);
+  // Ask OpenAI for recommendations
+  const suggestions = await getRecommendationsAI(likedMovie1, likedMovie2, watchedTitles);
 
-  const all = [...recommended, ...similar];
-  const seen = new Set<number>();
-  const unique = all.filter((m) => {
-    if (seen.has(m.id) || watchedIds.has(m.id)) return false;
-    seen.add(m.id);
-    return true;
-  });
+  // Resolve via TMDB for posters, ratings, certifications
+  const movies = await resolveAISuggestions(suggestions);
 
-  const top5 = unique.slice(0, 5);
-  const enriched = await enrichWithCertifications(top5);
+  // Save the liked movies for future context
+  for (const title of [likedMovie1, likedMovie2]) {
+    await db.execute({
+      sql: "INSERT INTO liked_movies (member_id, title) VALUES (?, ?)",
+      args: [memberId, title],
+    });
+  }
 
   // Clear old active recommendations and save new ones
   await db.execute({
@@ -38,13 +38,13 @@ export async function GET(req: NextRequest) {
     args: [memberId],
   });
 
-  for (const movie of enriched) {
+  for (const movie of movies) {
     await db.execute({
-      sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, base_movie_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification, movie.overview, Number(movieId)],
+      sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification, movie.overview],
     });
   }
 
-  return NextResponse.json({ movies: enriched, baseMovieId: Number(movieId) });
+  return NextResponse.json({ movies });
 }
