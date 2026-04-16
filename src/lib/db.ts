@@ -73,6 +73,20 @@ export async function initDB() {
       UNIQUE(member_id, tmdb_id)
     )`,
   ]);
+
+  // Migrations: add category column to existing tables if missing
+  const migrations = [
+    "ALTER TABLE recommendations ADD COLUMN category TEXT DEFAULT 'general'",
+    "ALTER TABLE liked_movies ADD COLUMN category TEXT DEFAULT 'general'",
+    "ALTER TABLE disliked_movies ADD COLUMN category TEXT DEFAULT 'general'",
+  ];
+  for (const sql of migrations) {
+    try {
+      await db.execute(sql);
+    } catch {
+      // Column already exists — ignore
+    }
+  }
 }
 
 const db = new Proxy({} as Client, {

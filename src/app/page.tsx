@@ -47,6 +47,7 @@ export default function Home() {
 
   const [step, setStep] = useState<Step>("select-member");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Search state
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
@@ -239,6 +240,7 @@ export default function Home() {
   const handleSelectCategory = async (genreId: string) => {
     setActiveCategory(genreId);
     setLoading(true);
+    setError(null);
     setCategoryLiked([]);
     setCategoryDisliked([]);
 
@@ -247,6 +249,11 @@ export default function Home() {
       const sessionRes = await fetch(
         `/api/session?memberId=${selectedMember!.id}&category=${encodeURIComponent(genreId)}`
       );
+
+      if (!sessionRes.ok) {
+        throw new Error(`Session failed: ${sessionRes.status}`);
+      }
+
       const sessionData = await sessionRes.json();
 
       if (sessionData.hasHistory && sessionData.activeRecommendations.length > 0) {
@@ -268,13 +275,19 @@ export default function Home() {
         const res = await fetch(
           `/api/movies/category?category=${encodeURIComponent(genreId)}&memberId=${selectedMember!.id}`
         );
+
+        if (!res.ok) {
+          throw new Error(`Category fetch failed: ${res.status}`);
+        }
+
         const data = await res.json();
-        setRecommendations(data.movies);
+        setRecommendations(data.movies || []);
         setWatchedSelection(new Set());
         setStep("category-recs");
       }
     } catch (err) {
       console.error(err);
+      setError("Failed to load recommendations. Check that your API keys are configured in Vercel.");
     }
     setLoading(false);
   };
@@ -467,6 +480,14 @@ export default function Home() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Error banner */}
+        {error && (
+          <div className="mb-6 bg-red-900/50 border border-red-700 rounded-xl p-4 flex items-center justify-between">
+            <p className="text-red-200 text-sm">{error}</p>
+            <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300 ml-4 text-lg">&times;</button>
+          </div>
+        )}
+
         {/* STEP: Select Member */}
         {step === "select-member" && (
           <div className="pt-12">
@@ -514,9 +535,13 @@ export default function Home() {
               </div>
             )}
 
-            {searchResults.length === 0 && (
-              <div className="mt-10">
-                <GenreSelector onSelect={handleSelectCategory} loading={loading} />
+            <div className="mt-10">
+              <GenreSelector onSelect={handleSelectCategory} loading={loading} />
+            </div>
+
+            {loading && (
+              <div className="mt-8">
+                <LoadingSpinner />
               </div>
             )}
           </div>
