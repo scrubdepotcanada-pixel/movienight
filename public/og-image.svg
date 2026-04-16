@@ -1,0 +1,27 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#030712"/>
+      <stop offset="50%" style="stop-color:#111827"/>
+      <stop offset="100%" style="stop-color:#3b0764"/>
+    </linearGradient>
+    <linearGradient id="title" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#c084fc"/>
+      <stop offset="100%" style="stop-color:#f472b6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <!-- Movie emoji icons -->
+  <text x="600" y="180" text-anchor="middle" font-size="80" fill="white">🎬 🍿 🎭</text>
+  <!-- Title -->
+  <text x="600" y="300" text-anchor="middle" font-family="Arial, sans-serif" font-size="72" font-weight="bold" fill="url(#title)">Next Movie</text>
+  <!-- Subtitle -->
+  <text x="600" y="380" text-anchor="middle" font-family="Arial, sans-serif" font-size="32" fill="#d1d5db">AI Movie Picks for the Whole Family</text>
+  <!-- Features -->
+  <text x="600" y="460" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#9ca3af">Family Profiles • Age-Safe Filtering • Learns Your Taste</text>
+  <!-- CTA -->
+  <rect x="440" y="500" width="320" height="56" rx="28" fill="#7c3aed"/>
+  <text x="600" y="536" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="bold" fill="white">Try It Free →</text>
+  <!-- URL -->
+  <text x="600" y="610" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" fill="#6b7280">nextmovie.app</text>
+</svg>

@@ -13,8 +13,37 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MovieNight - Family Movie Recommendations",
-  description: "Get personalized movie recommendations for the whole family",
+  title: "Next Movie — AI Movie Picks for the Whole Family",
+  description:
+    "Find your next movie in seconds. AI-powered recommendations with family profiles, age-safe filtering, and taste learning. Free to use.",
+  metadataBase: new URL("https://nextmovie.app"),
+  openGraph: {
+    title: "Next Movie — AI Movie Picks for the Whole Family",
+    description:
+      "Stop scrolling, start watching. Get personalized movie recommendations for every family member — powered by AI, filtered by age. Free.",
+    url: "https://nextmovie.app",
+    siteName: "Next Movie",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/api/og",
+        width: 1200,
+        height: 630,
+        alt: "Next Movie — AI-powered family movie recommendations",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Next Movie — AI Movie Picks for the Whole Family",
+    description:
+      "Stop scrolling, start watching. Personalized movie recommendations for every family member — free.",
+    images: ["/api/og"],
+  },
+  icons: {
+    icon: "/favicon.ico",
+  },
 };
 
 export default function RootLayout({

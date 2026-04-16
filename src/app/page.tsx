@@ -514,7 +514,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <button onClick={() => { setStep("select-member"); setSelectedMember(null); setViewingAll(false); }}>
             <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              MovieNight
+              Next Movie
             </h1>
           </button>
           <div className="flex items-center gap-3">
@@ -555,7 +555,7 @@ export default function Home() {
         {step === "select-member" && (
           <div className="pt-12">
             <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold mb-3">Welcome to MovieNight</h2>
+              <h2 className="text-4xl font-bold mb-3">Welcome to Next Movie</h2>
               <p className="text-gray-400 text-lg">Pick your profile to get personalized recommendations</p>
             </div>
             <MemberSelector
