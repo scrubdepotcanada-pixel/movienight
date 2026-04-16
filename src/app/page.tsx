@@ -61,6 +61,7 @@ export default function Home() {
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [watchedSelection, setWatchedSelection] = useState<Set<number>>(new Set());
   const [dislikeLoadingId, setDislikeLoadingId] = useState<number | null>(null);
+  const [likeLoadingId, setLikeLoadingId] = useState<number | null>(null);
 
   // Category state
   const [activeCategory, setActiveCategory] = useState<string>("general");
@@ -348,35 +349,43 @@ export default function Home() {
   };
 
   const handleLike = async (movie: Movie) => {
-    const wasLiked = categoryLiked.some((m) => m.title === movie.title);
-
-    // Optimistic UI update
-    if (wasLiked) {
-      setCategoryLiked((prev) => prev.filter((m) => m.title !== movie.title));
-    } else {
-      setCategoryLiked((prev) => [...prev, { title: movie.title }]);
-    }
-
+    setLikeLoadingId(movie.id);
     try {
-      await fetch("/api/movies/like", {
-        method: wasLiked ? "DELETE" : "POST",
+      const res = await fetch("/api/movies/like", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           memberId: selectedMember!.id,
-          movie: wasLiked ? undefined : movie,
-          movieTitle: wasLiked ? movie.title : undefined,
+          movie,
           category: activeCategory,
         }),
       });
+      const data = await res.json();
+
+      // Replace the liked movie with a new suggestion
+      setRecommendations((prev) => {
+        const idx = prev.findIndex((m) => m.id === movie.id);
+        if (idx === -1) return prev;
+        const next = [...prev];
+        if (data.replacement) {
+          next[idx] = data.replacement;
+        } else {
+          next.splice(idx, 1);
+        }
+        return next;
+      });
+
+      // Update sidebar
+      setCategoryLiked((prev) => [...prev, { title: movie.title }]);
+
+      // Refresh sidebar from server
+      if (selectedMember) {
+        loadCategoryHistory(selectedMember.id, activeCategory);
+      }
     } catch (err) {
       console.error(err);
-      // Revert on error
-      if (wasLiked) {
-        setCategoryLiked((prev) => [...prev, { title: movie.title }]);
-      } else {
-        setCategoryLiked((prev) => prev.filter((m) => m.title !== movie.title));
-      }
     }
+    setLikeLoadingId(null);
   };
 
   const handleDislike = async (movie: Movie) => {
@@ -459,6 +468,7 @@ export default function Home() {
                 onClick={() => handleWatched(movie)}
                 showLike
                 onLike={() => handleLike(movie)}
+                likeLoading={likeLoadingId === movie.id}
                 showDislike
                 onDislike={() => handleDislike(movie)}
                 dislikeLoading={dislikeLoadingId === movie.id}

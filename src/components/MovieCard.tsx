@@ -20,6 +20,7 @@ interface MovieCardProps {
   showDislike?: boolean;
   showLike?: boolean;
   dislikeLoading?: boolean;
+  likeLoading?: boolean;
 }
 
 function ratingColor(rating: number): string {
@@ -56,6 +57,7 @@ export default function MovieCard({
   showDislike,
   showLike,
   dislikeLoading,
+  likeLoading,
 }: MovieCardProps) {
   const posterSrc = movie.poster_path
     ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`
@@ -133,47 +135,53 @@ export default function MovieCard({
               </div>
             )}
 
-            {/* Action buttons - bottom of poster */}
-            {(showLike || showDislike) && (
-              <div className="absolute bottom-2 right-2 z-10 flex flex-col gap-1.5">
-                {showLike && (
-                  <button
-                    className={`rounded-full p-1.5 transition-colors shadow-lg
-                      ${liked ? "bg-green-600 hover:bg-green-700" : "bg-gray-900/80 hover:bg-green-600"}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onLike?.();
-                    }}
-                    title={liked ? "Unlike" : "Like this movie"}
-                  >
-                    <svg className="w-4 h-4 text-white" fill={liked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.904 0 .715-.211 1.413-.608 2.008L7 11V21m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                    </svg>
-                  </button>
+            {/* Like button - bottom left */}
+            {showLike && (
+              <button
+                className={`absolute bottom-3 left-3 z-10 rounded-full p-2.5 transition-all shadow-lg hover:scale-110
+                  ${liked ? "bg-green-600" : "bg-black/70 hover:bg-green-600"}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onLike?.();
+                }}
+                disabled={likeLoading}
+                title="Like — get a fresh suggestion in this style"
+              >
+                {likeLoading ? (
+                  <svg className="w-6 h-6 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-white" fill={liked ? "currentColor" : "none"} stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.904 0 .715-.211 1.413-.608 2.008L7 11V21m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                  </svg>
                 )}
-                {showDislike && (
-                  <button
-                    className="rounded-full p-1.5 bg-gray-900/80 hover:bg-red-600 transition-colors shadow-lg"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDislike?.();
-                    }}
-                    disabled={dislikeLoading}
-                    title="Don't like this — replace it"
-                  >
-                    {dislikeLoading ? (
-                      <svg className="w-4 h-4 text-white animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                    ) : (
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
-                      </svg>
-                    )}
-                  </button>
+              </button>
+            )}
+
+            {/* Dislike button - bottom right */}
+            {showDislike && (
+              <button
+                className="absolute bottom-3 right-3 z-10 rounded-full p-2.5 bg-black/70 hover:bg-red-600 transition-all shadow-lg hover:scale-110"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDislike?.();
+                }}
+                disabled={dislikeLoading}
+                title="Don't like this — replace it"
+              >
+                {dislikeLoading ? (
+                  <svg className="w-6 h-6 text-white animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                ) : (
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                  </svg>
                 )}
-              </div>
+              </button>
             )}
           </div>
 
