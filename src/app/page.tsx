@@ -20,6 +20,7 @@ interface Member {
   id: number;
   name: string;
   avatar: string;
+  age?: number | null;
 }
 
 interface SidebarMovie {
@@ -161,15 +162,29 @@ export default function Home() {
     setLoading(false);
   };
 
-  const handleAddMember = async (name: string, avatar: string) => {
+  const handleAddMember = async (name: string, avatar: string, age: number | null) => {
     try {
       const res = await fetch("/api/members", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, avatar }),
+        body: JSON.stringify({ name, avatar, age }),
       });
       const member = await res.json();
       setMembers((prev) => [...prev, member]);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateAge = async (memberId: number, age: number | null) => {
+    try {
+      const res = await fetch("/api/members", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId, age }),
+      });
+      const updated = await res.json();
+      setMembers((prev) => prev.map((m) => (m.id === memberId ? updated : m)));
     } catch (err) {
       console.error(err);
     }
@@ -548,6 +563,7 @@ export default function Home() {
               onSelect={handleSelectMember}
               onAdd={handleAddMember}
               onDelete={handleDeleteMember}
+              onUpdateAge={handleUpdateAge}
               viewingAll={viewingAll}
               onViewAll={handleViewAll}
             />

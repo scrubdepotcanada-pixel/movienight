@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveAISuggestions } from "@/lib/tmdb";
 import { getReplacementMoviesAI } from "@/lib/openai";
+import { getMemberAge } from "@/lib/member";
+import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
 
 // Like a movie — save to liked_movies AND replace the card with a new recommendation
@@ -11,20 +13,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing memberId or movie" }, { status: 400 });
   }
 
-  // Save the like
   await db.execute({
     sql: "INSERT INTO liked_movies (member_id, title, category) VALUES (?, ?, ?)",
     args: [memberId, movie.title, category],
   });
 
-  // Deactivate from current recommendations
   await db.execute({
     sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND tmdb_id = ?",
     args: [memberId, movie.id],
   });
 
-  // Get context for a replacement — now including the new like
-  const [likedRows, watchedRows, dislikedRows, recsRows] = await Promise.all([
+  const [age, likedRows, watchedRows, dislikedRows, recsRows] = await Promise.all([
+    getMemberAge(memberId),
     db.execute({
       sql: "SELECT DISTINCT title FROM liked_movies WHERE member_id = ? AND category = ? ORDER BY created_at DESC LIMIT 2",
       args: [memberId, category],
@@ -61,11 +61,13 @@ export async function POST(req: NextRequest) {
     currentRecTitles,
     watchedTitles,
     dislikedTitles,
-    1
+    1,
+    age
   );
 
   const movies = await resolveAISuggestions(suggestions);
-  const replacement = movies[0] || null;
+  const allowed = movies.filter((m) => isMovieAllowed(m.certification, age));
+  const replacement = allowed[0] || null;
 
   if (replacement) {
     await db.execute({

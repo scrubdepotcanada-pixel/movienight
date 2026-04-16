@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { ageRestrictionPrompt } from "./ageRating";
 
 let _openai: OpenAI | null = null;
 function getOpenAI(): OpenAI {
@@ -21,7 +22,7 @@ async function askForMovies(prompt: string, count: number): Promise<MovieSuggest
     messages: [
       {
         role: "system",
-        content: `You are a movie recommendation expert. You always respond in JSON format with a "movies" array containing objects with "title" (string) and "year" (number) fields. Only suggest real, well-known movies. Never repeat movies. Always return exactly ${count} movies.`,
+        content: `You are a movie recommendation expert. You always respond in JSON format with a "movies" array containing objects with "title" (string) and "year" (number) fields. Only suggest real, well-known movies. Never repeat movies. Always return exactly ${count} movies. Strictly respect any age restrictions specified by the user.`,
       },
       {
         role: "user",
@@ -55,13 +56,16 @@ function buildExcludeBlock(watchedTitles: string[], dislikedTitles: string[]): s
 export async function getSimilarMoviesAI(
   movieTitle: string,
   watchedTitles: string[],
-  dislikedTitles: string[] = []
+  dislikedTitles: string[] = [],
+  age: number | null = null
 ): Promise<MovieSuggestion[]> {
   const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
+  const ageBlock = ageRestrictionPrompt(age);
+  const extra = age != null && age < 13 ? 4 : 0; // ask for more so we can filter
 
   return askForMovies(
-    `The user loves the movie "${movieTitle}". Suggest 3 movies that are similar in tone, genre, and style. These should be movies that someone who loved "${movieTitle}" would also enjoy.${excludeBlock}\n\nReturn exactly 3 movies.`,
-    3
+    `The user loves the movie "${movieTitle}". Suggest ${3 + extra} movies that are similar in tone, genre, and style. These should be movies that someone who loved "${movieTitle}" would also enjoy.${excludeBlock}${ageBlock}\n\nReturn exactly ${3 + extra} movies.`,
+    3 + extra
   );
 }
 
@@ -69,26 +73,32 @@ export async function getRecommendationsAI(
   likedMovie1: string,
   likedMovie2: string,
   watchedTitles: string[],
-  dislikedTitles: string[] = []
+  dislikedTitles: string[] = [],
+  age: number | null = null
 ): Promise<MovieSuggestion[]> {
   const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
+  const ageBlock = ageRestrictionPrompt(age);
+  const extra = age != null && age < 13 ? 5 : 0;
 
   return askForMovies(
-    `The user loves these two movies: "${likedMovie1}" and "${likedMovie2}". Based on their taste across both movies, suggest 5 movies they would love for movie night. Consider the common themes, genres, mood, and style across both picks. Mix popular and lesser-known gems.${excludeBlock}\n\nDo NOT include "${likedMovie1}" or "${likedMovie2}" in your suggestions. Return exactly 5 movies.`,
-    5
+    `The user loves these two movies: "${likedMovie1}" and "${likedMovie2}". Based on their taste across both movies, suggest ${5 + extra} movies they would love for movie night. Consider the common themes, genres, mood, and style across both picks. Mix popular and lesser-known gems.${excludeBlock}${ageBlock}\n\nDo NOT include "${likedMovie1}" or "${likedMovie2}" in your suggestions. Return exactly ${5 + extra} movies.`,
+    5 + extra
   );
 }
 
 export async function getCategoryRecommendationsAI(
   category: string,
   watchedTitles: string[],
-  dislikedTitles: string[]
+  dislikedTitles: string[],
+  age: number | null = null
 ): Promise<MovieSuggestion[]> {
   const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
+  const ageBlock = ageRestrictionPrompt(age);
+  const extra = age != null && age < 13 ? 5 : 0;
 
   return askForMovies(
-    `Suggest 5 must-watch ${category} movies for a movie night. Include a mix of all-time classics and great recent films in the ${category} genre. Pick movies that best represent what makes ${category} great — the ones that fans of the genre absolutely need to see.${excludeBlock}\n\nReturn exactly 5 movies.`,
-    5
+    `Suggest ${5 + extra} must-watch ${category} movies for a movie night. Include a mix of all-time classics and great recent films in the ${category} genre. Pick movies that best represent what makes ${category} great — the ones that fans of the genre absolutely need to see.${excludeBlock}${ageBlock}\n\nReturn exactly ${5 + extra} movies.`,
+    5 + extra
   );
 }
 
@@ -97,7 +107,8 @@ export async function getReplacementMoviesAI(
   currentRecommendations: string[],
   watchedTitles: string[],
   dislikedTitles: string[],
-  count: number
+  count: number,
+  age: number | null = null
 ): Promise<MovieSuggestion[]> {
   const allExclude = [...new Set([
     ...watchedTitles,
@@ -111,17 +122,20 @@ export async function getReplacementMoviesAI(
     dislikeBlock = `\n\nThe user DISLIKED these movies, so avoid anything similar in tone, style, or themes: ${dislikedTitles.join(", ")}`;
   }
 
+  const ageBlock = ageRestrictionPrompt(age);
+  const fetchCount = count + (age != null && age < 13 ? 3 : 0);
+
   let tasteContext: string;
   if (context.category && context.category !== "general") {
-    tasteContext = `The user wants ${context.category} movies for movie night. Suggest ${count} great ${context.category} movies they haven't seen.`;
+    tasteContext = `The user wants ${context.category} movies for movie night. Suggest ${fetchCount} great ${context.category} movies they haven't seen.`;
   } else if (context.likedMovie1 && context.likedMovie2) {
-    tasteContext = `The user loves "${context.likedMovie1}" and "${context.likedMovie2}". They need ${count} new movie recommendations to replace movies they've already watched or didn't like. Suggest movies similar in taste to their liked movies.`;
+    tasteContext = `The user loves "${context.likedMovie1}" and "${context.likedMovie2}". They need ${fetchCount} new movie recommendations to replace movies they've already watched or didn't like. Suggest movies similar in taste to their liked movies.`;
   } else {
-    tasteContext = `Suggest ${count} great movies for movie night.`;
+    tasteContext = `Suggest ${fetchCount} great movies for movie night.`;
   }
 
   return askForMovies(
-    `${tasteContext}${dislikeBlock}\n\nDo NOT suggest any of these movies: ${allExclude.join(", ")}\n\nReturn exactly ${count} movies.`,
-    count
+    `${tasteContext}${dislikeBlock}${ageBlock}\n\nDo NOT suggest any of these movies: ${allExclude.join(", ")}\n\nReturn exactly ${fetchCount} movies.`,
+    fetchCount
   );
 }

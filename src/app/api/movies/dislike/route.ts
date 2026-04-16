@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveAISuggestions } from "@/lib/tmdb";
 import { getReplacementMoviesAI } from "@/lib/openai";
+import { getMemberAge } from "@/lib/member";
+import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
 
 export async function POST(req: NextRequest) {
@@ -10,20 +12,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing memberId or movie" }, { status: 400 });
   }
 
-  // Save to disliked_movies with category
   await db.execute({
     sql: "INSERT OR IGNORE INTO disliked_movies (member_id, tmdb_id, title, category) VALUES (?, ?, ?, ?)",
     args: [memberId, movie.id, movie.title, category],
   });
 
-  // Deactivate from recommendations
   await db.execute({
     sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND tmdb_id = ?",
     args: [memberId, movie.id],
   });
 
-  // Get context for replacement — scoped to this category
-  const [likedRows, watchedRows, dislikedRows, recsRows] = await Promise.all([
+  const [age, likedRows, watchedRows, dislikedRows, recsRows] = await Promise.all([
+    getMemberAge(memberId),
     db.execute({
       sql: "SELECT DISTINCT title FROM liked_movies WHERE member_id = ? AND category = ? ORDER BY created_at DESC LIMIT 2",
       args: [memberId, category],
@@ -51,7 +51,6 @@ export async function POST(req: NextRequest) {
     ? { category }
     : { likedMovie1: likedTitles[0], likedMovie2: likedTitles[1] };
 
-  // Need at least some context to generate a replacement
   if (category === "general" && likedTitles.length < 2) {
     return NextResponse.json({ replacement: null });
   }
@@ -61,11 +60,13 @@ export async function POST(req: NextRequest) {
     currentRecTitles,
     watchedTitles,
     dislikedTitles,
-    1
+    1,
+    age
   );
 
   const movies = await resolveAISuggestions(suggestions);
-  const replacement = movies[0] || null;
+  const allowed = movies.filter((m) => isMovieAllowed(m.certification, age));
+  const replacement = allowed[0] || null;
 
   if (replacement) {
     await db.execute({

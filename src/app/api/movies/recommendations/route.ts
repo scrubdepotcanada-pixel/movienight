@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveAISuggestions } from "@/lib/tmdb";
 import { getRecommendationsAI } from "@/lib/openai";
+import { getMemberAge } from "@/lib/member";
+import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
 
 export async function GET(req: NextRequest) {
@@ -12,7 +14,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing required params" }, { status: 400 });
   }
 
-  const [watchedRows, dislikedRows] = await Promise.all([
+  const [age, watchedRows, dislikedRows] = await Promise.all([
+    getMemberAge(memberId),
     db.execute({
       sql: "SELECT title FROM watched_movies WHERE member_id = ?",
       args: [memberId],
@@ -26,10 +29,10 @@ export async function GET(req: NextRequest) {
   const watchedTitles = watchedRows.rows.map((r) => String(r.title));
   const dislikedTitles = dislikedRows.rows.map((r) => String(r.title));
 
-  const suggestions = await getRecommendationsAI(likedMovie1, likedMovie2, watchedTitles, dislikedTitles);
-  const movies = await resolveAISuggestions(suggestions);
+  const suggestions = await getRecommendationsAI(likedMovie1, likedMovie2, watchedTitles, dislikedTitles, age);
+  const allMovies = await resolveAISuggestions(suggestions);
+  const movies = allMovies.filter((m) => isMovieAllowed(m.certification, age)).slice(0, 5);
 
-  // Save the liked movies for future context
   for (const title of [likedMovie1, likedMovie2]) {
     await db.execute({
       sql: "INSERT INTO liked_movies (member_id, title, category) VALUES (?, ?, ?)",
@@ -37,7 +40,6 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  // Clear old active recommendations for this category and save new ones
   await db.execute({
     sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND category = ?",
     args: [memberId, category],

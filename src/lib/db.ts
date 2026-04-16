@@ -24,6 +24,7 @@ export async function initDB() {
       family_id TEXT NOT NULL,
       name TEXT NOT NULL,
       avatar TEXT DEFAULT '🎬',
+      age INTEGER,
       created_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (family_id) REFERENCES families(id)
     )`,
@@ -74,11 +75,12 @@ export async function initDB() {
     )`,
   ]);
 
-  // Migrations: add category column to existing tables if missing
+  // Migrations: add new columns to existing tables if missing
   const migrations = [
     "ALTER TABLE recommendations ADD COLUMN category TEXT DEFAULT 'general'",
     "ALTER TABLE liked_movies ADD COLUMN category TEXT DEFAULT 'general'",
     "ALTER TABLE disliked_movies ADD COLUMN category TEXT DEFAULT 'general'",
+    "ALTER TABLE members ADD COLUMN age INTEGER",
   ];
   for (const sql of migrations) {
     try {
