@@ -1,28 +1,82 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveAISuggestions } from "@/lib/tmdb";
+import { getReplacementMoviesAI } from "@/lib/openai";
 import db from "@/lib/db";
 
-// Mark movies as watched
+// Mark a single movie as watched and return one replacement
 export async function POST(req: NextRequest) {
-  const { memberId, movies } = await req.json();
+  const { memberId, movie, category = "general" } = await req.json();
 
-  if (!memberId || !Array.isArray(movies) || movies.length === 0) {
-    return NextResponse.json({ error: "Missing memberId or movies" }, { status: 400 });
+  if (!memberId || !movie) {
+    return NextResponse.json({ error: "Missing memberId or movie" }, { status: 400 });
   }
 
-  for (const movie of movies) {
-    await db.execute({
-      sql: `INSERT OR IGNORE INTO watched_movies (member_id, tmdb_id, title, poster_path, vote_average, certification)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-      args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification || "NR"],
-    });
+  // Save to watched
+  await db.execute({
+    sql: `INSERT OR IGNORE INTO watched_movies (member_id, tmdb_id, title, poster_path, vote_average, certification)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification || "NR"],
+  });
 
+  // Deactivate from recommendations
+  await db.execute({
+    sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND tmdb_id = ?",
+    args: [memberId, movie.id],
+  });
+
+  // Fetch one replacement — category-aware
+  const [likedRows, watchedRows, dislikedRows, recsRows] = await Promise.all([
+    db.execute({
+      sql: "SELECT DISTINCT title FROM liked_movies WHERE member_id = ? AND category = ? ORDER BY created_at DESC LIMIT 2",
+      args: [memberId, category],
+    }),
+    db.execute({
+      sql: "SELECT title FROM watched_movies WHERE member_id = ?",
+      args: [memberId],
+    }),
+    db.execute({
+      sql: "SELECT title FROM disliked_movies WHERE member_id = ? AND category = ?",
+      args: [memberId, category],
+    }),
+    db.execute({
+      sql: "SELECT title FROM recommendations WHERE member_id = ? AND is_active = 1 AND category = ?",
+      args: [memberId, category],
+    }),
+  ]);
+
+  const likedTitles = likedRows.rows.map((r) => String(r.title));
+  const watchedTitles = watchedRows.rows.map((r) => String(r.title));
+  const dislikedTitles = dislikedRows.rows.map((r) => String(r.title));
+  const currentRecTitles = recsRows.rows.map((r) => String(r.title));
+
+  const context = category !== "general"
+    ? { category }
+    : { likedMovie1: likedTitles[0], likedMovie2: likedTitles[1] };
+
+  if (category === "general" && likedTitles.length < 2) {
+    return NextResponse.json({ replacement: null });
+  }
+
+  const suggestions = await getReplacementMoviesAI(
+    context,
+    currentRecTitles,
+    watchedTitles,
+    dislikedTitles,
+    1
+  );
+
+  const movies = await resolveAISuggestions(suggestions);
+  const replacement = movies[0] || null;
+
+  if (replacement) {
     await db.execute({
-      sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND tmdb_id = ?",
-      args: [memberId, movie.id],
+      sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, category)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [memberId, replacement.id, replacement.title, replacement.poster_path, replacement.vote_average, replacement.certification, replacement.overview, category],
     });
   }
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ replacement });
 }
 
 // Get watched movies for a member

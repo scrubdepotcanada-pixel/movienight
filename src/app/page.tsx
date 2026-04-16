@@ -104,6 +104,8 @@ export default function Home() {
         }));
         setRecommendations(recs);
         setActiveCategory("general");
+        // Load like/dislike history for general category
+        await loadCategoryHistory(member.id, "general");
         setStep("returning");
       } else {
         setStep("search");
@@ -113,7 +115,7 @@ export default function Home() {
       setStep("search");
     }
     setLoading(false);
-  }, []);
+  }, [loadCategoryHistory]);
 
   const handleSelectMember = (member: Member) => {
     setSelectedMember(member);
@@ -229,6 +231,7 @@ export default function Home() {
       const data = await res.json();
       setRecommendations(data.movies);
       setWatchedSelection(new Set());
+      await loadCategoryHistory(selectedMember!.id, "general");
       setStep("recommendations");
     } catch (err) {
       console.error(err);
@@ -292,58 +295,88 @@ export default function Home() {
     setLoading(false);
   };
 
-  const toggleWatched = (movieId: number) => {
+  // Click a card → flip to watched → auto-replace after flip animation
+  const handleWatched = async (movie: Movie) => {
+    // 1. Immediately flip the card
     setWatchedSelection((prev) => {
       const next = new Set(prev);
-      if (next.has(movieId)) next.delete(movieId);
-      else next.add(movieId);
+      next.add(movie.id);
       return next;
     });
-  };
-
-  const handleSubmitWatched = async () => {
-    if (watchedSelection.size === 0) return;
-    setLoading(true);
-
-    const watchedMovies = recommendations.filter((m) => watchedSelection.has(m.id));
 
     try {
-      await fetch("/api/movies/watched", {
+      // 2. Fire off the API call - it returns a replacement movie
+      const res = await fetch("/api/movies/watched", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           memberId: selectedMember!.id,
-          movies: watchedMovies,
-        }),
-      });
-
-      const res = await fetch("/api/movies/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          memberId: selectedMember!.id,
-          count: watchedSelection.size,
+          movie,
           category: activeCategory,
         }),
       });
-      const replacements = await res.json();
+      const data = await res.json();
 
-      const remaining = recommendations.filter((m) => !watchedSelection.has(m.id));
-      setRecommendations([...remaining, ...replacements]);
-      setWatchedSelection(new Set());
+      // 3. Wait for flip animation (700ms), then replace the card
+      setTimeout(() => {
+        setRecommendations((prev) => {
+          const idx = prev.findIndex((m) => m.id === movie.id);
+          if (idx === -1) return prev;
+          const next = [...prev];
+          if (data.replacement) {
+            next[idx] = data.replacement;
+          } else {
+            next.splice(idx, 1);
+          }
+          return next;
+        });
+        setWatchedSelection((prev) => {
+          const next = new Set(prev);
+          next.delete(movie.id);
+          return next;
+        });
+      }, 800);
     } catch (err) {
       console.error(err);
+      // Revert flip on error
+      setWatchedSelection((prev) => {
+        const next = new Set(prev);
+        next.delete(movie.id);
+        return next;
+      });
     }
-    setLoading(false);
   };
 
-  const handleReturningWatched = async () => {
-    if (watchedSelection.size === 0) {
-      setStep(activeCategory !== "general" ? "category-recs" : "recommendations");
-      return;
+  const handleLike = async (movie: Movie) => {
+    const wasLiked = categoryLiked.some((m) => m.title === movie.title);
+
+    // Optimistic UI update
+    if (wasLiked) {
+      setCategoryLiked((prev) => prev.filter((m) => m.title !== movie.title));
+    } else {
+      setCategoryLiked((prev) => [...prev, { title: movie.title }]);
     }
-    await handleSubmitWatched();
-    setStep(activeCategory !== "general" ? "category-recs" : "recommendations");
+
+    try {
+      await fetch("/api/movies/like", {
+        method: wasLiked ? "DELETE" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId: selectedMember!.id,
+          movie: wasLiked ? undefined : movie,
+          movieTitle: wasLiked ? movie.title : undefined,
+          category: activeCategory,
+        }),
+      });
+    } catch (err) {
+      console.error(err);
+      // Revert on error
+      if (wasLiked) {
+        setCategoryLiked((prev) => [...prev, { title: movie.title }]);
+      } else {
+        setCategoryLiked((prev) => prev.filter((m) => m.title !== movie.title));
+      }
+    }
   };
 
   const handleDislike = async (movie: Movie) => {
@@ -397,15 +430,17 @@ export default function Home() {
   const genreLabel = GENRES.find((g) => g.id === activeCategory)?.label || activeCategory;
   const genreIcon = GENRES.find((g) => g.id === activeCategory)?.icon || "";
   const isCategoryStep = step === "category-recs" || step === "category-returning";
+  const sidebarLabel = activeCategory === "general" ? "Your" : genreLabel;
+  const showSidebar = categoryLiked.length > 0 || categoryDisliked.length > 0;
 
   // Shared recommendation grid used in multiple steps
   const renderRecommendationGrid = () => (
-    <div className={`flex gap-6 ${isCategoryStep ? "" : "justify-center"}`}>
-      {/* Sidebar for category views */}
-      {isCategoryStep && (
+    <div className="flex gap-6 justify-center">
+      {/* Sidebar showing like/dislike history */}
+      {showSidebar && (
         <div className="hidden lg:block w-56 flex-shrink-0">
           <CategorySidebar
-            category={genreLabel}
+            category={sidebarLabel}
             likedMovies={categoryLiked}
             dislikedMovies={categoryDisliked}
           />
@@ -420,7 +455,10 @@ export default function Home() {
               <MovieCard
                 movie={movie}
                 watched={watchedSelection.has(movie.id)}
-                onClick={() => toggleWatched(movie.id)}
+                liked={categoryLiked.some((m) => m.title === movie.title)}
+                onClick={() => handleWatched(movie)}
+                showLike
+                onLike={() => handleLike(movie)}
                 showDislike
                 onDislike={() => handleDislike(movie)}
                 dislikeLoading={dislikeLoadingId === movie.id}
@@ -430,10 +468,10 @@ export default function Home() {
         </div>
 
         {/* Mobile sidebar */}
-        {isCategoryStep && (categoryLiked.length > 0 || categoryDisliked.length > 0) && (
+        {showSidebar && (
           <div className="mt-6 lg:hidden">
             <CategorySidebar
-              category={genreLabel}
+              category={sidebarLabel}
               likedMovies={categoryLiked}
               dislikedMovies={categoryDisliked}
             />
@@ -589,7 +627,7 @@ export default function Home() {
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">Your Top Picks</h2>
               <p className="text-gray-400">
-                Mark watched or dislike to get better suggestions
+                Tap a card to mark watched. Use the like/dislike buttons to teach us your taste.
               </p>
             </div>
 
@@ -600,14 +638,6 @@ export default function Home() {
                 {renderRecommendationGrid()}
 
                 <div className="flex flex-col items-center gap-4 mt-8">
-                  {watchedSelection.size > 0 && (
-                    <button
-                      onClick={handleSubmitWatched}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl font-medium text-lg transition-colors"
-                    >
-                      I&apos;ve watched {watchedSelection.size} — suggest replacements
-                    </button>
-                  )}
                   <button
                     onClick={handleStartFresh}
                     className="text-gray-400 hover:text-white text-sm underline"
@@ -628,7 +658,7 @@ export default function Home() {
                 {genreIcon} Top {genreLabel} Picks
               </h2>
               <p className="text-gray-400">
-                Mark watched or dislike to get better {genreLabel.toLowerCase()} suggestions
+                Tap to mark watched, or like/dislike to refine your {genreLabel.toLowerCase()} picks
               </p>
             </div>
 
@@ -639,14 +669,6 @@ export default function Home() {
                 {renderRecommendationGrid()}
 
                 <div className="flex flex-col items-center gap-4 mt-8">
-                  {watchedSelection.size > 0 && (
-                    <button
-                      onClick={handleSubmitWatched}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl font-medium text-lg transition-colors"
-                    >
-                      I&apos;ve watched {watchedSelection.size} — suggest replacements
-                    </button>
-                  )}
                   <button
                     onClick={handleStartFresh}
                     className="text-gray-400 hover:text-white text-sm underline"
@@ -667,7 +689,7 @@ export default function Home() {
                 Welcome back, {selectedMember.name}! {selectedMember.avatar}
               </h2>
               <p className="text-gray-400">
-                Did you watch any of these? Tap the ones you&apos;ve seen.
+                Tap a card to mark it watched. Like or dislike to teach us your taste.
               </p>
             </div>
 
@@ -678,14 +700,6 @@ export default function Home() {
                 {renderRecommendationGrid()}
 
                 <div className="flex flex-col items-center gap-4 mt-8">
-                  <button
-                    onClick={handleReturningWatched}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl font-medium text-lg transition-colors"
-                  >
-                    {watchedSelection.size > 0
-                      ? `I watched ${watchedSelection.size} — update my list`
-                      : "I haven't watched any yet"}
-                  </button>
                   <button
                     onClick={handleStartFresh}
                     className="text-gray-400 hover:text-white text-sm underline"
@@ -706,7 +720,7 @@ export default function Home() {
                 {genreIcon} Your {genreLabel} List
               </h2>
               <p className="text-gray-400">
-                Did you watch any of these? Tap the ones you&apos;ve seen.
+                Tap a card to mark it watched. Like or dislike to teach us your taste.
               </p>
             </div>
 
@@ -717,14 +731,6 @@ export default function Home() {
                 {renderRecommendationGrid()}
 
                 <div className="flex flex-col items-center gap-4 mt-8">
-                  <button
-                    onClick={handleReturningWatched}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-xl font-medium text-lg transition-colors"
-                  >
-                    {watchedSelection.size > 0
-                      ? `I watched ${watchedSelection.size} — update my list`
-                      : "I haven't watched any yet"}
-                  </button>
                   <button
                     onClick={handleStartFresh}
                     className="text-gray-400 hover:text-white text-sm underline"
