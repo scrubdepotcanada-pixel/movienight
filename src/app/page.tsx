@@ -412,21 +412,20 @@ export default function Home() {
         </div>
       )}
 
-      {/* Movie grid */}
-      <div className="flex-1 max-w-5xl">
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+      {/* Movie row - all cards fit in one row, shrinking equally */}
+      <div className="flex-1 min-w-0">
+        <div className="flex gap-3 w-full">
           {recommendations.map((movie) => (
-            <MovieCard
-              key={movie.id}
-              movie={movie}
-              watched={watchedSelection.has(movie.id)}
-              onClick={() => toggleWatched(movie.id)}
-              showWatchedToggle
-              onWatchedToggle={() => toggleWatched(movie.id)}
-              showDislike
-              onDislike={() => handleDislike(movie)}
-              dislikeLoading={dislikeLoadingId === movie.id}
-            />
+            <div key={movie.id} className="flex-1 min-w-0">
+              <MovieCard
+                movie={movie}
+                watched={watchedSelection.has(movie.id)}
+                onClick={() => toggleWatched(movie.id)}
+                showDislike
+                onDislike={() => handleDislike(movie)}
+                dislikeLoading={dislikeLoadingId === movie.id}
+              />
+            </div>
           ))}
         </div>
 
