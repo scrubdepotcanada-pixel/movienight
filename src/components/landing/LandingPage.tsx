@@ -53,6 +53,17 @@ export default function LandingPage({ onSignIn }: LandingPageProps) {
             &copy; {new Date().getFullYear()} nextmovie.app. All rights
             reserved.
           </p>
+          <p className="text-gray-600 text-xs">
+            Built by{" "}
+            <a
+              href="https://thewebguys.ca"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-purple-400 hover:text-purple-300 transition-colors"
+            >
+              thewebguys.ca
+            </a>
+          </p>
         </div>
       </footer>
     </div>
