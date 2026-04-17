@@ -17,6 +17,13 @@ export async function POST(req: NextRequest) {
     args: [memberId, movie.id, movie.title, category],
   });
 
+  // Disliking = watched
+  await db.execute({
+    sql: `INSERT OR IGNORE INTO watched_movies (member_id, tmdb_id, title, poster_path, vote_average, certification)
+          VALUES (?, ?, ?, ?, ?, ?)`,
+    args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification || "NR"],
+  });
+
   await db.execute({
     sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND tmdb_id = ?",
     args: [memberId, movie.id],
