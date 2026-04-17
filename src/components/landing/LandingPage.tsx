@@ -23,12 +23,20 @@ export default function LandingPage({ onSignIn, onGuest }: LandingPageProps) {
               Next Movie
             </span>
           </div>
-          <button
-            onClick={onSignIn}
-            className="bg-gray-800/80 hover:bg-gray-700/80 border border-gray-700/50 text-gray-200 rounded-xl px-5 py-2 text-sm font-medium transition-colors"
-          >
-            Sign In
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onGuest}
+              className="cursor-pointer text-gray-400 hover:text-white text-sm font-medium transition-colors"
+            >
+              Try as Guest
+            </button>
+            <button
+              onClick={onSignIn}
+              className="cursor-pointer bg-gray-800/80 hover:bg-gray-700/80 border border-gray-700/50 text-gray-200 rounded-xl px-5 py-2 text-sm font-medium transition-colors"
+            >
+              Sign In
+            </button>
+          </div>
         </div>
       </header>
 
