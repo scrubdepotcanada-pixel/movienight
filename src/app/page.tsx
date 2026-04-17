@@ -717,7 +717,19 @@ export default function Home() {
               <GuestSetup
                 existingMember={null}
                 onDone={async (name, age, maxRating) => {
-                  await handleAddMember(name, "🎬", age, maxRating);
+                  try {
+                    const res = await fetch("/api/members", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ name, avatar: "🎬", age, maxRating }),
+                    });
+                    const member = await res.json();
+                    setMembers([member]);
+                    setSelectedMember(member);
+                    setStep("search");
+                  } catch (err) {
+                    console.error(err);
+                  }
                 }}
               />
             ) : (
