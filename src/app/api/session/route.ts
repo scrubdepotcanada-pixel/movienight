@@ -12,18 +12,28 @@ async function filterAndPruneRecs(
   rows: Record<string, unknown>[],
   maxRating: string | null
 ) {
-  if (!maxRating || maxRating === "ALL") return rows;
-
   const allowed: Record<string, unknown>[] = [];
   const toDeactivate: number[] = [];
+  const seenTmdbIds = new Set<number>();
 
   for (const rec of rows) {
+    const tmdbId = Number(rec.tmdb_id);
     const cert = rec.certification ? String(rec.certification) : undefined;
-    if (isMovieAllowed(cert, maxRating as "G" | "PG" | "PG-13" | "R" | "NC-17")) {
-      allowed.push(rec);
-    } else {
+
+    // Deduplicate by tmdb_id
+    if (seenTmdbIds.has(tmdbId)) {
       toDeactivate.push(Number(rec.id));
+      continue;
     }
+    seenTmdbIds.add(tmdbId);
+
+    // Filter by age rating
+    if (maxRating && maxRating !== "ALL" && !isMovieAllowed(cert, maxRating as "G" | "PG" | "PG-13" | "R" | "NC-17")) {
+      toDeactivate.push(Number(rec.id));
+      continue;
+    }
+
+    allowed.push(rec);
   }
 
   // Deactivate filtered-out recs so future loads are clean

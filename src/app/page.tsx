@@ -499,6 +499,19 @@ export default function Home() {
   // Shared recommendation grid used in multiple steps
   const renderRecommendationGrid = () => (
     <div className="max-w-6xl mx-auto">
+      {/* History tags above the cards */}
+      {showSidebar && (
+        <div className="mb-6">
+          <CategorySidebar
+            category={sidebarLabel}
+            likedMovies={categoryLiked}
+            dislikedMovies={categoryDisliked}
+            onRemoveLike={handleRemoveLike}
+            onRemoveDislike={handleRemoveDislike}
+          />
+        </div>
+      )}
+
       {/* Movie row - fixed size cards in a grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
         {recommendations.map((movie) => (
@@ -517,19 +530,6 @@ export default function Home() {
           />
         ))}
       </div>
-
-      {/* History section below the cards */}
-      {showSidebar && (
-        <div className="mt-8 max-w-2xl mx-auto">
-          <CategorySidebar
-            category={sidebarLabel}
-            likedMovies={categoryLiked}
-            dislikedMovies={categoryDisliked}
-            onRemoveLike={handleRemoveLike}
-            onRemoveDislike={handleRemoveDislike}
-          />
-        </div>
-      )}
     </div>
   );
 
