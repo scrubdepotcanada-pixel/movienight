@@ -76,6 +76,9 @@ export default function Home() {
   const [categoryDisliked, setCategoryDisliked] = useState<SidebarMovie[]>([]);
   const [activeCategories, setActiveCategories] = useState<{ category: string; count: number }[]>([]);
 
+  // Track whether guest auto-select has happened
+  const [guestAutoSelected, setGuestAutoSelected] = useState(false);
+
   // Load members when signed in or in guest mode
   useEffect(() => {
     if (status !== "authenticated" && !guestMode) return;
@@ -169,6 +172,14 @@ export default function Home() {
     setCategoryDisliked([]);
     loadMemberSession(member);
   };
+
+  // Auto-select guest's single member
+  useEffect(() => {
+    if (guestMode && members.length === 1 && !guestAutoSelected && !selectedMember) {
+      setGuestAutoSelected(true);
+      handleSelectMember(members[0]);
+    }
+  }, [guestMode, members, guestAutoSelected, selectedMember]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleViewAll = async () => {
     setViewingAll(true);
@@ -701,32 +712,39 @@ export default function Home() {
         {/* STEP: Select Member */}
         {step === "select-member" && (
           <div className="pt-8 sm:pt-16">
-            {/* Hero area */}
-            <div className="relative text-center mb-16">
-              <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-3xl" />
-                <div className="absolute top-20 left-1/3 w-[300px] h-[300px] bg-pink-600/8 rounded-full blur-3xl" />
-              </div>
-              <div className="relative">
-                <div className="text-5xl mb-4">🎬</div>
-                <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-                  <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Who&apos;s watching</span> tonight?
-                </h2>
-                <p className="text-gray-400 text-lg max-w-md mx-auto">
-                  Pick your profile for personalized picks — or add a family member
-                </p>
-              </div>
-            </div>
-            <MemberSelector
-              members={members}
-              selectedMember={selectedMember}
-              onSelect={handleSelectMember}
-              onAdd={handleAddMember}
-              onDelete={handleDeleteMember}
-              onUpdateMember={handleUpdateMember}
-              viewingAll={viewingAll}
-              onViewAll={handleViewAll}
-            />
+            {isGuest && members.length === 0 ? (
+              <GuestSetup onDone={(name, age, maxRating) => {
+                handleAddMember(name, "🎬", age, maxRating);
+              }} />
+            ) : (
+              <>
+                <div className="relative text-center mb-16">
+                  <div className="absolute inset-0 pointer-events-none">
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-3xl" />
+                    <div className="absolute top-20 left-1/3 w-[300px] h-[300px] bg-pink-600/8 rounded-full blur-3xl" />
+                  </div>
+                  <div className="relative">
+                    <div className="text-5xl mb-4">🎬</div>
+                    <h2 className="text-4xl sm:text-5xl font-bold mb-4">
+                      <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Who&apos;s watching</span> tonight?
+                    </h2>
+                    <p className="text-gray-400 text-lg max-w-md mx-auto">
+                      Pick your profile for personalized picks — or add a family member
+                    </p>
+                  </div>
+                </div>
+                <MemberSelector
+                  members={members}
+                  selectedMember={selectedMember}
+                  onSelect={handleSelectMember}
+                  onAdd={handleAddMember}
+                  onDelete={handleDeleteMember}
+                  onUpdateMember={handleUpdateMember}
+                  viewingAll={viewingAll}
+                  onViewAll={handleViewAll}
+                />
+              </>
+            )}
           </div>
         )}
 
@@ -1004,6 +1022,107 @@ export default function Home() {
         )}
       </div>
     </main>
+  );
+}
+
+const RATING_OPTIONS = [
+  { value: "G", label: "G", hint: "Kids", color: "bg-green-600" },
+  { value: "PG", label: "PG", hint: "Family", color: "bg-blue-600" },
+  { value: "PG-13", label: "PG-13", hint: "Teens", color: "bg-yellow-600" },
+  { value: "R", label: "R", hint: "Adult", color: "bg-red-600" },
+  { value: "ALL", label: "All", hint: "No limit", color: "bg-gray-600" },
+];
+
+function GuestSetup({ onDone }: { onDone: (name: string, age: number | null, maxRating: string) => void }) {
+  const [name, setName] = useState("");
+  const [age, setAge] = useState("");
+  const [maxRating, setMaxRating] = useState("ALL");
+
+  const handleAgeChange = (value: string) => {
+    setAge(value);
+    const a = parseInt(value, 10);
+    if (!isNaN(a)) {
+      setMaxRating(a < 7 ? "G" : a < 10 ? "PG" : a < 14 ? "PG-13" : a < 17 ? "R" : "ALL");
+    }
+  };
+
+  const handleSubmit = () => {
+    if (!name.trim()) return;
+    const ageNum = age.trim() ? parseInt(age, 10) : null;
+    const validAge = ageNum && !isNaN(ageNum) && ageNum > 0 ? ageNum : null;
+    onDone(name.trim(), validAge, maxRating);
+  };
+
+  return (
+    <div className="relative text-center">
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-3xl" />
+      </div>
+      <div className="relative max-w-sm mx-auto">
+        <div className="text-5xl mb-4">🎬</div>
+        <h2 className="text-3xl sm:text-4xl font-bold mb-2">
+          <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Let&apos;s get started</span>
+        </h2>
+        <p className="text-gray-400 mb-8">Quick setup — takes 10 seconds</p>
+
+        <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 text-left">
+          <label className="block text-gray-300 text-xs font-medium uppercase tracking-wider mb-2">Your name</label>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Sarah"
+            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white text-base placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-5"
+            autoFocus
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          />
+
+          <label className="block text-gray-300 text-xs font-medium uppercase tracking-wider mb-2">Age <span className="text-gray-500 normal-case">(for content filtering)</span></label>
+          <input
+            type="number"
+            value={age}
+            onChange={(e) => handleAgeChange(e.target.value)}
+            placeholder="e.g. 12"
+            min="1"
+            max="120"
+            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white text-base placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-5"
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          />
+
+          <label className="block text-gray-300 text-xs font-medium uppercase tracking-wider mb-3">What can you watch?</label>
+          <div className="grid grid-cols-5 gap-2 mb-2">
+            {RATING_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setMaxRating(opt.value)}
+                className={`flex flex-col items-center px-1 py-2.5 rounded-xl text-xs font-bold transition-all
+                  ${maxRating === opt.value
+                    ? `${opt.color} text-white ring-2 ring-white/40 scale-105`
+                    : "bg-gray-900 text-gray-300 hover:bg-gray-700 border border-gray-700"}`}
+              >
+                <span>{opt.label}</span>
+                <span className="text-[9px] font-normal opacity-75 mt-0.5">{opt.hint}</span>
+              </button>
+            ))}
+          </div>
+          <p className="text-gray-500 text-xs mb-6">
+            {maxRating === "G" && "Only G-rated movies."}
+            {maxRating === "PG" && "G and PG movies."}
+            {maxRating === "PG-13" && "Up to PG-13 — no R-rated content."}
+            {maxRating === "R" && "Up to R — no NC-17."}
+            {maxRating === "ALL" && "No content filter."}
+          </p>
+
+          <button
+            onClick={handleSubmit}
+            disabled={!name.trim()}
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-gray-600 disabled:to-gray-600 text-white py-3 rounded-xl text-lg font-semibold transition-all"
+          >
+            Start Picking Movies
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
