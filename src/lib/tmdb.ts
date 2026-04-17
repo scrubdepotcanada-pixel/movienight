@@ -113,3 +113,36 @@ export async function resolveAISuggestions(
   );
   return results.filter((m): m is Movie & { certification: string } => m !== null);
 }
+
+export interface WatchProvider {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string;
+}
+
+export interface WatchProviders {
+  flatrate?: WatchProvider[]; // subscription streaming
+  rent?: WatchProvider[];     // rentable
+  buy?: WatchProvider[];      // purchasable
+  link?: string;              // TMDB JustWatch link
+}
+
+export async function getWatchProviders(movieId: number, region: string = "CA"): Promise<WatchProviders> {
+  const res = await fetch(
+    `${TMDB_BASE}/movie/${movieId}/watch/providers`,
+    { headers: headers() }
+  );
+  const data = await res.json();
+  const countryData = data.results?.[region];
+  if (!countryData) return {};
+  return {
+    flatrate: countryData.flatrate || [],
+    rent: countryData.rent || [],
+    buy: countryData.buy || [],
+    link: countryData.link,
+  };
+}
+
+export function providerLogoUrl(path: string): string {
+  return `${TMDB_IMAGE_BASE}/w92${path}`;
+}
