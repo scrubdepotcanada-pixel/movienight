@@ -498,10 +498,29 @@ export default function Home() {
 
   // Shared recommendation grid used in multiple steps
   const renderRecommendationGrid = () => (
-    <div className="flex gap-6 justify-center">
-      {/* Sidebar showing like/dislike history */}
+    <div className="max-w-6xl mx-auto">
+      {/* Movie row - fixed size cards in a grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+        {recommendations.map((movie) => (
+          <MovieCard
+            key={movie.id}
+            movie={movie}
+            watched={watchedSelection.has(movie.id)}
+            liked={categoryLiked.some((m) => m.title === movie.title)}
+            onClick={() => handleWatched(movie)}
+            showLike
+            onLike={() => handleLike(movie)}
+            likeLoading={likeLoadingId === movie.id}
+            showDislike
+            onDislike={() => handleDislike(movie)}
+            dislikeLoading={dislikeLoadingId === movie.id}
+          />
+        ))}
+      </div>
+
+      {/* History section below the cards */}
       {showSidebar && (
-        <div className="hidden lg:block w-56 flex-shrink-0">
+        <div className="mt-8 max-w-2xl mx-auto">
           <CategorySidebar
             category={sidebarLabel}
             likedMovies={categoryLiked}
@@ -511,41 +530,6 @@ export default function Home() {
           />
         </div>
       )}
-
-      {/* Movie row - all cards fit in one row, shrinking equally */}
-      <div className="flex-1 min-w-0">
-        <div className="flex gap-3 w-full">
-          {recommendations.map((movie) => (
-            <div key={movie.id} className="flex-1 min-w-0">
-              <MovieCard
-                movie={movie}
-                watched={watchedSelection.has(movie.id)}
-                liked={categoryLiked.some((m) => m.title === movie.title)}
-                onClick={() => handleWatched(movie)}
-                showLike
-                onLike={() => handleLike(movie)}
-                likeLoading={likeLoadingId === movie.id}
-                showDislike
-                onDislike={() => handleDislike(movie)}
-                dislikeLoading={dislikeLoadingId === movie.id}
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Mobile sidebar */}
-        {showSidebar && (
-          <div className="mt-6 lg:hidden">
-            <CategorySidebar
-              category={sidebarLabel}
-              likedMovies={categoryLiked}
-              dislikedMovies={categoryDisliked}
-              onRemoveLike={handleRemoveLike}
-              onRemoveDislike={handleRemoveDislike}
-            />
-          </div>
-        )}
-      </div>
     </div>
   );
 
