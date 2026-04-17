@@ -109,10 +109,10 @@ export default function Home() {
           certification: r.certification as string,
           overview: r.overview as string,
         }));
-        setRecommendations(recs);
         setActiveCategory("general");
-        // Load like/dislike history for general category
         await loadCategoryHistory(member.id, "general");
+        const filled = await topUpRecommendations(recs, member.id, "general");
+        setRecommendations(filled);
         setStep("returning");
       } else {
         setStep("search");
@@ -122,7 +122,7 @@ export default function Home() {
       setStep("search");
     }
     setLoading(false);
-  }, [loadCategoryHistory]);
+  }, [loadCategoryHistory, topUpRecommendations]);
 
   const handleSelectMember = (member: Member) => {
     setSelectedMember(member);
@@ -289,9 +289,11 @@ export default function Home() {
           certification: r.certification as string,
           overview: r.overview as string,
         }));
-        setRecommendations(recs);
         setCategoryLiked((sessionData.likedInCategory || []).map((r: Record<string, unknown>) => ({ title: String(r.title) })));
         setCategoryDisliked((sessionData.dislikedInCategory || []).map((r: Record<string, unknown>) => ({ title: String(r.title), tmdb_id: Number(r.tmdb_id) })));
+        // Top up to 5 if dedup/filtering removed some
+        const filled = await topUpRecommendations(recs, selectedMember!.id, genreId);
+        setRecommendations(filled);
         setWatchedSelection(new Set());
         setStep("category-returning");
       } else {
@@ -315,6 +317,27 @@ export default function Home() {
     }
     setLoading(false);
   };
+
+  // Top up recommendations to 5 if some were lost to dedup/filtering
+  const topUpRecommendations = useCallback(async (currentRecs: Movie[], memberId: number, category: string) => {
+    const missing = 5 - currentRecs.length;
+    if (missing <= 0) return currentRecs;
+
+    try {
+      const res = await fetch("/api/movies/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId, count: missing, category }),
+      });
+      const extras = await res.json();
+      if (Array.isArray(extras) && extras.length > 0) {
+        return [...currentRecs, ...extras];
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    return currentRecs;
+  }, []);
 
   // Click a card → flip to watched → auto-replace after flip animation
   const handleWatched = async (movie: Movie) => {
@@ -707,8 +730,12 @@ export default function Home() {
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">Your Top Picks</h2>
               <p className="text-gray-400">
-                Tap a card to mark watched. Use the like/dislike buttons to teach us your taste.
               </p>
+              <div className="flex items-center justify-center gap-6 mt-3 text-sm">
+                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-green-600 rounded-full w-7 h-7 flex items-center justify-center text-white text-xs">👍</span> Like = more like this</span>
+                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-red-600 rounded-full w-7 h-7 flex items-center justify-center text-white text-xs">👎</span> Dislike = replace it</span>
+                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-purple-600 rounded-full w-7 h-7 flex items-center justify-center text-white text-xs">👆</span> Tap card = watched</span>
+              </div>
             </div>
 
             {loading ? (
@@ -738,7 +765,7 @@ export default function Home() {
                 {genreIcon} Top {genreLabel} Picks
               </h2>
               <p className="text-gray-400">
-                Tap to mark watched, or like/dislike to refine your {genreLabel.toLowerCase()} picks
+                Like, dislike, or tap to mark watched
               </p>
             </div>
 
@@ -769,7 +796,7 @@ export default function Home() {
                 Welcome back, {selectedMember.name}! {selectedMember.avatar}
               </h2>
               <p className="text-gray-400">
-                Tap a card to mark it watched. Like or dislike to teach us your taste.
+                Like, dislike, or tap to mark watched
               </p>
             </div>
 
@@ -800,7 +827,7 @@ export default function Home() {
                 {genreIcon} Your {genreLabel} List
               </h2>
               <p className="text-gray-400">
-                Tap a card to mark it watched. Like or dislike to teach us your taste.
+                Like, dislike, or tap to mark watched
               </p>
             </div>
 
