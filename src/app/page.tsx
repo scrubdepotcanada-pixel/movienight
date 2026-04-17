@@ -82,6 +82,27 @@ export default function Home() {
       .catch(console.error);
   }, [status]);
 
+  // Top up recommendations to 5 if some were lost to dedup/filtering
+  const topUpRecommendations = useCallback(async (currentRecs: Movie[], memberId: number, category: string) => {
+    const missing = 5 - currentRecs.length;
+    if (missing <= 0) return currentRecs;
+
+    try {
+      const res = await fetch("/api/movies/refresh", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId, count: missing, category }),
+      });
+      const extras = await res.json();
+      if (Array.isArray(extras) && extras.length > 0) {
+        return [...currentRecs, ...extras];
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    return currentRecs;
+  }, []);
+
   const loadCategoryHistory = useCallback(async (memberId: number, category: string) => {
     try {
       const res = await fetch(`/api/session?memberId=${memberId}&category=${encodeURIComponent(category)}`);
@@ -317,27 +338,6 @@ export default function Home() {
     }
     setLoading(false);
   };
-
-  // Top up recommendations to 5 if some were lost to dedup/filtering
-  const topUpRecommendations = useCallback(async (currentRecs: Movie[], memberId: number, category: string) => {
-    const missing = 5 - currentRecs.length;
-    if (missing <= 0) return currentRecs;
-
-    try {
-      const res = await fetch("/api/movies/refresh", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberId, count: missing, category }),
-      });
-      const extras = await res.json();
-      if (Array.isArray(extras) && extras.length > 0) {
-        return [...currentRecs, ...extras];
-      }
-    } catch (err) {
-      console.error(err);
-    }
-    return currentRecs;
-  }, []);
 
   // Click a card → flip to watched → auto-replace after flip animation
   const handleWatched = async (movie: Movie) => {
