@@ -49,6 +49,31 @@ function certBadgeColor(cert: string): string {
   }
 }
 
+// Deep link patterns for major streaming services
+// TMDB provider_id → search URL template ({title} gets replaced)
+const PROVIDER_URLS: Record<number, string> = {
+  8: "https://www.netflix.com/search?q={title}",           // Netflix
+  9: "https://www.amazon.com/s?k={title}&i=instant-video", // Amazon Prime Video
+  337: "https://www.disneyplus.com/search/{title}",        // Disney+
+  350: "https://tv.apple.com/search?term={title}",         // Apple TV+
+  230: "https://www.crave.ca/en/search/{title}",           // Crave
+  386: "https://www.peacocktv.com/search?q={title}",       // Peacock
+  531: "https://www.paramountplus.com/search/?q={title}",  // Paramount+
+  1899: "https://www.max.com/search?q={title}",            // Max (HBO)
+  15: "https://www.hulu.com/search?q={title}",             // Hulu
+  192: "https://www.youtube.com/results?search_query={title}+full+movie", // YouTube
+  3: "https://play.google.com/store/search?q={title}&c=movies", // Google Play
+  10: "https://www.amazon.com/s?k={title}&i=instant-video", // Amazon Video
+};
+
+function getProviderUrl(providerId: number, movieTitle: string, fallbackLink?: string): string {
+  const template = PROVIDER_URLS[providerId];
+  if (template) {
+    return template.replace("{title}", encodeURIComponent(movieTitle));
+  }
+  return fallbackLink || `https://www.google.com/search?q=${encodeURIComponent(movieTitle)}+watch+online`;
+}
+
 function LoadingSpinnerSmall() {
   return (
     <svg className="w-5 h-5 text-white animate-spin" fill="none" viewBox="0 0 24 24">
@@ -247,7 +272,7 @@ export default function MovieCard({
         >
           <div className="p-4 flex-1 flex flex-col">
             <div className="text-center mb-3">
-              <p className="text-green-400 text-xs font-semibold uppercase tracking-wider mb-1">👍 You liked</p>
+              <p className="text-purple-400 text-xs font-semibold uppercase tracking-wider mb-1">🎬 Watch</p>
               <h3 className="text-white text-sm font-bold leading-tight">{movie.title}</h3>
               {movie.release_date && (
                 <p className="text-gray-400 text-xs mt-0.5">{movie.release_date.slice(0, 4)}</p>
@@ -262,7 +287,7 @@ export default function MovieCard({
                     {uniqueProviders.map((p) => (
                       <a
                         key={p.provider_id}
-                        href={providers?.link || "#"}
+                        href={getProviderUrl(p.provider_id, movie.title, providers?.link)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex flex-col items-center gap-1 p-2 rounded-lg bg-gray-800/80 hover:bg-gray-700 transition-colors"
