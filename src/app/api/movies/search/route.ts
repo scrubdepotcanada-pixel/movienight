@@ -7,9 +7,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing query" }, { status: 400 });
   }
 
-  const results = await searchMovies(query);
+  const locale = req.cookies.get("locale")?.value;
+
+  const results = await searchMovies(query, locale);
   const top = results.slice(0, 8);
-  const enriched = await enrichWithCertifications(top);
+  const enriched = await enrichWithCertifications(top, locale);
 
   return NextResponse.json(enriched);
 }

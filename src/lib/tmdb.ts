@@ -23,9 +23,13 @@ export function posterUrl(path: string | null, size: string = "w342"): string {
   return `${TMDB_IMAGE_BASE}/${size}${path}`;
 }
 
-export async function searchMovies(query: string): Promise<Movie[]> {
+function tmdbLanguage(locale?: string): string {
+  return locale === "he" ? "he" : "en-US";
+}
+
+export async function searchMovies(query: string, locale?: string): Promise<Movie[]> {
   const res = await fetch(
-    `${TMDB_BASE}/search/movie?query=${encodeURIComponent(query)}&include_adult=false&language=en-US&page=1`,
+    `${TMDB_BASE}/search/movie?query=${encodeURIComponent(query)}&include_adult=false&language=${tmdbLanguage(locale)}&page=1`,
     { headers: headers() }
   );
   const data = await res.json();
@@ -33,7 +37,9 @@ export async function searchMovies(query: string): Promise<Movie[]> {
 }
 
 
-export async function getMovieCertification(movieId: number): Promise<string> {
+export async function getMovieCertification(movieId: number, _locale?: string): Promise<string> {
+  // Certification data is language-independent (always US ratings), so locale is accepted
+  // for API consistency but not used in the TMDB call.
   const res = await fetch(
     `${TMDB_BASE}/movie/${movieId}/release_dates`,
     { headers: headers() }
@@ -51,19 +57,19 @@ export async function getMovieCertification(movieId: number): Promise<string> {
   return "NR";
 }
 
-export async function getMovieDetails(movieId: number): Promise<Movie & { certification: string }> {
+export async function getMovieDetails(movieId: number, locale?: string): Promise<Movie & { certification: string }> {
   const [movieRes, cert] = await Promise.all([
-    fetch(`${TMDB_BASE}/movie/${movieId}?language=en-US`, { headers: headers() }),
-    getMovieCertification(movieId),
+    fetch(`${TMDB_BASE}/movie/${movieId}?language=${tmdbLanguage(locale)}`, { headers: headers() }),
+    getMovieCertification(movieId, locale),
   ]);
   const movie = await movieRes.json();
   return { ...movie, certification: cert };
 }
 
-export async function enrichWithCertifications(movies: Movie[]): Promise<(Movie & { certification: string })[]> {
+export async function enrichWithCertifications(movies: Movie[], locale?: string): Promise<(Movie & { certification: string })[]> {
   const enriched = await Promise.all(
     movies.map(async (movie) => {
-      const cert = await getMovieCertification(movie.id);
+      const cert = await getMovieCertification(movie.id, locale);
       return { ...movie, certification: cert };
     })
   );
@@ -77,11 +83,12 @@ export async function enrichWithCertifications(movies: Movie[]): Promise<(Movie 
  */
 export async function lookupMovie(
   title: string,
-  year?: number
+  year?: number,
+  locale?: string
 ): Promise<(Movie & { certification: string }) | null> {
   const yearParam = year ? `&year=${year}` : "";
   const res = await fetch(
-    `${TMDB_BASE}/search/movie?query=${encodeURIComponent(title)}${yearParam}&include_adult=false&language=en-US&page=1`,
+    `${TMDB_BASE}/search/movie?query=${encodeURIComponent(title)}${yearParam}&include_adult=false&language=${tmdbLanguage(locale)}&page=1`,
     { headers: headers() }
   );
   const data = await res.json();
@@ -89,7 +96,7 @@ export async function lookupMovie(
   if (results.length === 0) return null;
 
   const movie = results[0];
-  const cert = await getMovieCertification(movie.id);
+  const cert = await getMovieCertification(movie.id, locale);
   return { ...movie, certification: cert };
 }
 
@@ -98,10 +105,11 @@ export async function lookupMovie(
  * to full Movie objects with posters, ratings, and certifications.
  */
 export async function resolveAISuggestions(
-  suggestions: { title: string; year: number }[]
+  suggestions: { title: string; year: number }[],
+  locale?: string
 ): Promise<(Movie & { certification: string })[]> {
   const results = await Promise.all(
-    suggestions.map((s) => lookupMovie(s.title, s.year))
+    suggestions.map((s) => lookupMovie(s.title, s.year, locale))
   );
   return results.filter((m): m is Movie & { certification: string } => m !== null);
 }

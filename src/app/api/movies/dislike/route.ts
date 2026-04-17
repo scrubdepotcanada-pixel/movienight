@@ -71,8 +71,10 @@ export async function POST(req: NextRequest) {
     maxRating
   );
 
+  const locale = req.cookies.get("locale")?.value;
+
   const activeIds = new Set(recsRows.rows.map((r) => Number(r.tmdb_id)));
-  const movies = await resolveAISuggestions(suggestions);
+  const movies = await resolveAISuggestions(suggestions, locale);
   const allowed = movies.filter((m) => isMovieAllowed(m.certification, maxRating) && !activeIds.has(m.id));
   const replacement = allowed[0] || null;
 

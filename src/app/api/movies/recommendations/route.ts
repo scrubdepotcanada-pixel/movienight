@@ -29,8 +29,10 @@ export async function GET(req: NextRequest) {
   const watchedTitles = watchedRows.rows.map((r) => String(r.title));
   const dislikedTitles = dislikedRows.rows.map((r) => String(r.title));
 
+  const locale = req.cookies.get("locale")?.value;
+
   const suggestions = await getRecommendationsAI(likedMovie1, likedMovie2, watchedTitles, dislikedTitles, maxRating);
-  const allMovies = await resolveAISuggestions(suggestions);
+  const allMovies = await resolveAISuggestions(suggestions, locale);
   const movies = allMovies.filter((m) => isMovieAllowed(m.certification, maxRating)).slice(0, 5);
 
   for (const title of [likedMovie1, likedMovie2]) {

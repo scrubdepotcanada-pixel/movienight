@@ -66,7 +66,9 @@ export async function POST(req: NextRequest) {
     maxRating
   );
 
-  const resolved = await resolveAISuggestions(suggestions);
+  const locale = req.cookies.get("locale")?.value;
+
+  const resolved = await resolveAISuggestions(suggestions, locale);
 
   // Filter: age-appropriate, not already active, not watched, not liked, no dupes
   const watchedTitleSet = new Set(watchedTitles);
