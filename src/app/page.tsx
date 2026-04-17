@@ -72,6 +72,7 @@ export default function Home() {
   const [activeCategory, setActiveCategory] = useState<string>("general");
   const [categoryLiked, setCategoryLiked] = useState<SidebarMovie[]>([]);
   const [categoryDisliked, setCategoryDisliked] = useState<SidebarMovie[]>([]);
+  const [activeCategories, setActiveCategories] = useState<{ category: string; count: number }[]>([]);
 
   // Load members only when signed in
   useEffect(() => {
@@ -136,6 +137,14 @@ export default function Home() {
         setRecommendations(filled);
         setStep("returning");
       } else {
+        // Fetch active categories for "continue where you left off"
+        try {
+          const catRes = await fetch(`/api/session/categories?memberId=${member.id}`);
+          const cats = await catRes.json();
+          setActiveCategories(Array.isArray(cats) ? cats.map((c: Record<string, unknown>) => ({ category: String(c.category), count: Number(c.count) })) : []);
+        } catch {
+          setActiveCategories([]);
+        }
         setStep("search");
       }
     } catch (err) {
@@ -693,6 +702,31 @@ export default function Home() {
                       onClick={() => handlePickSearchMovie(movie)}
                     />
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Continue where you left off */}
+            {activeCategories.length > 0 && (
+              <div className="mt-10 max-w-3xl mx-auto">
+                <h3 className="text-center text-gray-400 text-sm mb-4">Continue where you left off</h3>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {activeCategories.map(({ category, count }) => {
+                    const genre = GENRES.find((g) => g.id === category);
+                    if (!genre) return null;
+                    return (
+                      <button
+                        key={category}
+                        onClick={() => handleSelectCategory(category)}
+                        disabled={loading}
+                        className="flex items-center gap-2 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 hover:border-purple-500 text-white px-5 py-3 rounded-xl transition-all hover:scale-105 disabled:opacity-50"
+                      >
+                        <span className="text-xl">{genre.icon}</span>
+                        <span className="font-medium">{genre.label}</span>
+                        <span className="text-purple-300 text-xs bg-purple-500/30 px-2 py-0.5 rounded-full">{count} picks</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
