@@ -639,10 +639,22 @@ export default function Home() {
 
         {/* STEP: Select Member */}
         {step === "select-member" && (
-          <div className="pt-12">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold mb-3">Welcome to Next Movie</h2>
-              <p className="text-gray-400 text-lg">Pick your profile to get personalized recommendations</p>
+          <div className="pt-8 sm:pt-16">
+            {/* Hero area */}
+            <div className="relative text-center mb-16">
+              <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-3xl" />
+                <div className="absolute top-20 left-1/3 w-[300px] h-[300px] bg-pink-600/8 rounded-full blur-3xl" />
+              </div>
+              <div className="relative">
+                <div className="text-5xl mb-4">🎬</div>
+                <h2 className="text-4xl sm:text-5xl font-bold mb-4">
+                  <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Who&apos;s watching</span> tonight?
+                </h2>
+                <p className="text-gray-400 text-lg max-w-md mx-auto">
+                  Pick your profile for personalized picks — or add a family member
+                </p>
+              </div>
             </div>
             <MemberSelector
               members={members}

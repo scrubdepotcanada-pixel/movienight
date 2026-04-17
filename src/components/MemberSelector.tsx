@@ -108,31 +108,29 @@ export default function MemberSelector({
   };
 
   return (
-    <div className="w-full max-w-3xl mx-auto">
-      <h2 className="text-center text-gray-300 text-sm font-medium mb-4 uppercase tracking-wider">
-        Who&apos;s watching?
-      </h2>
-
-      <div className="flex flex-wrap justify-center gap-4 mb-4">
+    <div className="w-full max-w-4xl mx-auto">
+      <div className="flex flex-wrap justify-center gap-6 mb-6">
         {members.map((member) => {
           const badge = ratingBadge(getMaxRating(member));
           return (
             <div key={member.id} className="relative group">
               <button
                 onClick={() => onSelect(member)}
-                className={`relative flex flex-col items-center gap-2 p-4 rounded-xl transition-all
+                className={`relative flex flex-col items-center gap-3 px-8 py-6 rounded-2xl transition-all border
                   ${selectedMember?.id === member.id && !viewingAll
-                    ? "bg-purple-600/30 ring-2 ring-purple-500 scale-105"
-                    : "bg-gray-800/60 hover:bg-gray-700/60 hover:scale-105"}`}
+                    ? "bg-purple-600/20 border-purple-500 ring-2 ring-purple-500/50 scale-105 shadow-lg shadow-purple-900/30"
+                    : "bg-gray-800/40 border-gray-700/50 hover:bg-gray-700/40 hover:border-purple-500/50 hover:scale-105 hover:shadow-lg hover:shadow-purple-900/20"}`}
               >
-                <span className="text-4xl">{member.avatar}</span>
-                <span className="text-white text-sm font-medium">{member.name}</span>
-                {member.age != null && (
-                  <span className="text-gray-400 text-xs">Age {member.age}</span>
-                )}
-                <span className={`absolute -top-1 -left-1 ${badge.color} text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md shadow`}>
-                  {badge.label}
-                </span>
+                <span className="text-5xl">{member.avatar}</span>
+                <span className="text-white text-base font-semibold">{member.name}</span>
+                <div className="flex items-center gap-2">
+                  {member.age != null && (
+                    <span className="text-gray-400 text-xs">Age {member.age}</span>
+                  )}
+                  <span className={`${badge.color} text-white text-[10px] font-bold px-2 py-0.5 rounded-full`}>
+                    {badge.label}
+                  </span>
+                </div>
               </button>
 
               {/* Action buttons */}
@@ -208,22 +206,22 @@ export default function MemberSelector({
         {members.length > 1 && (
           <button
             onClick={onViewAll}
-            className={`flex flex-col items-center gap-2 p-4 rounded-xl transition-all
+            className={`flex flex-col items-center gap-3 px-8 py-6 rounded-2xl transition-all border
               ${viewingAll
-                ? "bg-blue-600/30 ring-2 ring-blue-500 scale-105"
-                : "bg-gray-800/60 hover:bg-gray-700/60 hover:scale-105"}`}
+                ? "bg-blue-600/20 border-blue-500 ring-2 ring-blue-500/50 scale-105 shadow-lg"
+                : "bg-gray-800/40 border-gray-700/50 hover:bg-gray-700/40 hover:border-blue-500/50 hover:scale-105 hover:shadow-lg"}`}
           >
-            <span className="text-4xl">👨‍👩‍👧‍👦</span>
-            <span className="text-white text-sm font-medium">Everyone</span>
+            <span className="text-5xl">👨‍👩‍👧‍👦</span>
+            <span className="text-white text-base font-semibold">Everyone</span>
           </button>
         )}
 
         <button
           onClick={() => setShowAdd(true)}
-          className="flex flex-col items-center gap-2 p-4 rounded-xl bg-gray-800/40 hover:bg-gray-700/40 border-2 border-dashed border-gray-600 hover:border-purple-500 transition-all"
+          className="flex flex-col items-center gap-3 px-8 py-6 rounded-2xl bg-gray-800/20 hover:bg-gray-700/30 border-2 border-dashed border-gray-600/50 hover:border-purple-500 transition-all hover:scale-105"
         >
-          <span className="text-4xl text-gray-400">+</span>
-          <span className="text-gray-400 text-sm font-medium">Add</span>
+          <span className="text-5xl text-gray-500">+</span>
+          <span className="text-gray-400 text-base font-semibold">Add Member</span>
         </button>
       </div>
 
