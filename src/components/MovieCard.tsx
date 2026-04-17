@@ -14,10 +14,13 @@ interface MovieCardProps {
   selected?: boolean;
   onDislike?: () => void;
   onLike?: () => void;
+  onPass?: () => void;
   showDislike?: boolean;
   showLike?: boolean;
+  showPass?: boolean;
   dislikeLoading?: boolean;
   likeLoading?: boolean;
+  passLoading?: boolean;
   onClick?: () => void;
 }
 
@@ -58,10 +61,13 @@ export default function MovieCard({
   selected,
   onDislike,
   onLike,
+  onPass,
   showDislike,
   showLike,
+  showPass,
   dislikeLoading,
   likeLoading,
+  passLoading,
   onClick,
 }: MovieCardProps) {
   const posterSrc = movie.poster_path
@@ -143,44 +149,36 @@ export default function MovieCard({
         </div>
 
         {/* Like / Dislike buttons below the poster */}
-        {(showLike || showDislike) && (
-          <div className="flex gap-2 px-3 pb-3 pt-1">
+        {(showLike || showPass || showDislike) && (
+          <div className="flex gap-1.5 px-3 pb-3 pt-1">
             {showLike && (
               <button
-                className="flex-1 flex items-center justify-center gap-1.5 bg-gray-700/80 hover:bg-green-600 text-white py-2 rounded-lg transition-all text-sm font-medium"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onLike?.();
-                }}
+                className="flex-1 flex items-center justify-center gap-1 bg-gray-700/80 hover:bg-green-600 text-white py-2 rounded-lg transition-all text-xs font-medium"
+                onClick={(e) => { e.stopPropagation(); onLike?.(); }}
                 disabled={likeLoading}
+                title="Loved it — more like this"
               >
-                {likeLoading ? <LoadingSpinnerSmall /> : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.904 0 .715-.211 1.413-.608 2.008L7 11V21m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
-                    </svg>
-                    Liked it
-                  </>
-                )}
+                {likeLoading ? <LoadingSpinnerSmall /> : <>👍 Liked</>}
+              </button>
+            )}
+            {showPass && (
+              <button
+                className="flex-1 flex items-center justify-center gap-1 bg-gray-700/80 hover:bg-gray-500 text-white py-2 rounded-lg transition-all text-xs font-medium"
+                onClick={(e) => { e.stopPropagation(); onPass?.(); }}
+                disabled={passLoading}
+                title="Skip — doesn't affect your taste"
+              >
+                {passLoading ? <LoadingSpinnerSmall /> : <>⏭ Pass</>}
               </button>
             )}
             {showDislike && (
               <button
-                className="flex-1 flex items-center justify-center gap-1.5 bg-gray-700/80 hover:bg-red-600 text-white py-2 rounded-lg transition-all text-sm font-medium"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDislike?.();
-                }}
+                className="flex-1 flex items-center justify-center gap-1 bg-gray-700/80 hover:bg-red-600 text-white py-2 rounded-lg transition-all text-xs font-medium"
+                onClick={(e) => { e.stopPropagation(); onDislike?.(); }}
                 disabled={dislikeLoading}
+                title="Didn't like it — avoid similar"
               >
-                {dislikeLoading ? <LoadingSpinnerSmall /> : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
-                    </svg>
-                    Nope
-                  </>
-                )}
+                {dislikeLoading ? <LoadingSpinnerSmall /> : <>👎 Nope</>}
               </button>
             )}
           </div>

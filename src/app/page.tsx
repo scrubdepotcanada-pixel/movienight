@@ -67,6 +67,7 @@ export default function Home() {
   const [watchedSelection, setWatchedSelection] = useState<Set<number>>(new Set());
   const [dislikeLoadingId, setDislikeLoadingId] = useState<number | null>(null);
   const [likeLoadingId, setLikeLoadingId] = useState<number | null>(null);
+  const [passLoadingId, setPassLoadingId] = useState<number | null>(null);
 
   // Category state
   const [activeCategory, setActiveCategory] = useState<string>("general");
@@ -440,6 +441,38 @@ export default function Home() {
     setLikeLoadingId(null);
   };
 
+  // Pass = skip without affecting taste. Marks as watched so it won't return.
+  const handlePass = async (movie: Movie) => {
+    setPassLoadingId(movie.id);
+    try {
+      const res = await fetch("/api/movies/watched", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId: selectedMember!.id,
+          movie,
+          category: activeCategory,
+        }),
+      });
+      const data = await res.json();
+
+      setRecommendations((prev) => {
+        const idx = prev.findIndex((m) => m.id === movie.id);
+        if (idx === -1) return prev;
+        const next = [...prev];
+        if (data.replacement) {
+          next[idx] = data.replacement;
+        } else {
+          next.splice(idx, 1);
+        }
+        return next;
+      });
+    } catch (err) {
+      console.error(err);
+    }
+    setPassLoadingId(null);
+  };
+
   const handleDislike = async (movie: Movie) => {
     setDislikeLoadingId(movie.id);
     try {
@@ -556,6 +589,9 @@ export default function Home() {
             showLike
             onLike={() => handleLike(movie)}
             likeLoading={likeLoadingId === movie.id}
+            showPass
+            onPass={() => handlePass(movie)}
+            passLoading={passLoadingId === movie.id}
             showDislike
             onDislike={() => handleDislike(movie)}
             dislikeLoading={dislikeLoadingId === movie.id}
@@ -788,8 +824,9 @@ export default function Home() {
               <p className="text-gray-400">
               </p>
               <div className="flex items-center justify-center gap-6 mt-3 text-sm">
-                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-green-600 rounded-full w-7 h-7 flex items-center justify-center text-white text-xs">👍</span> Liked it = more like this</span>
-                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-red-600 rounded-full w-7 h-7 flex items-center justify-center text-white text-xs">👎</span> Nope = replace it</span>
+                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-green-600 rounded-full w-6 h-6 flex items-center justify-center text-white text-[10px]">👍</span> Liked = more like this</span>
+                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-gray-500 rounded-full w-6 h-6 flex items-center justify-center text-white text-[10px]">⏭</span> Pass = skip, no effect</span>
+                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-red-600 rounded-full w-6 h-6 flex items-center justify-center text-white text-[10px]">👎</span> Nope = avoid similar</span>
               </div>
             </div>
 
