@@ -7,6 +7,7 @@ import MovieCard from "@/components/MovieCard";
 import MemberSelector from "@/components/MemberSelector";
 import GenreSelector, { GENRES } from "@/components/GenreSelector";
 import CategorySidebar from "@/components/CategorySidebar";
+import { useLocale } from "@/lib/i18n";
 import LandingPage from "@/components/landing/LandingPage";
 
 interface Movie {
@@ -44,6 +45,7 @@ type Step =
 
 export default function Home() {
   const { data: session, status } = useSession();
+  const { locale, dir } = useLocale();
   const [guestMode, setGuestMode] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -631,7 +633,7 @@ export default function Home() {
   const isGuest = !session;
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-purple-950 text-white">
+    <main dir={dir} className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-purple-950 text-white">
       {/* Header */}
       <header className="border-b border-gray-800/50 bg-black/20 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">

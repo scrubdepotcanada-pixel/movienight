@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 
-export type Locale = "en" | "he";
+export type Locale = "en" | "he" | "fr" | "es" | "ar" | "ru";
 
 export const translations = {
   en: {
@@ -181,7 +181,7 @@ export const translations = {
     history: "היסטוריה",
     picks: "בחירות",
   },
-} as const;
+} as Record<string, Record<string, string>>;
 
 export type TranslationStrings = typeof translations.en;
 
@@ -190,11 +190,28 @@ export type TranslationStrings = typeof translations.en;
  * Returns 'he' if browser language starts with 'he', otherwise 'en'.
  * Safe to call on the server (returns 'en' when navigator is unavailable).
  */
+const RTL_LOCALES: Locale[] = ["he", "ar"];
+
+export function isRTL(locale: Locale): boolean {
+  return RTL_LOCALES.includes(locale);
+}
+
 export function getLocale(): Locale {
-  if (typeof navigator !== "undefined" && navigator.language?.startsWith("he")) {
-    return "he";
-  }
+  if (typeof navigator === "undefined") return "en";
+  const lang = navigator.language?.toLowerCase() || "";
+  if (lang.startsWith("he")) return "he";
+  if (lang.startsWith("ar")) return "ar";
+  if (lang.startsWith("fr")) return "fr";
+  if (lang.startsWith("es")) return "es";
+  if (lang.startsWith("ru")) return "ru";
   return "en";
+}
+
+export function tmdbLocale(locale: Locale): string {
+  const map: Record<Locale, string> = {
+    en: "en-US", he: "he", fr: "fr-FR", es: "es-MX", ar: "ar", ru: "ru-RU",
+  };
+  return map[locale] || "en-US";
 }
 
 /**
@@ -218,8 +235,8 @@ export function useLocale() {
       });
   }, []);
 
-  const t = translations[locale];
-  const dir = locale === "he" ? "rtl" : "ltr";
+  const t = translations[locale] || translations.en;
+  const dir = isRTL(locale) ? "rtl" : "ltr";
 
   return { locale, setLocale, t, dir } as const;
 }
