@@ -78,3 +78,19 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ replacement });
 }
+
+// Remove a dislike
+export async function DELETE(req: NextRequest) {
+  const { memberId, tmdbId, category = "general" } = await req.json();
+
+  if (!memberId || !tmdbId) {
+    return NextResponse.json({ error: "Missing memberId or tmdbId" }, { status: 400 });
+  }
+
+  await db.execute({
+    sql: "DELETE FROM disliked_movies WHERE member_id = ? AND tmdb_id = ? AND category = ?",
+    args: [memberId, tmdbId, category],
+  });
+
+  return NextResponse.json({ success: true });
+}

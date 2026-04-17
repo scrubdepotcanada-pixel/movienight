@@ -9,12 +9,16 @@ interface CategorySidebarProps {
   category: string;
   likedMovies: SidebarMovie[];
   dislikedMovies: SidebarMovie[];
+  onRemoveLike?: (title: string) => void;
+  onRemoveDislike?: (tmdbId: number) => void;
 }
 
 export default function CategorySidebar({
   category,
   likedMovies,
   dislikedMovies,
+  onRemoveLike,
+  onRemoveDislike,
 }: CategorySidebarProps) {
   if (likedMovies.length === 0 && dislikedMovies.length === 0) {
     return null;
@@ -36,8 +40,17 @@ export default function CategorySidebar({
           </p>
           <ul className="space-y-1">
             {likedMovies.map((m, i) => (
-              <li key={i} className="text-xs text-gray-300 pl-5 truncate">
-                {m.title}
+              <li key={i} className="group flex items-center justify-between text-xs text-gray-300 pl-5 pr-1">
+                <span className="truncate">{m.title}</span>
+                {onRemoveLike && (
+                  <button
+                    onClick={() => onRemoveLike(m.title)}
+                    className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all ml-1 flex-shrink-0"
+                    title="Remove"
+                  >
+                    &times;
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -54,8 +67,17 @@ export default function CategorySidebar({
           </p>
           <ul className="space-y-1">
             {dislikedMovies.map((m, i) => (
-              <li key={i} className="text-xs text-gray-400 pl-5 truncate line-through">
-                {m.title}
+              <li key={i} className="group flex items-center justify-between text-xs text-gray-400 pl-5 pr-1">
+                <span className="truncate line-through">{m.title}</span>
+                {onRemoveDislike && m.tmdb_id && (
+                  <button
+                    onClick={() => onRemoveDislike(m.tmdb_id!)}
+                    className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all ml-1 flex-shrink-0"
+                    title="Remove"
+                  >
+                    &times;
+                  </button>
+                )}
               </li>
             ))}
           </ul>

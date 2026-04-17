@@ -79,3 +79,19 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ replacement });
 }
+
+// Remove a like
+export async function DELETE(req: NextRequest) {
+  const { memberId, movieTitle, category = "general" } = await req.json();
+
+  if (!memberId || !movieTitle) {
+    return NextResponse.json({ error: "Missing memberId or movieTitle" }, { status: 400 });
+  }
+
+  await db.execute({
+    sql: "DELETE FROM liked_movies WHERE member_id = ? AND title = ? AND category = ?",
+    args: [memberId, movieTitle, category],
+  });
+
+  return NextResponse.json({ success: true });
+}

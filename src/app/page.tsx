@@ -456,6 +456,40 @@ export default function Home() {
     setStep("search");
   };
 
+  const handleRemoveLike = async (title: string) => {
+    setCategoryLiked((prev) => prev.filter((m) => m.title !== title));
+    try {
+      await fetch("/api/movies/like", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId: selectedMember!.id,
+          movieTitle: title,
+          category: activeCategory,
+        }),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleRemoveDislike = async (tmdbId: number) => {
+    setCategoryDisliked((prev) => prev.filter((m) => m.tmdb_id !== tmdbId));
+    try {
+      await fetch("/api/movies/dislike", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId: selectedMember!.id,
+          tmdbId,
+          category: activeCategory,
+        }),
+      });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const genreLabel = GENRES.find((g) => g.id === activeCategory)?.label || activeCategory;
   const genreIcon = GENRES.find((g) => g.id === activeCategory)?.icon || "";
   const isCategoryStep = step === "category-recs" || step === "category-returning";
@@ -472,6 +506,8 @@ export default function Home() {
             category={sidebarLabel}
             likedMovies={categoryLiked}
             dislikedMovies={categoryDisliked}
+            onRemoveLike={handleRemoveLike}
+            onRemoveDislike={handleRemoveDislike}
           />
         </div>
       )}
@@ -504,6 +540,8 @@ export default function Home() {
               category={sidebarLabel}
               likedMovies={categoryLiked}
               dislikedMovies={categoryDisliked}
+              onRemoveLike={handleRemoveLike}
+              onRemoveDislike={handleRemoveDislike}
             />
           </div>
         )}

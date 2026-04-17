@@ -15,17 +15,34 @@ export async function getOrCreateFamily(): Promise<string | null> {
   const name = session.user.name ?? null;
   const image = session.user.image ?? null;
 
-  // Check if this Google user already has a family
-  const existing = await db.execute({
+  // Try to find by google_id first
+  const byId = await db.execute({
     sql: "SELECT id FROM families WHERE google_id = ?",
     args: [userId],
   });
 
-  if (existing.rows.length > 0) {
-    return String(existing.rows[0].id);
+  if (byId.rows.length > 0) {
+    return String(byId.rows[0].id);
   }
 
-  // Create family on first API call after sign-in
+  // Fallback: try to find by email (in case google_id changed between sessions)
+  if (email) {
+    const byEmail = await db.execute({
+      sql: "SELECT id FROM families WHERE email = ?",
+      args: [email],
+    });
+
+    if (byEmail.rows.length > 0) {
+      // Update google_id to current one
+      await db.execute({
+        sql: "UPDATE families SET google_id = ?, name = ?, avatar = ? WHERE email = ?",
+        args: [userId, name, image, email],
+      });
+      return String(byEmail.rows[0].id);
+    }
+  }
+
+  // Create family on first sign-in
   await db.execute({
     sql: "INSERT INTO families (id, google_id, email, name, avatar) VALUES (?, ?, ?, ?, ?)",
     args: [userId, userId, email, name, image],
