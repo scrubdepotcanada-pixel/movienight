@@ -84,10 +84,10 @@ export default function MovieCard({
     ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`
     : null;
 
-  const handleLike = async (e: React.MouseEvent) => {
+  const handlePosterClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (selected) return;
 
-    // Fetch watch providers and flip the card
     setLoadingProviders(true);
     try {
       const res = await fetch(`/api/movies/providers?movieId=${movie.id}`);
@@ -98,8 +98,10 @@ export default function MovieCard({
     }
     setLoadingProviders(false);
     setFlipped(true);
+  };
 
-    // Also trigger the like callback
+  const handleLikeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     onLike?.();
   };
 
@@ -136,7 +138,12 @@ export default function MovieCard({
           style={{ backfaceVisibility: "hidden" }}
           onClick={onClick}
         >
-          <div className="relative aspect-[2/3] w-full bg-gray-700">
+          <div className="relative aspect-[2/3] w-full bg-gray-700 cursor-pointer" onClick={handlePosterClick}>
+            {loadingProviders && (
+              <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+                <LoadingSpinnerSmall />
+              </div>
+            )}
             {posterSrc ? (
               <Image
                 src={posterSrc}
@@ -202,10 +209,10 @@ export default function MovieCard({
               {showLike && (
                 <button
                   className="flex-1 flex items-center justify-center gap-1 bg-gray-700/80 hover:bg-green-600 text-white py-2 rounded-lg transition-all text-xs font-medium"
-                  onClick={handleLike}
-                  disabled={likeLoading || loadingProviders}
+                  onClick={handleLikeClick}
+                  disabled={likeLoading}
                 >
-                  {(likeLoading || loadingProviders) ? <LoadingSpinnerSmall /> : <>👍 Liked</>}
+                  {likeLoading ? <LoadingSpinnerSmall /> : <>👍 Liked</>}
                 </button>
               )}
               {showPass && (
