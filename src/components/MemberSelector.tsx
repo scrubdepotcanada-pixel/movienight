@@ -134,74 +134,103 @@ export default function MemberSelector({
               </button>
 
               {/* Action buttons */}
-              <div className="absolute -top-1 -right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="absolute -top-2 -right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
-                  onClick={() => startEditing(member)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-5 h-5 text-[10px] flex items-center justify-center"
+                  onClick={(e) => { e.stopPropagation(); startEditing(member); }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-full w-7 h-7 text-sm flex items-center justify-center shadow-lg"
                   title="Edit settings"
                 >
                   ✎
                 </button>
                 <button
-                  onClick={() => onDelete(member.id)}
-                  className="bg-red-600 hover:bg-red-700 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center"
+                  onClick={(e) => { e.stopPropagation(); onDelete(member.id); }}
+                  className="bg-red-600 hover:bg-red-700 text-white rounded-full w-7 h-7 text-base flex items-center justify-center shadow-lg"
                   title="Remove member"
                 >
                   &times;
                 </button>
               </div>
-
-              {/* Edit form */}
-              {editingMember === member.id && (
-                <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 bg-gray-800 border border-gray-700 rounded-lg p-4 shadow-xl z-20 w-72">
-                  <p className="text-white text-sm font-medium mb-3">Edit {member.name}</p>
-
-                  <label className="block text-gray-300 text-xs mb-1 uppercase tracking-wider">Age</label>
-                  <input
-                    type="number"
-                    value={editAge}
-                    onChange={(e) => setEditAge(e.target.value)}
-                    placeholder="e.g. 12"
-                    min="1"
-                    max="120"
-                    className="w-full px-2 py-1.5 bg-gray-700 border border-gray-600 rounded text-white text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500 mb-3"
-                  />
-
-                  <label className="block text-gray-300 text-xs mb-2 uppercase tracking-wider">Max rating allowed</label>
-                  <div className="grid grid-cols-5 gap-1 mb-3">
-                    {RATING_OPTIONS.map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => setEditMaxRating(opt.value)}
-                        className={`px-1 py-1.5 rounded text-xs font-bold transition-all
-                          ${editMaxRating === opt.value
-                            ? `${opt.color} text-white ring-2 ring-white/50`
-                            : "bg-gray-700 text-gray-300 hover:bg-gray-600"}`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => saveEdit(member.id)}
-                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-1.5 rounded text-sm font-medium"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => setEditingMember(null)}
-                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1.5 rounded text-sm font-medium"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           );
         })}
+
+        {/* Edit Modal — rendered outside the member cards */}
+        {editingMember !== null && (() => {
+          const member = members.find((m) => m.id === editingMember);
+          if (!member) return null;
+          return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={() => setEditingMember(null)}>
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+              <div
+                className="relative bg-gray-900 border border-gray-700 rounded-2xl p-8 shadow-2xl w-full max-w-md"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header */}
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="text-4xl">{member.avatar}</span>
+                  <div>
+                    <h3 className="text-white text-xl font-bold">Edit {member.name}</h3>
+                    <p className="text-gray-400 text-sm">Set age and content restrictions</p>
+                  </div>
+                </div>
+
+                {/* Age */}
+                <label className="block text-gray-300 text-xs font-medium uppercase tracking-wider mb-2">Age</label>
+                <input
+                  type="number"
+                  value={editAge}
+                  onChange={(e) => setEditAge(e.target.value)}
+                  placeholder="e.g. 12"
+                  min="1"
+                  max="120"
+                  className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-xl text-white text-base placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-6"
+                  autoFocus
+                />
+
+                {/* Max rating */}
+                <label className="block text-gray-300 text-xs font-medium uppercase tracking-wider mb-3">What can they watch?</label>
+                <div className="grid grid-cols-5 gap-2 mb-2">
+                  {RATING_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      onClick={() => setEditMaxRating(opt.value)}
+                      className={`flex flex-col items-center px-2 py-3 rounded-xl text-sm font-bold transition-all
+                        ${editMaxRating === opt.value
+                          ? `${opt.color} text-white ring-2 ring-white/40 scale-105`
+                          : "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700"}`}
+                    >
+                      <span>{opt.label}</span>
+                      <span className="text-[10px] font-normal opacity-75 mt-0.5">{opt.hint}</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="text-gray-500 text-xs mb-6">
+                  {editMaxRating === "G" && "Only G-rated movies will be suggested."}
+                  {editMaxRating === "PG" && "G and PG movies only."}
+                  {editMaxRating === "PG-13" && "G, PG, and PG-13 — no R-rated content."}
+                  {editMaxRating === "R" && "Up to R — no NC-17 explicit content."}
+                  {editMaxRating === "ALL" && "No content filter applied."}
+                </p>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => saveEdit(member.id)}
+                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl text-base font-semibold transition-colors"
+                  >
+                    Save Changes
+                  </button>
+                  <button
+                    onClick={() => setEditingMember(null)}
+                    className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 py-3 rounded-xl text-base font-semibold transition-colors border border-gray-700"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {members.length > 1 && (
           <button
