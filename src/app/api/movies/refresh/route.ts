@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveAISuggestions } from "@/lib/tmdb";
 import { getReplacementMoviesAI } from "@/lib/openai";
+import { getMemberRestrictions } from "@/lib/member";
+import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
 
 export async function POST(req: NextRequest) {
@@ -10,13 +12,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const [likedRows, watchedRows, dislikedRows, recsRows] = await Promise.all([
+  const [{ maxRating }, likedRows, allLikedRows, watchedRows, dislikedRows, recsRows] = await Promise.all([
+    getMemberRestrictions(memberId),
     db.execute({
       sql: "SELECT DISTINCT title FROM liked_movies WHERE member_id = ? AND category = ? ORDER BY created_at DESC LIMIT 2",
       args: [memberId, category],
     }),
     db.execute({
-      sql: "SELECT title FROM watched_movies WHERE member_id = ?",
+      sql: "SELECT DISTINCT title FROM liked_movies WHERE member_id = ? AND category = ?",
+      args: [memberId, category],
+    }),
+    db.execute({
+      sql: "SELECT tmdb_id, title FROM watched_movies WHERE member_id = ?",
       args: [memberId],
     }),
     db.execute({
@@ -24,7 +31,7 @@ export async function POST(req: NextRequest) {
       args: [memberId, category],
     }),
     db.execute({
-      sql: "SELECT title FROM recommendations WHERE member_id = ? AND is_active = 1 AND category = ?",
+      sql: "SELECT tmdb_id, title FROM recommendations WHERE member_id = ? AND is_active = 1 AND category = ?",
       args: [memberId, category],
     }),
   ]);
@@ -34,6 +41,11 @@ export async function POST(req: NextRequest) {
   const dislikedTitles = dislikedRows.rows.map((r) => String(r.title));
   const currentRecTitles = recsRows.rows.map((r) => String(r.title));
 
+  // Build full exclude set: all liked titles + watched titles + current recs
+  const allLikedTitles = new Set(allLikedRows.rows.map((r) => String(r.title)));
+  const watchedIds = new Set(watchedRows.rows.map((r) => Number(r.tmdb_id)));
+  const activeIds = new Set(recsRows.rows.map((r) => Number(r.tmdb_id)));
+
   const context = category !== "general"
     ? { category }
     : { likedMovie1: likedTitles[0], likedMovie2: likedTitles[1] };
@@ -42,17 +54,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json([]);
   }
 
+  // Ask for extra to account for filtering
+  const fetchCount = count + 3;
+
   const suggestions = await getReplacementMoviesAI(
     context,
-    currentRecTitles,
+    [...currentRecTitles, ...Array.from(allLikedTitles)],
     watchedTitles,
     dislikedTitles,
-    count
+    fetchCount,
+    maxRating
   );
 
-  const movies = await resolveAISuggestions(suggestions);
+  const resolved = await resolveAISuggestions(suggestions);
 
-  for (const movie of movies) {
+  // Filter: age-appropriate, not already active, not watched, not liked
+  const filtered = resolved.filter((m) =>
+    isMovieAllowed(m.certification, maxRating) &&
+    !activeIds.has(m.id) &&
+    !watchedIds.has(m.id) &&
+    !allLikedTitles.has(m.title)
+  ).slice(0, count);
+
+  for (const movie of filtered) {
     await db.execute({
       sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, category)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -60,5 +84,5 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  return NextResponse.json(movies);
+  return NextResponse.json(filtered);
 }
