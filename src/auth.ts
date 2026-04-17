@@ -4,30 +4,37 @@ import db, { initDB } from "@/lib/db";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [Google],
+  trustHost: true,
   callbacks: {
     async signIn({ user }) {
-      await initDB();
+      try {
+        await initDB();
 
-      const userId = user.id ?? "";
-      const email = user.email ?? null;
-      const name = user.name ?? null;
-      const image = user.image ?? null;
+        const userId = user.id ?? "";
+        const email = user.email ?? null;
+        const name = user.name ?? null;
+        const image = user.image ?? null;
 
-      const existing = await db.execute({
-        sql: "SELECT id FROM families WHERE google_id = ?",
-        args: [userId],
-      });
+        if (!userId) return true;
 
-      if (existing.rows.length === 0) {
-        await db.execute({
-          sql: "INSERT INTO families (id, google_id, email, name, avatar) VALUES (?, ?, ?, ?, ?)",
-          args: [userId, userId, email, name, image],
+        const existing = await db.execute({
+          sql: "SELECT id FROM families WHERE google_id = ?",
+          args: [userId],
         });
-      } else {
-        await db.execute({
-          sql: "UPDATE families SET email = ?, name = ?, avatar = ? WHERE google_id = ?",
-          args: [email, name, image, userId],
-        });
+
+        if (existing.rows.length === 0) {
+          await db.execute({
+            sql: "INSERT INTO families (id, google_id, email, name, avatar) VALUES (?, ?, ?, ?, ?)",
+            args: [userId, userId, email, name, image],
+          });
+        } else {
+          await db.execute({
+            sql: "UPDATE families SET email = ?, name = ?, avatar = ? WHERE google_id = ?",
+            args: [email, name, image, userId],
+          });
+        }
+      } catch (err) {
+        console.error("Sign-in callback error:", err);
       }
 
       return true;
