@@ -47,10 +47,11 @@ export async function getOrCreateFamily(): Promise<string | null> {
     return userId;
   }
 
-  // Guest mode: use a cookie-based session
+  // Guest mode: always create a fresh session (no persistence)
   const cookieStore = await cookies();
-  let guestId = cookieStore.get("guest_family_id")?.value;
 
+  // Check for existing guest session within the same browser session
+  const guestId = cookieStore.get("guest_family_id")?.value;
   if (guestId) {
     const existing = await db.execute({
       sql: "SELECT id FROM families WHERE id = ?",
@@ -60,19 +61,25 @@ export async function getOrCreateFamily(): Promise<string | null> {
   }
 
   // Create new guest family
-  guestId = `guest_${uuidv4()}`;
+  const newGuestId = `guest_${uuidv4()}`;
   await db.execute({
     sql: "INSERT INTO families (id, name) VALUES (?, ?)",
-    args: [guestId, "Guest"],
+    args: [newGuestId, "Guest"],
   });
 
-  cookieStore.set("guest_family_id", guestId, {
+  // Session cookie — expires when browser closes (no maxAge)
+  cookieStore.set("guest_family_id", newGuestId, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 365,
     path: "/",
   });
 
-  return guestId;
+  return newGuestId;
+}
+
+// Clear guest session so next visit is fresh
+export async function clearGuestSession() {
+  const cookieStore = await cookies();
+  cookieStore.delete("guest_family_id");
 }

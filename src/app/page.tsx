@@ -620,7 +620,12 @@ export default function Home() {
 
   // Not signed in and not guest — show landing page
   if (!session && !guestMode) {
-    return <LandingPage onSignIn={() => signIn("google")} onGuest={() => setGuestMode(true)} />;
+    return <LandingPage onSignIn={() => signIn("google")} onGuest={async () => {
+      // Clear any old guest session so it's fresh
+      await fetch("/api/guest/clear", { method: "POST" });
+      setMembers([]);
+      setGuestMode(true);
+    }} />;
   }
 
   const isGuest = !session;
@@ -710,15 +715,9 @@ export default function Home() {
           <div className="pt-8 sm:pt-16">
             {isGuest ? (
               <GuestSetup
-                existingMember={members[0] || null}
+                existingMember={null}
                 onDone={async (name, age, maxRating) => {
-                  if (members.length > 0) {
-                    // Update existing guest member
-                    await handleUpdateMember(members[0].id, { age, maxRating });
-                    handleSelectMember({ ...members[0], name, age, max_rating: maxRating });
-                  } else {
-                    await handleAddMember(name, "🎬", age, maxRating);
-                  }
+                  await handleAddMember(name, "🎬", age, maxRating);
                 }}
               />
             ) : (
