@@ -49,23 +49,55 @@ function certBadgeColor(cert: string): string {
   }
 }
 
-// Provider name used in Google search to find the movie on the right service
+// Affiliate tags — update these with your real IDs
+const AMAZON_ASSOCIATE_TAG = process.env.NEXT_PUBLIC_AMAZON_TAG || "nextmovie-20";
+const APPLE_AFFILIATE_TOKEN = process.env.NEXT_PUBLIC_APPLE_TOKEN || "";
+
+// Provider deep link patterns
+// {title} = movie title, {tag} = affiliate tag
+const PROVIDER_CONFIGS: Record<number, { name: string; getUrl: (title: string) => string }> = {
+  9: {
+    name: "Amazon Prime Video",
+    getUrl: (title) => `https://www.amazon.ca/s?k=${encodeURIComponent(title)}&i=instant-video&tag=${AMAZON_ASSOCIATE_TAG}`,
+  },
+  10: {
+    name: "Amazon Video",
+    getUrl: (title) => `https://www.amazon.ca/s?k=${encodeURIComponent(title)}&i=instant-video&tag=${AMAZON_ASSOCIATE_TAG}`,
+  },
+  350: {
+    name: "Apple TV",
+    getUrl: (title) => {
+      const base = `https://tv.apple.com/search?term=${encodeURIComponent(title)}`;
+      return APPLE_AFFILIATE_TOKEN ? `${base}&at=${APPLE_AFFILIATE_TOKEN}` : base;
+    },
+  },
+  192: {
+    name: "YouTube",
+    getUrl: (title) => `https://www.youtube.com/results?search_query=${encodeURIComponent(title)}+full+movie`,
+  },
+  3: {
+    name: "Google Play Movies",
+    getUrl: (title) => `https://play.google.com/store/search?q=${encodeURIComponent(title)}&c=movies`,
+  },
+};
+
+// Fallback: Google search for services without affiliate programs
 const PROVIDER_SEARCH_NAMES: Record<number, string> = {
   8: "Netflix",
-  9: "Amazon Prime Video",
   337: "Disney Plus",
-  350: "Apple TV",
   230: "Crave",
   386: "Peacock",
   531: "Paramount Plus",
   1899: "Max HBO",
   15: "Hulu",
-  192: "YouTube",
-  3: "Google Play Movies",
-  10: "Amazon Prime Video",
 };
 
 function getProviderUrl(providerId: number, movieTitle: string): string {
+  // Check for affiliate/deep link first
+  const config = PROVIDER_CONFIGS[providerId];
+  if (config) return config.getUrl(movieTitle);
+
+  // Fallback to Google search for non-affiliate services
   const serviceName = PROVIDER_SEARCH_NAMES[providerId];
   const query = serviceName
     ? `${movieTitle} ${serviceName} watch`
