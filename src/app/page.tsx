@@ -1051,24 +1051,23 @@ const RATING_OPTIONS = [
   { value: "ALL", label: "All", hint: "No limit", color: "bg-gray-600" },
 ];
 
-function GuestSetup({ existingMember, onDone }: { existingMember: Member | null; onDone: (name: string, age: number | null, maxRating: string) => void }) {
-  const [name, setName] = useState(existingMember?.name || "");
-  const [age, setAge] = useState(existingMember?.age?.toString() || "");
-  const [maxRating, setMaxRating] = useState(existingMember?.max_rating || "ALL");
+const FUNNY_NAMES = [
+  "Popcorn Pete", "Sofa Sam", "Binge Betty", "Remote Randy",
+  "Couch Potato", "Snack Attack", "Lazy Llama", "Movie Mochi",
+  "Captain Chill", "Sir Streams-a-Lot", "Blanket Burrito",
+  "Pixel Panda", "Nacho Ninja", "Rewind Rex", "Drama Llama",
+  "Flick Fox", "Screen Bean", "Plot Twist", "Cliffhanger Carl",
+];
 
-  const handleAgeChange = (value: string) => {
-    setAge(value);
-    const a = parseInt(value, 10);
-    if (!isNaN(a)) {
-      setMaxRating(a < 7 ? "G" : a < 10 ? "PG" : a < 14 ? "PG-13" : a < 17 ? "R" : "ALL");
-    }
-  };
+function getRandomFunnyName(): string {
+  return FUNNY_NAMES[Math.floor(Math.random() * FUNNY_NAMES.length)];
+}
+
+function GuestSetup({ onDone }: { existingMember: Member | null; onDone: (name: string, age: number | null, maxRating: string) => void }) {
+  const [maxRating, setMaxRating] = useState("ALL");
 
   const handleSubmit = () => {
-    if (!name.trim()) return;
-    const ageNum = age.trim() ? parseInt(age, 10) : null;
-    const validAge = ageNum && !isNaN(ageNum) && ageNum > 0 ? ageNum : null;
-    onDone(name.trim(), validAge, maxRating);
+    onDone(getRandomFunnyName(), null, maxRating);
   };
 
   return (
@@ -1079,64 +1078,39 @@ function GuestSetup({ existingMember, onDone }: { existingMember: Member | null;
       <div className="relative max-w-sm mx-auto">
         <div className="text-5xl mb-4">🎬</div>
         <h2 className="text-3xl sm:text-4xl font-bold mb-2">
-          <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Let&apos;s get started</span>
+          <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">What can you watch?</span>
         </h2>
-        <p className="text-gray-400 mb-8">Quick setup — takes 10 seconds</p>
+        <p className="text-gray-400 mb-8">Pick your content rating and let&apos;s go</p>
 
-        <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6 text-left">
-          <label className="block text-gray-300 text-xs font-medium uppercase tracking-wider mb-2">Your name</label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Sarah"
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white text-base placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-5"
-            autoFocus
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-          />
-
-          <label className="block text-gray-300 text-xs font-medium uppercase tracking-wider mb-2">Age <span className="text-gray-500 normal-case">(for content filtering)</span></label>
-          <input
-            type="number"
-            value={age}
-            onChange={(e) => handleAgeChange(e.target.value)}
-            placeholder="e.g. 12"
-            min="1"
-            max="120"
-            className="w-full px-4 py-3 bg-gray-900 border border-gray-600 rounded-xl text-white text-base placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 mb-5"
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-          />
-
-          <label className="block text-gray-300 text-xs font-medium uppercase tracking-wider mb-3">What can you watch?</label>
-          <div className="grid grid-cols-5 gap-2 mb-2">
+        <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6">
+          <div className="grid grid-cols-5 gap-2 mb-3">
             {RATING_OPTIONS.map((opt) => (
               <button
                 key={opt.value}
                 onClick={() => setMaxRating(opt.value)}
-                className={`flex flex-col items-center px-1 py-2.5 rounded-xl text-xs font-bold transition-all
+                className={`flex flex-col items-center px-1 py-3.5 rounded-xl text-sm font-bold transition-all
                   ${maxRating === opt.value
                     ? `${opt.color} text-white ring-2 ring-white/40 scale-105`
                     : "bg-gray-900 text-gray-300 hover:bg-gray-700 border border-gray-700"}`}
               >
                 <span>{opt.label}</span>
-                <span className="text-[9px] font-normal opacity-75 mt-0.5">{opt.hint}</span>
+                <span className="text-[10px] font-normal opacity-75 mt-0.5">{opt.hint}</span>
               </button>
             ))}
           </div>
-          <p className="text-gray-500 text-xs mb-6">
-            {maxRating === "G" && "Only G-rated movies."}
-            {maxRating === "PG" && "G and PG movies."}
+          <p className="text-gray-500 text-sm mb-6">
+            {maxRating === "G" && "Only G-rated movies — safe for little ones."}
+            {maxRating === "PG" && "G and PG — family-friendly picks."}
             {maxRating === "PG-13" && "Up to PG-13 — no R-rated content."}
-            {maxRating === "R" && "Up to R — no NC-17."}
-            {maxRating === "ALL" && "No content filter."}
+            {maxRating === "R" && "Up to R — no explicit adult content."}
+            {maxRating === "ALL" && "Everything goes — no filter."}
           </p>
 
           <button
             onClick={handleSubmit}
-            disabled={!name.trim()}
-            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-gray-600 disabled:to-gray-600 text-white py-3 rounded-xl text-lg font-semibold transition-all"
+            className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white py-4 rounded-xl text-lg font-semibold transition-all hover:scale-[1.02]"
           >
-            Start Picking Movies
+            Start Picking Movies 🍿
           </button>
         </div>
       </div>
