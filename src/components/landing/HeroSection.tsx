@@ -18,6 +18,8 @@ export default function HeroSection({ onSignIn }: HeroSectionProps) {
         <div className="inline-flex items-center gap-2 bg-gray-800/60 backdrop-blur border border-gray-700/50 rounded-full px-4 py-1.5 mb-8">
           <span className="text-sm">🎬</span>
           <span className="text-sm text-gray-300">Powered by AI</span>
+          <span className="text-gray-600 text-sm">·</span>
+          <span className="text-sm text-green-400 font-medium">100% Free</span>
         </div>
 
         {/* Headline */}
@@ -56,7 +58,7 @@ export default function HeroSection({ onSignIn }: HeroSectionProps) {
 
         {/* Streaming services */}
         <p className="text-gray-500 text-sm">
-          Works with Netflix, Disney+, Prime &amp; more
+          Works with Netflix, Disney+, Prime &amp; more · Free forever, no credit card needed
         </p>
       </div>
     </section>
