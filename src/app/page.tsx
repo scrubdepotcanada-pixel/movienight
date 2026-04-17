@@ -593,9 +593,18 @@ export default function Home() {
               <div className="flex items-center gap-2 text-sm text-gray-300">
                 <span className="text-xl">{selectedMember.avatar}</span>
                 <span>{selectedMember.name}</span>
+                {(() => {
+                  const r = selectedMember.max_rating || (selectedMember.age != null ? (selectedMember.age < 7 ? "G" : selectedMember.age < 10 ? "PG" : selectedMember.age < 14 ? "PG-13" : selectedMember.age < 17 ? "R" : "ALL") : "ALL");
+                  const color = r === "G" ? "bg-green-600" : r === "PG" ? "bg-blue-600" : r === "PG-13" ? "bg-yellow-600" : r === "R" ? "bg-red-600" : "bg-gray-600";
+                  return (
+                    <span className={`${color} text-white text-[10px] font-bold px-1.5 py-0.5 rounded`}>
+                      {r}
+                    </span>
+                  );
+                })()}
                 <button
                   onClick={() => { setStep("select-member"); setSelectedMember(null); }}
-                  className="ml-2 text-purple-400 hover:text-purple-300 underline text-xs"
+                  className="ml-1 text-purple-400 hover:text-purple-300 underline text-xs"
                 >
                   Switch
                 </button>
