@@ -1,13 +1,13 @@
 import { auth } from "@/auth";
 import db, { initDB } from "./db";
 
-export async function getOrCreateFamily(): Promise<string> {
+export async function getOrCreateFamily(): Promise<string | null> {
   await initDB();
 
   const session = await auth();
 
   if (!session?.user?.id) {
-    throw new Error("Not authenticated");
+    return null;
   }
 
   const userId = session.user.id;

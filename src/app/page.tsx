@@ -73,13 +73,14 @@ export default function Home() {
   const [categoryLiked, setCategoryLiked] = useState<SidebarMovie[]>([]);
   const [categoryDisliked, setCategoryDisliked] = useState<SidebarMovie[]>([]);
 
-  // Load members on mount
+  // Load members only when signed in
   useEffect(() => {
+    if (status !== "authenticated") return;
     fetch("/api/members")
       .then((r) => r.json())
       .then(setMembers)
       .catch(console.error);
-  }, []);
+  }, [status]);
 
   const loadCategoryHistory = useCallback(async (memberId: number, category: string) => {
     try {

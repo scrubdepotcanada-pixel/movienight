@@ -12,6 +12,7 @@ function sanitizeMaxRating(value: unknown): string | null {
 // Get all family members
 export async function GET() {
   const familyId = await getOrCreateFamily();
+  if (!familyId) return NextResponse.json([]);
 
   const rows = await db.execute({
     sql: "SELECT * FROM members WHERE family_id = ? ORDER BY created_at ASC",
@@ -24,6 +25,7 @@ export async function GET() {
 // Create a new family member
 export async function POST(req: NextRequest) {
   const familyId = await getOrCreateFamily();
+  if (!familyId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   const { name, avatar, age, maxRating } = await req.json();
 
   if (!name || !name.trim()) {
@@ -49,6 +51,7 @@ export async function POST(req: NextRequest) {
 // Update a family member (age, name, avatar, maxRating)
 export async function PATCH(req: NextRequest) {
   const familyId = await getOrCreateFamily();
+  if (!familyId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   const { memberId, name, avatar, age, maxRating } = await req.json();
 
   const existing = await db.execute({
@@ -100,6 +103,7 @@ export async function PATCH(req: NextRequest) {
 // Delete a family member
 export async function DELETE(req: NextRequest) {
   const familyId = await getOrCreateFamily();
+  if (!familyId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   const { memberId } = await req.json();
 
   const member = await db.execute({
