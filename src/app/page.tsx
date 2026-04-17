@@ -595,10 +595,11 @@ export default function Home() {
                 <span>{selectedMember.name}</span>
                 {(() => {
                   const r = selectedMember.max_rating || (selectedMember.age != null ? (selectedMember.age < 7 ? "G" : selectedMember.age < 10 ? "PG" : selectedMember.age < 14 ? "PG-13" : selectedMember.age < 17 ? "R" : "ALL") : "ALL");
-                  const color = r === "G" ? "bg-green-600" : r === "PG" ? "bg-blue-600" : r === "PG-13" ? "bg-yellow-600" : r === "R" ? "bg-red-600" : "bg-gray-600";
+                  const color = r === "G" ? "bg-green-600" : r === "PG" ? "bg-blue-600" : r === "PG-13" ? "bg-yellow-600" : r === "R" ? "bg-red-600" : "bg-purple-600";
+                  const label = r === "ALL" ? "All Ratings" : `Rated ${r}`;
                   return (
-                    <span className={`${color} text-white text-[10px] font-bold px-1.5 py-0.5 rounded`}>
-                      {r}
+                    <span className={`${color} text-white text-[11px] font-bold px-2 py-0.5 rounded-full`}>
+                      {label}
                     </span>
                   );
                 })()}
