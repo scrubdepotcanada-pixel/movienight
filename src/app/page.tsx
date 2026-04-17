@@ -553,8 +553,6 @@ export default function Home() {
           <MovieCard
             key={movie.id}
             movie={movie}
-            watched={watchedSelection.has(movie.id)}
-            onClick={() => handleWatched(movie)}
             showLike
             onLike={() => handleLike(movie)}
             likeLoading={likeLoadingId === movie.id}
@@ -790,9 +788,8 @@ export default function Home() {
               <p className="text-gray-400">
               </p>
               <div className="flex items-center justify-center gap-6 mt-3 text-sm">
-                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-green-600 rounded-full w-7 h-7 flex items-center justify-center text-white text-xs">👍</span> Like = more like this</span>
-                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-red-600 rounded-full w-7 h-7 flex items-center justify-center text-white text-xs">👎</span> Dislike = replace it</span>
-                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-purple-600 rounded-full w-7 h-7 flex items-center justify-center text-white text-xs">👆</span> Tap card = watched</span>
+                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-green-600 rounded-full w-7 h-7 flex items-center justify-center text-white text-xs">👍</span> Liked it = more like this</span>
+                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-red-600 rounded-full w-7 h-7 flex items-center justify-center text-white text-xs">👎</span> Nope = replace it</span>
               </div>
             </div>
 
@@ -823,7 +820,7 @@ export default function Home() {
                 {genreIcon} Top {genreLabel} Picks
               </h2>
               <p className="text-gray-400">
-                Like, dislike, or tap to mark watched
+                Hover to read about it, then like or dislike
               </p>
             </div>
 
@@ -854,7 +851,7 @@ export default function Home() {
                 Welcome back, {selectedMember.name}! {selectedMember.avatar}
               </h2>
               <p className="text-gray-400">
-                Like, dislike, or tap to mark watched
+                Hover to read about it, then like or dislike
               </p>
             </div>
 
@@ -885,7 +882,7 @@ export default function Home() {
                 {genreIcon} Your {genreLabel} List
               </h2>
               <p className="text-gray-400">
-                Like, dislike, or tap to mark watched
+                Hover to read about it, then like or dislike
               </p>
             </div>
 
