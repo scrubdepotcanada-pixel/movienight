@@ -40,12 +40,12 @@ export default function CategorySidebar({
           </p>
           <ul className="space-y-1">
             {likedMovies.map((m, i) => (
-              <li key={i} className="group flex items-center justify-between text-xs text-gray-300 pl-5 pr-1">
+              <li key={i} className="group flex items-center justify-between text-xs text-gray-300 pl-5 pr-1 py-0.5">
                 <span className="truncate">{m.title}</span>
                 {onRemoveLike && (
                   <button
                     onClick={() => onRemoveLike(m.title)}
-                    className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all ml-1 flex-shrink-0"
+                    className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all ml-2 flex-shrink-0 text-base font-bold w-5 h-5 flex items-center justify-center rounded hover:bg-red-400/20"
                     title="Remove"
                   >
                     &times;
@@ -67,12 +67,12 @@ export default function CategorySidebar({
           </p>
           <ul className="space-y-1">
             {dislikedMovies.map((m, i) => (
-              <li key={i} className="group flex items-center justify-between text-xs text-gray-400 pl-5 pr-1">
+              <li key={i} className="group flex items-center justify-between text-xs text-gray-400 pl-5 pr-1 py-0.5">
                 <span className="truncate line-through">{m.title}</span>
                 {onRemoveDislike && m.tmdb_id && (
                   <button
                     onClick={() => onRemoveDislike(m.tmdb_id!)}
-                    className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-all ml-1 flex-shrink-0"
+                    className="opacity-60 sm:opacity-0 sm:group-hover:opacity-100 text-red-400 hover:text-red-300 transition-all ml-2 flex-shrink-0 text-base font-bold w-5 h-5 flex items-center justify-center rounded hover:bg-red-400/20"
                     title="Remove"
                   >
                     &times;
