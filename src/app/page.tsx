@@ -76,9 +76,6 @@ export default function Home() {
   const [categoryDisliked, setCategoryDisliked] = useState<SidebarMovie[]>([]);
   const [activeCategories, setActiveCategories] = useState<{ category: string; count: number }[]>([]);
 
-  // Track whether guest auto-select has happened
-  const [guestAutoSelected, setGuestAutoSelected] = useState(false);
-
   // Load members when signed in or in guest mode
   useEffect(() => {
     if (status !== "authenticated" && !guestMode) return;
@@ -173,13 +170,8 @@ export default function Home() {
     loadMemberSession(member);
   };
 
-  // Auto-select guest's single member
-  useEffect(() => {
-    if (guestMode && members.length === 1 && !guestAutoSelected && !selectedMember) {
-      setGuestAutoSelected(true);
-      handleSelectMember(members[0]);
-    }
-  }, [guestMode, members, guestAutoSelected, selectedMember]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Auto-select guest's single member — disabled, always show setup
+  // Guests always see the setup form or search page fresh
 
   const handleViewAll = async () => {
     setViewingAll(true);
@@ -712,10 +704,19 @@ export default function Home() {
         {/* STEP: Select Member */}
         {step === "select-member" && (
           <div className="pt-8 sm:pt-16">
-            {isGuest && members.length === 0 ? (
-              <GuestSetup onDone={(name, age, maxRating) => {
-                handleAddMember(name, "🎬", age, maxRating);
-              }} />
+            {isGuest ? (
+              <GuestSetup
+                existingMember={members[0] || null}
+                onDone={async (name, age, maxRating) => {
+                  if (members.length > 0) {
+                    // Update existing guest member
+                    await handleUpdateMember(members[0].id, { age, maxRating });
+                    handleSelectMember({ ...members[0], name, age, max_rating: maxRating });
+                  } else {
+                    await handleAddMember(name, "🎬", age, maxRating);
+                  }
+                }}
+              />
             ) : (
               <>
                 <div className="relative text-center mb-16">
@@ -1033,10 +1034,10 @@ const RATING_OPTIONS = [
   { value: "ALL", label: "All", hint: "No limit", color: "bg-gray-600" },
 ];
 
-function GuestSetup({ onDone }: { onDone: (name: string, age: number | null, maxRating: string) => void }) {
-  const [name, setName] = useState("");
-  const [age, setAge] = useState("");
-  const [maxRating, setMaxRating] = useState("ALL");
+function GuestSetup({ existingMember, onDone }: { existingMember: Member | null; onDone: (name: string, age: number | null, maxRating: string) => void }) {
+  const [name, setName] = useState(existingMember?.name || "");
+  const [age, setAge] = useState(existingMember?.age?.toString() || "");
+  const [maxRating, setMaxRating] = useState(existingMember?.max_rating || "ALL");
 
   const handleAgeChange = (value: string) => {
     setAge(value);
