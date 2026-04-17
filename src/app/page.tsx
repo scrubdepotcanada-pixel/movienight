@@ -544,14 +544,16 @@ export default function Home() {
         </div>
       )}
 
-      {/* Movie row - fixed size cards in a grid */}
+      {/* Movie row - fixed size cards, max 5 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
-        {recommendations.map((movie) => (
+        {recommendations
+          .filter((m) => !categoryLiked.some((l) => l.title === m.title))
+          .slice(0, 5)
+          .map((movie) => (
           <MovieCard
             key={movie.id}
             movie={movie}
             watched={watchedSelection.has(movie.id)}
-            liked={categoryLiked.some((m) => m.title === movie.title)}
             onClick={() => handleWatched(movie)}
             showLike
             onLike={() => handleLike(movie)}
