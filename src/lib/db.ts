@@ -54,6 +54,7 @@ export async function initDB() {
       vote_average REAL,
       certification TEXT,
       overview TEXT,
+      release_date TEXT,
       base_movie_id INTEGER,
       category TEXT DEFAULT 'general',
       is_active INTEGER DEFAULT 1,
@@ -91,6 +92,7 @@ export async function initDB() {
     "ALTER TABLE families ADD COLUMN email TEXT",
     "ALTER TABLE families ADD COLUMN name TEXT",
     "ALTER TABLE families ADD COLUMN avatar TEXT",
+    "ALTER TABLE recommendations ADD COLUMN release_date TEXT",
   ];
   for (const sql of migrations) {
     try {

@@ -10,6 +10,7 @@ interface MovieCardProps {
     vote_average: number;
     certification?: string;
     overview?: string;
+    release_date?: string;
   };
   selected?: boolean;
   onDislike?: () => void;
@@ -139,6 +140,9 @@ export default function MovieCard({
         <div className="px-3 pt-2 pb-1">
           <h3 className="text-white text-sm font-medium truncate">{movie.title}</h3>
           <div className="flex items-center gap-2 mt-0.5">
+            {movie.release_date && (
+              <span className="text-gray-400 text-xs">{movie.release_date.slice(0, 4)}</span>
+            )}
             {movie.certification && (
               <span className="text-gray-400 text-xs">{movie.certification}</span>
             )}

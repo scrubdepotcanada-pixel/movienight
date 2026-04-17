@@ -16,6 +16,7 @@ interface Movie {
   vote_average: number;
   certification?: string;
   overview?: string;
+  release_date?: string;
 }
 
 interface Member {
@@ -132,6 +133,7 @@ export default function Home() {
           vote_average: Number(r.vote_average),
           certification: r.certification as string,
           overview: r.overview as string,
+          release_date: r.release_date ? String(r.release_date) : undefined,
         }));
         setActiveCategory("general");
         await loadCategoryHistory(member.id, "general");
@@ -191,6 +193,7 @@ export default function Home() {
             vote_average: Number(r.vote_average),
             certification: r.certification as string,
             overview: r.overview as string,
+          release_date: r.release_date ? String(r.release_date) : undefined,
           }));
           return { member, recommendations: recs };
         })
@@ -323,6 +326,7 @@ export default function Home() {
           vote_average: Number(r.vote_average),
           certification: r.certification as string,
           overview: r.overview as string,
+          release_date: r.release_date ? String(r.release_date) : undefined,
         }));
         setCategoryLiked((sessionData.likedInCategory || []).map((r: Record<string, unknown>) => ({ title: String(r.title) })));
         setCategoryDisliked((sessionData.dislikedInCategory || []).map((r: Record<string, unknown>) => ({ title: String(r.title), tmdb_id: Number(r.tmdb_id) })));

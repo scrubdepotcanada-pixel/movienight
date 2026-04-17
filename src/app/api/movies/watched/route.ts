@@ -73,9 +73,9 @@ export async function POST(req: NextRequest) {
 
   if (replacement) {
     await db.execute({
-      sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, category)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [memberId, replacement.id, replacement.title, replacement.poster_path, replacement.vote_average, replacement.certification, replacement.overview, category],
+      sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, release_date, category)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [memberId, replacement.id, replacement.title, replacement.poster_path, replacement.vote_average, replacement.certification, replacement.overview, replacement.release_date || null, category],
     });
   }
 
