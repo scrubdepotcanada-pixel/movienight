@@ -13,18 +13,20 @@ async function filterAndPruneRecs(
   const allowed: Record<string, unknown>[] = [];
   const toDeactivate: number[] = [];
   const seenTmdbIds = new Set<number>();
+  const seenTitles = new Set<string>();
 
   for (const rec of rows) {
     const tmdbId = Number(rec.tmdb_id);
     const title = String(rec.title);
     const cert = rec.certification ? String(rec.certification) : undefined;
 
-    // Deduplicate
-    if (seenTmdbIds.has(tmdbId)) {
+    // Deduplicate by ID and title
+    if (seenTmdbIds.has(tmdbId) || seenTitles.has(title)) {
       toDeactivate.push(Number(rec.id));
       continue;
     }
     seenTmdbIds.add(tmdbId);
+    seenTitles.add(title);
 
     // Skip movies already liked (user already gave feedback)
     if (likedTitles.has(title)) {

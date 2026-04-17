@@ -68,13 +68,17 @@ export async function POST(req: NextRequest) {
 
   const resolved = await resolveAISuggestions(suggestions);
 
-  // Filter: age-appropriate, not already active, not watched, not liked
-  const filtered = resolved.filter((m) =>
-    isMovieAllowed(m.certification, maxRating) &&
-    !activeIds.has(m.id) &&
-    !watchedIds.has(m.id) &&
-    !allLikedTitles.has(m.title)
-  ).slice(0, count);
+  // Filter: age-appropriate, not already active, not watched, not liked, no dupes
+  const watchedTitleSet = new Set(watchedTitles);
+  const seenTitles = new Set<string>();
+  const filtered = resolved.filter((m) => {
+    if (!isMovieAllowed(m.certification, maxRating)) return false;
+    if (activeIds.has(m.id) || watchedIds.has(m.id)) return false;
+    if (allLikedTitles.has(m.title) || watchedTitleSet.has(m.title)) return false;
+    if (seenTitles.has(m.title)) return false;
+    seenTitles.add(m.title);
+    return true;
+  }).slice(0, count);
 
   for (const movie of filtered) {
     await db.execute({
