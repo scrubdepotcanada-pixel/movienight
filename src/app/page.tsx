@@ -43,6 +43,7 @@ type Step =
 
 export default function Home() {
   const { data: session, status } = useSession();
+  const [guestMode, setGuestMode] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [viewingAll, setViewingAll] = useState(false);
@@ -75,14 +76,14 @@ export default function Home() {
   const [categoryDisliked, setCategoryDisliked] = useState<SidebarMovie[]>([]);
   const [activeCategories, setActiveCategories] = useState<{ category: string; count: number }[]>([]);
 
-  // Load members only when signed in
+  // Load members when signed in or in guest mode
   useEffect(() => {
-    if (status !== "authenticated") return;
+    if (status !== "authenticated" && !guestMode) return;
     fetch("/api/members")
       .then((r) => r.json())
       .then(setMembers)
       .catch(console.error);
-  }, [status]);
+  }, [status, guestMode]);
 
   // Top up recommendations to 5 if some were lost to dedup/filtering
   const topUpRecommendations = useCallback(async (currentRecs: Movie[], memberId: number, category: string) => {
@@ -610,10 +611,12 @@ export default function Home() {
     );
   }
 
-  // Not signed in — show landing page
-  if (!session) {
-    return <LandingPage onSignIn={() => signIn("google")} />;
+  // Not signed in and not guest — show landing page
+  if (!session && !guestMode) {
+    return <LandingPage onSignIn={() => signIn("google")} onGuest={() => setGuestMode(true)} />;
   }
+
+  const isGuest = !session;
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-purple-950 text-white">
@@ -656,19 +659,32 @@ export default function Home() {
                 </button>
               </div>
             )}
-            {session.user?.image && (
-              <img
-                src={session.user.image}
-                alt=""
-                className="w-7 h-7 rounded-full"
-              />
+            {isGuest ? (
+              <button
+                onClick={() => signIn("google")}
+                className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+              >
+                Sign in to save
+              </button>
+            ) : (
+              <>
+                {session?.user?.image && (
+                  <img
+                    src={session.user.image}
+                    alt=""
+                    className="w-7 h-7 rounded-full"
+                  />
+                )}
+              </>
             )}
-            <button
-              onClick={() => signOut()}
-              className="text-xs text-gray-400 hover:text-white underline"
-            >
-              Sign out
-            </button>
+            {!isGuest && (
+              <button
+                onClick={() => signOut()}
+                className="text-xs text-gray-400 hover:text-white underline"
+              >
+                Sign out
+              </button>
+            )}
           </div>
         </div>
       </header>

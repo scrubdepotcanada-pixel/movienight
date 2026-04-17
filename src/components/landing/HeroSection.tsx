@@ -2,9 +2,10 @@
 
 interface HeroSectionProps {
   onSignIn: () => void;
+  onGuest: () => void;
 }
 
-export default function HeroSection({ onSignIn }: HeroSectionProps) {
+export default function HeroSection({ onSignIn, onGuest }: HeroSectionProps) {
   return (
     <section className="relative px-4 pt-32 pb-20 sm:pt-40 sm:pb-28 overflow-hidden">
       {/* Background glow effect */}
@@ -48,13 +49,20 @@ export default function HeroSection({ onSignIn }: HeroSectionProps) {
               &rarr;
             </span>
           </button>
-          <a
-            href="#how-it-works"
-            className="text-gray-400 hover:text-white transition-colors text-base font-medium underline underline-offset-4 decoration-gray-600 hover:decoration-gray-400"
+          <button
+            onClick={onGuest}
+            className="text-gray-300 hover:text-white transition-colors text-base font-medium bg-gray-800/60 hover:bg-gray-700/60 border border-gray-700/50 rounded-xl px-6 py-4"
           >
-            See How It Works
-          </a>
+            Try as Guest
+          </button>
         </div>
+
+        <a
+          href="#how-it-works"
+          className="text-gray-500 hover:text-gray-300 transition-colors text-sm underline underline-offset-4 decoration-gray-600 hover:decoration-gray-400 mb-4 block"
+        >
+          See How It Works
+        </a>
 
         {/* Streaming services */}
         <p className="text-gray-500 text-sm">

@@ -8,9 +8,10 @@ import FinalCTASection from "./FinalCTASection";
 
 interface LandingPageProps {
   onSignIn: () => void;
+  onGuest: () => void;
 }
 
-export default function LandingPage({ onSignIn }: LandingPageProps) {
+export default function LandingPage({ onSignIn, onGuest }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-purple-950 text-white">
       {/* Sticky header */}
@@ -33,7 +34,7 @@ export default function LandingPage({ onSignIn }: LandingPageProps) {
 
       {/* Page sections */}
       <main>
-        <HeroSection onSignIn={onSignIn} />
+        <HeroSection onSignIn={onSignIn} onGuest={onGuest} />
         <ProductPreviewSection />
         <BenefitsSection />
         <HowItWorksSection />
