@@ -295,6 +295,7 @@ export default function Home() {
     setError(null);
     setCategoryLiked([]);
     setCategoryDisliked([]);
+    setStep("category-recs");
 
     try {
       // Check if there are existing recs for this category
