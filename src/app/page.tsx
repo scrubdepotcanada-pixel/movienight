@@ -64,6 +64,7 @@ export default function Home() {
 
   // Search state
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
+  const [selectedSearchId, setSelectedSearchId] = useState<number | null>(null);
 
   // Recommendations state
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
@@ -254,14 +255,22 @@ export default function Home() {
       const res = await fetch(`/api/movies/search?q=${encodeURIComponent(query)}`);
       const data = await res.json();
       setSearchResults(data);
+      setSelectedSearchId(null);
     } catch (err) {
       console.error(err);
     }
     setLoading(false);
   };
 
-  const handlePickMovie = async (movie: Movie) => {
+  const handleSelectSearchMovie = (movie: Movie) => {
+    setSelectedSearchId((prev) => prev === movie.id ? null : movie.id);
+  };
+
+  const handleConfirmPick = async () => {
+    const movie = searchResults.find((m) => m.id === selectedSearchId);
+    if (!movie) return;
     setSearchResults([]);
+    setSelectedSearchId(null);
     setStep("recommendations");
     setLoading(true);
     setActiveCategory("general");
@@ -764,16 +773,30 @@ export default function Home() {
 
             {searchResults.length > 0 && (
               <div className="mt-6">
-                <h3 className="text-lg font-medium text-gray-300 mb-4">Tap the movie you love:</h3>
+                <h3 className="text-lg font-medium text-gray-300 mb-4">
+                  {selectedSearchId ? "Tap again to deselect, or confirm below:" : "Tap the movie you love:"}
+                </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {searchResults.map((movie) => (
                     <MovieCard
                       key={movie.id}
                       movie={movie}
-                      onClick={() => handlePickMovie(movie)}
+                      selected={selectedSearchId === movie.id}
+                      onClick={() => handleSelectSearchMovie(movie)}
                     />
                   ))}
                 </div>
+                {selectedSearchId && (
+                  <div className="mt-6 text-center">
+                    <button
+                      onClick={handleConfirmPick}
+                      disabled={loading}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-3 rounded-xl text-lg font-semibold transition-all hover:scale-105"
+                    >
+                      Find Movies Like This →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 

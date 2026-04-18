@@ -143,6 +143,8 @@ export async function getReplacementMoviesAI(
     tasteContext = `The user wants ${context.category} movies for movie night. Suggest ${fetchCount} great ${context.category} movies they haven't seen.`;
   } else if (context.likedMovie1 && context.likedMovie2) {
     tasteContext = `The user loves "${context.likedMovie1}" and "${context.likedMovie2}". They need ${fetchCount} new movie recommendations to replace movies they've already watched or didn't like. Suggest movies similar in taste to their liked movies.`;
+  } else if (context.likedMovie1) {
+    tasteContext = `The user loves "${context.likedMovie1}". They need ${fetchCount} new movie recommendations. Suggest movies similar in tone, genre, and style.`;
   } else {
     tasteContext = `Suggest ${fetchCount} great movies for movie night.`;
   }
