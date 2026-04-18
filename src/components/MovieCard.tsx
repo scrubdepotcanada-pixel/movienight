@@ -140,9 +140,17 @@ export default function MovieCard({
     ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`
     : null;
 
+  const showProviderFlip = showLike || showPass || showDislike;
+
   const handlePosterClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (selected) return;
+
+    // If no action buttons, use the onClick callback (e.g. search flow selection)
+    if (!showProviderFlip) {
+      onClick?.();
+      return;
+    }
 
     setLoadingProviders(true);
     try {

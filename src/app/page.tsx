@@ -429,12 +429,9 @@ export default function Home() {
       setRecommendations((prev) => {
         const idx = prev.findIndex((m) => m.id === movie.id);
         if (idx === -1) return prev;
+        if (!data.replacement) return prev;
         const next = [...prev];
-        if (data.replacement) {
-          next[idx] = data.replacement;
-        } else {
-          next.splice(idx, 1);
-        }
+        next[idx] = data.replacement;
         return next;
       });
 
@@ -469,12 +466,9 @@ export default function Home() {
       setRecommendations((prev) => {
         const idx = prev.findIndex((m) => m.id === movie.id);
         if (idx === -1) return prev;
+        if (!data.replacement) return prev;
         const next = [...prev];
-        if (data.replacement) {
-          next[idx] = data.replacement;
-        } else {
-          next.splice(idx, 1);
-        }
+        next[idx] = data.replacement;
         return next;
       });
     } catch (err) {
@@ -498,11 +492,12 @@ export default function Home() {
       const data = await res.json();
 
       setRecommendations((prev) => {
-        const updated = prev.filter((m) => m.id !== movie.id);
-        if (data.replacement) {
-          updated.push(data.replacement);
-        }
-        return updated;
+        const idx = prev.findIndex((m) => m.id === movie.id);
+        if (idx === -1) return prev;
+        if (!data.replacement) return prev;
+        const next = [...prev];
+        next[idx] = data.replacement;
+        return next;
       });
 
       // Update sidebar
@@ -636,38 +631,38 @@ export default function Home() {
     <main dir={dir} className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-purple-950 text-white">
       {/* Header */}
       <header className="border-b border-gray-800/50 bg-black/20 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={() => { setStep("select-member"); setSelectedMember(null); setViewingAll(false); }}>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+        <div className="max-w-7xl mx-auto px-3 py-2 sm:px-4 sm:py-4 flex items-center justify-between gap-2">
+          <button onClick={() => { setStep("select-member"); setSelectedMember(null); setViewingAll(false); }} className="flex-shrink-0">
+            <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
               Next Movie
             </h1>
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 flex-wrap justify-end">
             {isCategoryStep && (
               <button
                 onClick={handleStartFresh}
-                className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg transition-colors"
+                className="text-[10px] sm:text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-colors"
               >
                 Change category
               </button>
             )}
             {selectedMember && (
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <span className="text-xl">{selectedMember.avatar}</span>
-                <span>{selectedMember.name}</span>
+              <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-300">
+                <span className="text-base sm:text-xl">{selectedMember.avatar}</span>
+                <span className="hidden sm:inline">{selectedMember.name}</span>
                 {(() => {
                   const r = selectedMember.max_rating || (selectedMember.age != null ? (selectedMember.age < 7 ? "G" : selectedMember.age < 10 ? "PG" : selectedMember.age < 14 ? "PG-13" : selectedMember.age < 17 ? "R" : "ALL") : "ALL");
                   const color = r === "G" ? "bg-green-600" : r === "PG" ? "bg-blue-600" : r === "PG-13" ? "bg-yellow-600" : r === "R" ? "bg-red-600" : "bg-purple-600";
                   const label = r === "ALL" ? "All Ratings" : `Rated ${r}`;
                   return (
-                    <span className={`${color} text-white text-[11px] font-bold px-2 py-0.5 rounded-full`}>
+                    <span className={`${color} text-white text-[9px] sm:text-[11px] font-bold px-1.5 py-0.5 rounded-full`}>
                       {label}
                     </span>
                   );
                 })()}
                 <button
                   onClick={() => { setStep("select-member"); setSelectedMember(null); }}
-                  className="ml-1 text-purple-400 hover:text-purple-300 underline text-xs"
+                  className="text-purple-400 hover:text-purple-300 underline text-[10px] sm:text-xs"
                 >
                   Switch
                 </button>
@@ -676,9 +671,9 @@ export default function Home() {
             {isGuest ? (
               <button
                 onClick={() => signIn("google")}
-                className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition-colors"
+                className="text-[10px] sm:text-xs bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg transition-colors flex-shrink-0"
               >
-                Sign in to save
+                Sign in
               </button>
             ) : (
               <>
