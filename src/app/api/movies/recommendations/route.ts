@@ -8,6 +8,7 @@ import db from "@/lib/db";
 export async function GET(req: NextRequest) {
   const likedMovie1 = req.nextUrl.searchParams.get("likedMovie1");
   const likedMovie2 = req.nextUrl.searchParams.get("likedMovie2");
+  const likedMovie3 = req.nextUrl.searchParams.get("likedMovie3");
   const memberId = req.nextUrl.searchParams.get("memberId");
   const category = req.nextUrl.searchParams.get("category") || "general";
   if (!likedMovie1 || !likedMovie2 || !memberId) {
@@ -31,11 +32,12 @@ export async function GET(req: NextRequest) {
 
   const locale = req.cookies.get("locale")?.value;
 
-  const suggestions = await getRecommendationsAI(likedMovie1, likedMovie2, watchedTitles, dislikedTitles, maxRating);
+  const suggestions = await getRecommendationsAI(likedMovie1, likedMovie2, watchedTitles, dislikedTitles, maxRating, likedMovie3);
   const allMovies = await resolveAISuggestions(suggestions, locale);
   const movies = allMovies.filter((m) => isMovieAllowed(m.certification, maxRating)).slice(0, 5);
 
-  for (const title of [likedMovie1, likedMovie2]) {
+  const likedTitles = [likedMovie1, likedMovie2, likedMovie3].filter(Boolean);
+  for (const title of likedTitles) {
     await db.execute({
       sql: "INSERT INTO liked_movies (member_id, title, category) VALUES (?, ?, ?)",
       args: [memberId, title, category],

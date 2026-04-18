@@ -81,14 +81,20 @@ export async function getRecommendationsAI(
   likedMovie2: string,
   watchedTitles: string[],
   dislikedTitles: string[] = [],
-  maxRating: MaxRating | null = null
+  maxRating: MaxRating | null = null,
+  likedMovie3?: string | null
 ): Promise<MovieSuggestion[]> {
   const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
   const ratingBlock = ratingRestrictionPrompt(maxRating);
   const count = 5 + bonusCount(maxRating);
 
+  const movieList = likedMovie3
+    ? `"${likedMovie1}", "${likedMovie2}", and "${likedMovie3}"`
+    : `"${likedMovie1}" and "${likedMovie2}"`;
+  const excludeList = [likedMovie1, likedMovie2, likedMovie3].filter(Boolean).map((t) => `"${t}"`).join(", ");
+
   return askForMovies(
-    `The user loves these two movies: "${likedMovie1}" and "${likedMovie2}". Based on their taste across both movies, suggest ${count} movies they would love for movie night. Consider the common themes, genres, mood, and style across both picks. Mix popular and lesser-known gems.${excludeBlock}${ratingBlock}\n\nDo NOT include "${likedMovie1}" or "${likedMovie2}" in your suggestions. Return exactly ${count} movies.`,
+    `The user loves these movies: ${movieList}. Based on their taste across all of them, suggest ${count} movies they would love for movie night. Consider the common themes, genres, mood, and style across all their picks. Mix popular and lesser-known gems.${excludeBlock}${ratingBlock}\n\nDo NOT include ${excludeList} in your suggestions. Return exactly ${count} movies.`,
     count
   );
 }
