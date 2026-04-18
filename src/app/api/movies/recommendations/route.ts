@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
   const suggestions = await getRecommendationsAI(likedMovie1, likedMovie2, watchedTitles, dislikedTitles, maxRating, likedMovie3);
   const allMovies = await resolveAISuggestions(suggestions, locale);
-  const movies = allMovies.filter((m) => isMovieAllowed(m.certification, maxRating)).slice(0, 5);
+  const movies = allMovies.filter((m) => isMovieAllowed(m.certification, maxRating)).slice(0, 6);
 
   const likedTitles = [likedMovie1, likedMovie2, likedMovie3].filter(Boolean);
   for (const title of likedTitles) {

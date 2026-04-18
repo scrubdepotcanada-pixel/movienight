@@ -86,7 +86,7 @@ export async function getRecommendationsAI(
 ): Promise<MovieSuggestion[]> {
   const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
   const ratingBlock = ratingRestrictionPrompt(maxRating);
-  const count = 5 + bonusCount(maxRating);
+  const count = 8 + bonusCount(maxRating);
 
   const allLiked = [likedMovie1, likedMovie2, likedMovie3].filter(Boolean) as string[];
   const movieList = allLiked.map((t) => `"${t}"`).join(", ");
@@ -107,7 +107,7 @@ export async function getCategoryRecommendationsAI(
 ): Promise<MovieSuggestion[]> {
   const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
   const ratingBlock = ratingRestrictionPrompt(maxRating);
-  const count = 5 + bonusCount(maxRating);
+  const count = 8 + bonusCount(maxRating);
 
   return askForMovies(
     `Suggest ${count} must-watch ${category} movies for a movie night. Include a mix of all-time classics and great recent films in the ${category} genre. Pick movies that best represent what makes ${category} great — the ones that fans of the genre absolutely need to see.${excludeBlock}${ratingBlock}\n\nReturn exactly ${count} movies.`,

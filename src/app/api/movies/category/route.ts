@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
     const suggestions = await getCategoryRecommendationsAI(category, watchedTitles, dislikedTitles, maxRating);
     const allMovies = await resolveAISuggestions(suggestions, locale);
-    const movies = allMovies.filter((m) => isMovieAllowed(m.certification, maxRating)).slice(0, 5);
+    const movies = allMovies.filter((m) => isMovieAllowed(m.certification, maxRating)).slice(0, 6);
 
     await db.execute({
       sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND category = ?",

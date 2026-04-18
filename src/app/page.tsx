@@ -90,7 +90,7 @@ export default function Home() {
 
   // Top up recommendations to 5 if some were lost to dedup/filtering
   const topUpRecommendations = useCallback(async (currentRecs: Movie[], memberId: number, category: string) => {
-    const missing = 5 - currentRecs.length;
+    const missing = 6 - currentRecs.length;
     if (missing <= 0) return currentRecs;
 
     try {
@@ -567,11 +567,11 @@ export default function Home() {
         </div>
       )}
 
-      {/* Movie row - fixed size cards, max 5 */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+      {/* Movie row - 6 cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
         {recommendations
           .filter((m) => !categoryLiked.some((l) => l.title === m.title))
-          .slice(0, 5)
+          .slice(0, 6)
           .map((movie) => (
           <MovieCard
             key={movie.id}
