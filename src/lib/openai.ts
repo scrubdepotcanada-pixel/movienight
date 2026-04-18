@@ -78,7 +78,7 @@ export async function getSimilarMoviesAI(
 
 export async function getRecommendationsAI(
   likedMovie1: string,
-  likedMovie2: string,
+  likedMovie2: string | null,
   watchedTitles: string[],
   dislikedTitles: string[] = [],
   maxRating: MaxRating | null = null,
@@ -88,15 +88,15 @@ export async function getRecommendationsAI(
   const ratingBlock = ratingRestrictionPrompt(maxRating);
   const count = 5 + bonusCount(maxRating);
 
-  const movieList = likedMovie3
-    ? `"${likedMovie1}", "${likedMovie2}", and "${likedMovie3}"`
-    : `"${likedMovie1}" and "${likedMovie2}"`;
-  const excludeList = [likedMovie1, likedMovie2, likedMovie3].filter(Boolean).map((t) => `"${t}"`).join(", ");
+  const allLiked = [likedMovie1, likedMovie2, likedMovie3].filter(Boolean) as string[];
+  const movieList = allLiked.map((t) => `"${t}"`).join(", ");
+  const excludeList = movieList;
 
-  return askForMovies(
-    `The user loves these movies: ${movieList}. Based on their taste across all of them, suggest ${count} movies they would love for movie night. Consider the common themes, genres, mood, and style across all their picks. Mix popular and lesser-known gems.${excludeBlock}${ratingBlock}\n\nDo NOT include ${excludeList} in your suggestions. Return exactly ${count} movies.`,
-    count
-  );
+  const prompt = allLiked.length === 1
+    ? `The user loves the movie "${allLiked[0]}". Suggest ${count} movies they would love for movie night. Consider similar themes, genres, mood, and style. Mix popular and lesser-known gems.${excludeBlock}${ratingBlock}\n\nDo NOT include "${allLiked[0]}" in your suggestions. Return exactly ${count} movies.`
+    : `The user loves these movies: ${movieList}. Based on their taste across all of them, suggest ${count} movies they would love for movie night. Consider the common themes, genres, mood, and style across all their picks. Mix popular and lesser-known gems.${excludeBlock}${ratingBlock}\n\nDo NOT include ${excludeList} in your suggestions. Return exactly ${count} movies.`;
+
+  return askForMovies(prompt, count);
 }
 
 export async function getCategoryRecommendationsAI(

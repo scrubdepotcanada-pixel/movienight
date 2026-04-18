@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
   const likedMovie3 = req.nextUrl.searchParams.get("likedMovie3");
   const memberId = req.nextUrl.searchParams.get("memberId");
   const category = req.nextUrl.searchParams.get("category") || "general";
-  if (!likedMovie1 || !likedMovie2 || !memberId) {
+  if (!likedMovie1 || !memberId) {
     return NextResponse.json({ error: "Missing required params" }, { status: 400 });
   }
 

@@ -64,7 +64,6 @@ export default function Home() {
 
   // Search state
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
-  const [selectedSearchMovies, setSelectedSearchMovies] = useState<Movie[]>([]);
 
   // Recommendations state
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
@@ -165,7 +164,6 @@ export default function Home() {
     setViewingAll(false);
     setWatchedSelection(new Set());
     setSearchResults([]);
-    setSelectedSearchMovies([]);
     setActiveCategory("general");
     setCategoryLiked([]);
     setCategoryDisliked([]);
@@ -256,36 +254,25 @@ export default function Home() {
       const res = await fetch(`/api/movies/search?q=${encodeURIComponent(query)}`);
       const data = await res.json();
       setSearchResults(data);
-      setSelectedSearchMovies([]);
     } catch (err) {
       console.error(err);
     }
     setLoading(false);
   };
 
-  const handleToggleSearchMovie = (movie: Movie) => {
-    setSelectedSearchMovies((prev) => {
-      const exists = prev.find((m) => m.id === movie.id);
-      if (exists) return prev.filter((m) => m.id !== movie.id);
-      if (prev.length >= 3) return prev;
-      return [...prev, movie];
-    });
-  };
-
-  const handleSubmitSearchPicks = async () => {
-    if (selectedSearchMovies.length < 3) return;
+  const handlePickMovie = async (movie: Movie) => {
+    setSearchResults([]);
+    setStep("recommendations");
     setLoading(true);
     setActiveCategory("general");
     try {
-      const titles = selectedSearchMovies.map((m) => m.title);
       const res = await fetch(
-        `/api/movies/recommendations?likedMovie1=${encodeURIComponent(titles[0])}&likedMovie2=${encodeURIComponent(titles[1])}&likedMovie3=${encodeURIComponent(titles[2])}&memberId=${selectedMember!.id}&category=general`
+        `/api/movies/recommendations?likedMovie1=${encodeURIComponent(movie.title)}&likedMovie2=&memberId=${selectedMember!.id}&category=general`
       );
       const data = await res.json();
-      setRecommendations(data.movies);
+      setRecommendations(data.movies || []);
       setWatchedSelection(new Set());
       await loadCategoryHistory(selectedMember!.id, "general");
-      setStep("recommendations");
     } catch (err) {
       console.error(err);
     }
@@ -507,7 +494,6 @@ export default function Home() {
 
   const handleStartFresh = () => {
     setSearchResults([]);
-    setSelectedSearchMovies([]);
     setRecommendations([]);
     setWatchedSelection(new Set());
     setActiveCategory("general");
@@ -651,10 +637,23 @@ export default function Home() {
                   );
                 })()}
                 <button
-                  onClick={() => { setStep("select-member"); setSelectedMember(null); }}
+                  onClick={async () => {
+                    if (isGuest) {
+                      await fetch("/api/guest/clear", { method: "POST" });
+                      setMembers([]);
+                      setGuestMode(false);
+                    }
+                    setSelectedMember(null);
+                    setRecommendations([]);
+                    setSearchResults([]);
+                    setCategoryLiked([]);
+                    setCategoryDisliked([]);
+                    setActiveCategories([]);
+                    setStep("select-member");
+                  }}
                   className="text-purple-400 hover:text-purple-300 underline text-[10px] sm:text-xs"
                 >
-                  Switch
+                  {isGuest ? "Restart" : "Switch"}
                 </button>
               </div>
             )}
@@ -758,61 +757,20 @@ export default function Home() {
               <h2 className="text-3xl font-bold mb-2">
                 Hey {selectedMember.name}! {selectedMember.avatar}
               </h2>
-              <p className="text-gray-400">Pick 3 movies you love and we&apos;ll find your next watch</p>
+              <p className="text-gray-400">Search a movie you love and tap it to get started</p>
             </div>
 
             <SearchBar onSearch={handleSearch} loading={loading} />
 
-            {/* Selection counter */}
-            {selectedSearchMovies.length > 0 && (
-              <div className="mt-6 text-center">
-                <div className="inline-flex items-center gap-3 bg-gray-800/60 border border-gray-700/50 rounded-full px-5 py-2.5">
-                  <div className="flex gap-1">
-                    {[0, 1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className={`w-3 h-3 rounded-full transition-colors ${i < selectedSearchMovies.length ? "bg-purple-500" : "bg-gray-600"}`}
-                      />
-                    ))}
-                  </div>
-                  <span className="text-gray-300 text-sm font-medium">
-                    {selectedSearchMovies.length}/3 selected
-                  </span>
-                  {selectedSearchMovies.length === 3 && (
-                    <button
-                      onClick={handleSubmitSearchPicks}
-                      disabled={loading}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-4 py-1.5 rounded-full text-sm font-semibold transition-all hover:scale-105"
-                    >
-                      Get Recommendations →
-                    </button>
-                  )}
-                </div>
-                <div className="flex flex-wrap justify-center gap-2 mt-3">
-                  {selectedSearchMovies.map((m) => (
-                    <span key={m.id} className="inline-flex items-center gap-1 bg-purple-900/30 border border-purple-500/40 text-purple-300 text-xs px-2.5 py-1 rounded-full">
-                      {m.title}
-                      <button onClick={() => handleToggleSearchMovie(m)} className="text-purple-400 hover:text-red-400 font-bold">&times;</button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
             {searchResults.length > 0 && (
               <div className="mt-6">
-                <h3 className="text-lg font-medium text-gray-300 mb-4">
-                  {selectedSearchMovies.length < 3
-                    ? `Pick ${3 - selectedSearchMovies.length} more movie${3 - selectedSearchMovies.length > 1 ? "s" : ""} you love:`
-                    : "Ready! Click 'Get Recommendations' above"}
-                </h3>
+                <h3 className="text-lg font-medium text-gray-300 mb-4">Tap the movie you love:</h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {searchResults.map((movie) => (
                     <MovieCard
                       key={movie.id}
                       movie={movie}
-                      selected={selectedSearchMovies.some((m) => m.id === movie.id)}
-                      onClick={() => handleToggleSearchMovie(movie)}
+                      onClick={() => handlePickMovie(movie)}
                     />
                   ))}
                 </div>
@@ -871,7 +829,14 @@ export default function Home() {
             </div>
 
             {loading ? (
-              <LoadingSpinner />
+              <div className="text-center py-16">
+                <div className="text-5xl mb-6 animate-bounce">🍿</div>
+                <h3 className="text-2xl font-bold text-white mb-3">Loading your movie night suggestions...</h3>
+                <p className="text-gray-400 text-sm">Like, dislike, or pass to teach us what you enjoy</p>
+                <div className="mt-8">
+                  <div className="w-12 h-12 mx-auto rounded-full border-4 border-gray-700 border-t-purple-500 animate-spin" />
+                </div>
+              </div>
             ) : (
               <>
                 {renderRecommendationGrid()}
