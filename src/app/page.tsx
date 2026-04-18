@@ -841,12 +841,14 @@ export default function Home() {
         {step === "recommendations" && selectedMember && (
           <div className="pt-8">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2">Your Top Picks</h2>
-              <p className="text-gray-400">
-              </p>
-              <div className="flex items-center justify-center gap-6 mt-3 text-sm">
+              <div className="text-4xl mb-3">🎬</div>
+              <h2 className="text-3xl sm:text-4xl font-bold mb-3">
+                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Here&apos;s what we recommend</span>
+              </h2>
+              <p className="text-gray-300 text-lg mb-2">Tap a poster to learn more. Already watched? Let us know!</p>
+              <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-4 text-xs sm:text-sm">
                 <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-green-600 rounded-full w-6 h-6 flex items-center justify-center text-white text-[10px]">👍</span> Liked = more like this</span>
-                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-gray-500 rounded-full w-6 h-6 flex items-center justify-center text-white text-[10px]">⏭</span> Pass = skip, no effect</span>
+                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-gray-500 rounded-full w-6 h-6 flex items-center justify-center text-white text-[10px]">⏭</span> Pass = skip</span>
                 <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-red-600 rounded-full w-6 h-6 flex items-center justify-center text-white text-[10px]">👎</span> Nope = avoid similar</span>
               </div>
             </div>
