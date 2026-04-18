@@ -59,7 +59,7 @@ export default function Home() {
 
   // Scroll to top on step change
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: "instant" });
+    setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 50);
   }, [step]);
 
   // Search state
@@ -762,7 +762,7 @@ export default function Home() {
 
         {/* STEP: Search */}
         {step === "search" && selectedMember && (
-          <div className="pt-8">
+          <div className="pt-6">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">
                 Hey {selectedMember.name}! {selectedMember.avatar}
@@ -840,7 +840,7 @@ export default function Home() {
 
         {/* STEP: Recommendations (general) */}
         {step === "recommendations" && selectedMember && (
-          <div className="pt-8">
+          <div className="pt-6">
             <div className="text-center mb-8">
               <div className="text-4xl mb-3">🎬</div>
               <h2 className="text-3xl sm:text-4xl font-bold mb-3">
@@ -875,7 +875,7 @@ export default function Home() {
 
         {/* STEP: Category Recommendations */}
         {step === "category-recs" && selectedMember && (
-          <div className="pt-8">
+          <div className="pt-6">
             <div className="text-center mb-8">
               <div className="text-4xl mb-3">{genreIcon}</div>
               <h2 className="text-3xl sm:text-4xl font-bold mb-3">
@@ -905,7 +905,7 @@ export default function Home() {
 
         {/* STEP: Returning User (general) */}
         {step === "returning" && selectedMember && (
-          <div className="pt-8">
+          <div className="pt-6">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">
                 Welcome back, {selectedMember.name}! {selectedMember.avatar}
@@ -936,7 +936,7 @@ export default function Home() {
 
         {/* STEP: Category Returning */}
         {step === "category-returning" && selectedMember && (
-          <div className="pt-8">
+          <div className="pt-6">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">
                 {genreIcon} Your {genreLabel} List
@@ -967,7 +967,7 @@ export default function Home() {
 
         {/* STEP: All Members View */}
         {step === "all-members" && (
-          <div className="pt-8">
+          <div className="pt-6">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">Family Movie Board</h2>
               <p className="text-gray-400">See what everyone is watching</p>
