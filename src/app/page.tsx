@@ -884,10 +884,10 @@ export default function Home() {
           <div className="pt-8">
             <div className="text-center mb-8">
               <h2 className="text-3xl font-bold mb-2">
-                {genreIcon} Top {genreLabel} Picks
+                {genreIcon} {genreLabel} We Recommend
               </h2>
               <p className="text-gray-400">
-                Hover to read about it, then like or dislike
+                Tap a poster to learn more, then like or dislike
               </p>
             </div>
 
@@ -918,7 +918,7 @@ export default function Home() {
                 Welcome back, {selectedMember.name}! {selectedMember.avatar}
               </h2>
               <p className="text-gray-400">
-                Hover to read about it, then like or dislike
+                Tap a poster to learn more, then like or dislike
               </p>
             </div>
 
@@ -949,7 +949,7 @@ export default function Home() {
                 {genreIcon} Your {genreLabel} List
               </h2>
               <p className="text-gray-400">
-                Hover to read about it, then like or dislike
+                Tap a poster to learn more, then like or dislike
               </p>
             </div>
 
