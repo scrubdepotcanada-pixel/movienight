@@ -854,14 +854,7 @@ export default function Home() {
             </div>
 
             {loading ? (
-              <div className="text-center py-16">
-                <div className="text-5xl mb-6 animate-bounce">🍿</div>
-                <h3 className="text-2xl font-bold text-white mb-3">Loading your movie night suggestions...</h3>
-                <p className="text-gray-400 text-sm">Like, dislike, or pass to teach us what you enjoy</p>
-                <div className="mt-8">
-                  <div className="w-12 h-12 mx-auto rounded-full border-4 border-gray-700 border-t-purple-500 animate-spin" />
-                </div>
-              </div>
+              <MovieLoadingScreen />
             ) : (
               <>
                 {renderRecommendationGrid()}
@@ -891,7 +884,7 @@ export default function Home() {
             </div>
 
             {loading ? (
-              <LoadingSpinner />
+              <MovieLoadingScreen />
             ) : (
               <>
                 {renderRecommendationGrid()}
@@ -922,7 +915,7 @@ export default function Home() {
             </div>
 
             {loading ? (
-              <LoadingSpinner />
+              <MovieLoadingScreen />
             ) : (
               <>
                 {renderRecommendationGrid()}
@@ -953,7 +946,7 @@ export default function Home() {
             </div>
 
             {loading ? (
-              <LoadingSpinner />
+              <MovieLoadingScreen />
             ) : (
               <>
                 {renderRecommendationGrid()}
@@ -1090,6 +1083,19 @@ function GuestSetup({ onDone }: { existingMember: Member | null; onDone: (name: 
             Start Picking Movies 🍿
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function MovieLoadingScreen() {
+  return (
+    <div className="text-center py-16">
+      <div className="text-5xl mb-6 animate-bounce">🍿</div>
+      <h3 className="text-2xl font-bold text-white mb-3">Loading your movie night suggestions...</h3>
+      <p className="text-gray-400 text-sm">Like, dislike, or pass to teach us what you enjoy</p>
+      <div className="mt-8">
+        <div className="w-12 h-12 mx-auto rounded-full border-4 border-gray-700 border-t-purple-500 animate-spin" />
       </div>
     </div>
   );
