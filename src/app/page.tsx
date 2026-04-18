@@ -883,12 +883,11 @@ export default function Home() {
         {step === "category-recs" && selectedMember && (
           <div className="pt-8">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2">
-                {genreIcon} {genreLabel} We Recommend
+              <div className="text-4xl mb-3">{genreIcon}</div>
+              <h2 className="text-3xl sm:text-4xl font-bold mb-3">
+                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">{genreLabel} We Recommend</span>
               </h2>
-              <p className="text-gray-400">
-                Tap a poster to learn more, then like or dislike
-              </p>
+              <p className="text-gray-300 text-lg">Tap a poster to learn more, then like or dislike</p>
             </div>
 
             {loading ? (
