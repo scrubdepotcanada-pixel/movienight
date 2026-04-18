@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
 
   const context = category !== "general"
     ? { category }
-    : { likedMovie1: likedTitles[0], likedMovie2: likedTitles[1] || null };
+    : { likedMovie1: likedTitles[0], likedMovie2: likedTitles[1] || undefined };
 
   if (category === "general" && likedTitles.length < 1) {
     return NextResponse.json({ replacement: null });
