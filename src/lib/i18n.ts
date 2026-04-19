@@ -2,17 +2,13 @@
 
 import { useState, useEffect } from "react";
 
-export type Locale = "en" | "he" | "fr" | "es" | "ar" | "ru";
+export type Locale = "en" | "he" | "fr" | "es" | "ar" | "ru" | "de";
 
 export const translations = {
   en: {
-    // Brand
     brandName: "Next Movie",
-
-    // Landing page
     heroHeadline: "AI movie picks for the whole family — without the arguing.",
-    heroSubtext:
-      "No more scrolling, no more debates. Just the right movie for everyone — instantly.",
+    heroSubtext: "No more scrolling, no more debates. Just the right movie for everyone — instantly.",
     free: "100% Free",
     poweredByAI: "Powered by AI",
     worksWithServices: "Works with Netflix, Disney+, Prime & more",
@@ -21,42 +17,26 @@ export const translations = {
     passExplainer: "Pass = skip, no effect",
     nopeExplainer: "Nope = avoid similar",
     hoverExplainer: "Hover to read about it, then like or dislike",
-
-    // Member selector
     whosWatching: "Who's watching tonight?",
-    pickProfile:
-      "Pick your profile for personalized picks — or add a family member",
+    pickProfile: "Pick your profile for personalized picks — or add a family member",
     startPicking: "Start Picking",
     tryAsGuest: "Try as Guest",
-
-    // Auth
     signIn: "Sign In",
     signOut: "Sign out",
     signInToSave: "Sign in to save",
-
-    // Greeting
     hey: "Hey {name}!",
-
-    // Search
-    searchPrompt:
-      "Tell us a movie you love and we'll find your next watch",
+    searchPrompt: "Tell us a movie you love and we'll find your next watch",
     searchPlaceholder: "Enter a movie you love...",
     search: "Search",
-
-    // Categories
     orBrowseByCategory: "Or browse by category",
     continueWhereYouLeftOff: "Continue where you left off",
     changeCategory: "Change category",
     switchLabel: "Switch",
     browseDifferentCategory: "Browse a different category",
     startOverDifferentMovie: "Start over with a different movie",
-
-    // Actions
     liked: "Liked",
     pass: "Pass",
     nope: "Nope",
-
-    // Genres
     genreAction: "Action",
     genreComedy: "Comedy",
     genreDrama: "Drama",
@@ -69,8 +49,6 @@ export const translations = {
     genreFantasy: "Fantasy",
     genreMystery: "Mystery",
     genreAdventure: "Adventure",
-
-    // Onboarding
     letsGetStarted: "Let's get started",
     quickSetup: "Quick setup — takes 10 seconds",
     yourName: "Your name",
@@ -79,29 +57,20 @@ export const translations = {
     startPickingMovies: "Start Picking Movies",
     addMember: "Add Member",
     everyone: "Everyone",
-
-    // Ratings
     ratingKids: "Kids",
     ratingFamily: "Family",
     ratingTeens: "Teens",
     ratingAdult: "Adult",
     ratingNoLimit: "No limit",
     allRatings: "All Ratings",
-
-    // History
     history: "history",
     picks: "picks",
   },
 
   he: {
-    // Brand
     brandName: "Next Movie",
-
-    // Landing page
-    heroHeadline:
-      "המלצות סרטים בינה מלאכותית לכל המשפחה — בלי הויכוחים.",
-    heroSubtext:
-      "בלי גלילה אינסופית, בלי ויכוחים. רק הסרט הנכון לכולם — מיידית.",
+    heroHeadline: "המלצות סרטים בינה מלאכותית לכל המשפחה — בלי הויכוחים.",
+    heroSubtext: "בלי גלילה אינסופית, בלי ויכוחים. רק הסרט הנכון לכולם — מיידית.",
     free: "חינם 100%",
     poweredByAI: "מופעל בינה מלאכותית",
     worksWithServices: "עובד עם נטפליקס, דיסני+, פריים ועוד",
@@ -110,42 +79,26 @@ export const translations = {
     passExplainer: "דלג = דלג, בלי השפעה",
     nopeExplainer: "לא = הימנע מדומים",
     hoverExplainer: "רחף לקריאה, ואז אהב או לא",
-
-    // Member selector
     whosWatching: "מי צופה הערב?",
-    pickProfile:
-      "בחר את הפרופיל שלך להמלצות מותאמות — או הוסף בן משפחה",
+    pickProfile: "בחר את הפרופיל שלך להמלצות מותאמות — או הוסף בן משפחה",
     startPicking: "התחל לבחור",
     tryAsGuest: "נסה כאורח",
-
-    // Auth
     signIn: "התחבר",
     signOut: "התנתק",
     signInToSave: "התחבר כדי לשמור",
-
-    // Greeting
     hey: "!{name} היי",
-
-    // Search
-    searchPrompt:
-      "ספר לנו על סרט שאהבת ונמצא לך את הבא",
+    searchPrompt: "ספר לנו על סרט שאהבת ונמצא לך את הבא",
     searchPlaceholder: "...הזן סרט שאהבת",
     search: "חפש",
-
-    // Categories
     orBrowseByCategory: "או עיין לפי קטגוריה",
     continueWhereYouLeftOff: "המשך מאיפה שהפסקת",
     changeCategory: "שנה קטגוריה",
     switchLabel: "החלף",
     browseDifferentCategory: "עיין בקטגוריה אחרת",
     startOverDifferentMovie: "התחל מחדש עם סרט אחר",
-
-    // Actions
     liked: "אהבתי",
     pass: "דלג",
     nope: "לא",
-
-    // Genres
     genreAction: "אקשן",
     genreComedy: "קומדיה",
     genreDrama: "דרמה",
@@ -158,8 +111,6 @@ export const translations = {
     genreFantasy: "פנטזיה",
     genreMystery: "מסתורין",
     genreAdventure: "הרפתקאות",
-
-    // Onboarding
     letsGetStarted: "בואו נתחיל",
     quickSetup: "הגדרה מהירה — לוקח 10 שניות",
     yourName: "השם שלך",
@@ -168,28 +119,329 @@ export const translations = {
     startPickingMovies: "התחל לבחור סרטים",
     addMember: "הוסף חבר",
     everyone: "כולם",
-
-    // Ratings
     ratingKids: "ילדים",
     ratingFamily: "משפחה",
     ratingTeens: "נוער",
     ratingAdult: "מבוגרים",
     ratingNoLimit: "ללא הגבלה",
     allRatings: "כל הדירוגים",
-
-    // History
     history: "היסטוריה",
     picks: "בחירות",
+  },
+
+  fr: {
+    brandName: "Next Movie",
+    heroHeadline: "Des recommandations de films IA pour toute la famille — sans les disputes.",
+    heroSubtext: "Plus de scroll infini, plus de débats. Juste le bon film pour tout le monde — instantanément.",
+    free: "100% Gratuit",
+    poweredByAI: "Propulsé par l'IA",
+    worksWithServices: "Fonctionne avec Netflix, Disney+, Prime & plus",
+    freeForever: "Gratuit pour toujours, sans carte bancaire",
+    likedExplainer: "Aimé = plus comme ça",
+    passExplainer: "Passer = ignorer, sans effet",
+    nopeExplainer: "Non = éviter les similaires",
+    hoverExplainer: "Survolez pour lire, puis aimez ou non",
+    whosWatching: "Qui regarde ce soir ?",
+    pickProfile: "Choisissez votre profil pour des recommandations personnalisées — ou ajoutez un membre",
+    startPicking: "Commencer",
+    tryAsGuest: "Essayer en invité",
+    signIn: "Se connecter",
+    signOut: "Se déconnecter",
+    signInToSave: "Se connecter pour sauvegarder",
+    hey: "Salut {name} !",
+    searchPrompt: "Dites-nous un film que vous aimez et on trouve votre prochain",
+    searchPlaceholder: "Entrez un film que vous aimez...",
+    search: "Rechercher",
+    orBrowseByCategory: "Ou parcourir par catégorie",
+    continueWhereYouLeftOff: "Reprendre où vous en étiez",
+    changeCategory: "Changer de catégorie",
+    switchLabel: "Changer",
+    browseDifferentCategory: "Parcourir une autre catégorie",
+    startOverDifferentMovie: "Recommencer avec un autre film",
+    liked: "Aimé",
+    pass: "Passer",
+    nope: "Non",
+    genreAction: "Action",
+    genreComedy: "Comédie",
+    genreDrama: "Drame",
+    genreHorror: "Horreur",
+    genreSciFi: "Science-fiction",
+    genreRomance: "Romance",
+    genreThriller: "Thriller",
+    genreAnimation: "Animation",
+    genreDocumentary: "Documentaire",
+    genreFantasy: "Fantaisie",
+    genreMystery: "Mystère",
+    genreAdventure: "Aventure",
+    letsGetStarted: "Commençons",
+    quickSetup: "Configuration rapide — 10 secondes",
+    yourName: "Votre prénom",
+    age: "Âge",
+    whatCanYouWatch: "Que pouvez-vous regarder ?",
+    startPickingMovies: "Choisir des films",
+    addMember: "Ajouter un membre",
+    everyone: "Tout le monde",
+    ratingKids: "Enfants",
+    ratingFamily: "Famille",
+    ratingTeens: "Ados",
+    ratingAdult: "Adulte",
+    ratingNoLimit: "Sans limite",
+    allRatings: "Tous les âges",
+    history: "historique",
+    picks: "choix",
+  },
+
+  es: {
+    brandName: "Next Movie",
+    heroHeadline: "Recomendaciones de películas con IA para toda la familia — sin discusiones.",
+    heroSubtext: "Sin más scroll infinito, sin más debates. Solo la película perfecta para todos — al instante.",
+    free: "100% Gratis",
+    poweredByAI: "Impulsado por IA",
+    worksWithServices: "Funciona con Netflix, Disney+, Prime y más",
+    freeForever: "Gratis para siempre, sin tarjeta de crédito",
+    likedExplainer: "Me gustó = más como esto",
+    passExplainer: "Pasar = saltar, sin efecto",
+    nopeExplainer: "No = evitar similares",
+    hoverExplainer: "Pasa el cursor para leer, luego me gusta o no",
+    whosWatching: "¿Quién mira esta noche?",
+    pickProfile: "Elige tu perfil para recomendaciones personalizadas — o añade un familiar",
+    startPicking: "Empezar",
+    tryAsGuest: "Probar como invitado",
+    signIn: "Iniciar sesión",
+    signOut: "Cerrar sesión",
+    signInToSave: "Inicia sesión para guardar",
+    hey: "¡Hola {name}!",
+    searchPrompt: "Dinos una película que te guste y encontraremos tu próxima",
+    searchPlaceholder: "Ingresa una película que te guste...",
+    search: "Buscar",
+    orBrowseByCategory: "O explorar por categoría",
+    continueWhereYouLeftOff: "Continuar donde lo dejaste",
+    changeCategory: "Cambiar categoría",
+    switchLabel: "Cambiar",
+    browseDifferentCategory: "Explorar otra categoría",
+    startOverDifferentMovie: "Empezar de nuevo con otra película",
+    liked: "Me gustó",
+    pass: "Pasar",
+    nope: "No",
+    genreAction: "Acción",
+    genreComedy: "Comedia",
+    genreDrama: "Drama",
+    genreHorror: "Terror",
+    genreSciFi: "Ciencia ficción",
+    genreRomance: "Romance",
+    genreThriller: "Thriller",
+    genreAnimation: "Animación",
+    genreDocumentary: "Documental",
+    genreFantasy: "Fantasía",
+    genreMystery: "Misterio",
+    genreAdventure: "Aventura",
+    letsGetStarted: "Empecemos",
+    quickSetup: "Configuración rápida — 10 segundos",
+    yourName: "Tu nombre",
+    age: "Edad",
+    whatCanYouWatch: "¿Qué puedes ver?",
+    startPickingMovies: "Elegir películas",
+    addMember: "Añadir miembro",
+    everyone: "Todos",
+    ratingKids: "Niños",
+    ratingFamily: "Familia",
+    ratingTeens: "Jóvenes",
+    ratingAdult: "Adulto",
+    ratingNoLimit: "Sin límite",
+    allRatings: "Todas las edades",
+    history: "historial",
+    picks: "elecciones",
+  },
+
+  ar: {
+    brandName: "Next Movie",
+    heroHeadline: "توصيات أفلام بالذكاء الاصطناعي للعائلة كلها — بدون جدال.",
+    heroSubtext: "لا مزيد من التمرير اللانهائي، لا مزيد من النقاشات. فقط الفيلم المناسب للجميع — فوراً.",
+    free: "مجاني 100%",
+    poweredByAI: "مدعوم بالذكاء الاصطناعي",
+    worksWithServices: "يعمل مع نتفليكس، ديزني+، برايم والمزيد",
+    freeForever: "مجاني للأبد، لا تحتاج بطاقة ائتمان",
+    likedExplainer: "أحببت = المزيد مثل هذا",
+    passExplainer: "تخطي = تجاهل، بدون تأثير",
+    nopeExplainer: "لا = تجنب المشابهة",
+    hoverExplainer: "مرر للقراءة، ثم أحبب أو لا",
+    whosWatching: "من يشاهد الليلة؟",
+    pickProfile: "اختر ملفك الشخصي للتوصيات — أو أضف فرداً من العائلة",
+    startPicking: "ابدأ الاختيار",
+    tryAsGuest: "جرب كضيف",
+    signIn: "تسجيل الدخول",
+    signOut: "تسجيل الخروج",
+    signInToSave: "سجل دخولك للحفظ",
+    hey: "مرحباً {name}!",
+    searchPrompt: "أخبرنا بفيلم تحبه وسنجد مشاهدتك التالية",
+    searchPlaceholder: "أدخل فيلماً تحبه...",
+    search: "بحث",
+    orBrowseByCategory: "أو تصفح حسب الفئة",
+    continueWhereYouLeftOff: "تابع من حيث توقفت",
+    changeCategory: "تغيير الفئة",
+    switchLabel: "تبديل",
+    browseDifferentCategory: "تصفح فئة مختلفة",
+    startOverDifferentMovie: "ابدأ من جديد بفيلم آخر",
+    liked: "أحببت",
+    pass: "تخطي",
+    nope: "لا",
+    genreAction: "أكشن",
+    genreComedy: "كوميديا",
+    genreDrama: "دراما",
+    genreHorror: "رعب",
+    genreSciFi: "خيال علمي",
+    genreRomance: "رومانسية",
+    genreThriller: "إثارة",
+    genreAnimation: "رسوم متحركة",
+    genreDocumentary: "وثائقي",
+    genreFantasy: "خيال",
+    genreMystery: "غموض",
+    genreAdventure: "مغامرة",
+    letsGetStarted: "لنبدأ",
+    quickSetup: "إعداد سريع — 10 ثوانٍ",
+    yourName: "اسمك",
+    age: "العمر",
+    whatCanYouWatch: "ماذا يمكنك مشاهدته؟",
+    startPickingMovies: "ابدأ اختيار الأفلام",
+    addMember: "إضافة عضو",
+    everyone: "الجميع",
+    ratingKids: "أطفال",
+    ratingFamily: "عائلة",
+    ratingTeens: "مراهقون",
+    ratingAdult: "بالغون",
+    ratingNoLimit: "بلا حدود",
+    allRatings: "جميع الأعمار",
+    history: "السجل",
+    picks: "اختيارات",
+  },
+
+  ru: {
+    brandName: "Next Movie",
+    heroHeadline: "Рекомендации фильмов на основе ИИ для всей семьи — без споров.",
+    heroSubtext: "Больше никакого бесконечного скролла, никаких дебатов. Только нужный фильм для всех — мгновенно.",
+    free: "100% Бесплатно",
+    poweredByAI: "На основе ИИ",
+    worksWithServices: "Работает с Netflix, Disney+, Prime и другими",
+    freeForever: "Бесплатно навсегда, без кредитной карты",
+    likedExplainer: "Понравилось = больше похожего",
+    passExplainer: "Пропустить = без эффекта",
+    nopeExplainer: "Нет = избегать похожего",
+    hoverExplainer: "Наведите для чтения, затем лайк или нет",
+    whosWatching: "Кто смотрит сегодня вечером?",
+    pickProfile: "Выберите профиль для персонализированных рекомендаций — или добавьте члена семьи",
+    startPicking: "Начать выбор",
+    tryAsGuest: "Попробовать как гость",
+    signIn: "Войти",
+    signOut: "Выйти",
+    signInToSave: "Войдите, чтобы сохранить",
+    hey: "Привет, {name}!",
+    searchPrompt: "Назовите фильм, который вам нравится, и мы найдём следующий",
+    searchPlaceholder: "Введите любимый фильм...",
+    search: "Поиск",
+    orBrowseByCategory: "Или просмотр по категориям",
+    continueWhereYouLeftOff: "Продолжить с того места",
+    changeCategory: "Сменить категорию",
+    switchLabel: "Сменить",
+    browseDifferentCategory: "Просмотр другой категории",
+    startOverDifferentMovie: "Начать заново с другим фильмом",
+    liked: "Понравилось",
+    pass: "Пропустить",
+    nope: "Нет",
+    genreAction: "Боевик",
+    genreComedy: "Комедия",
+    genreDrama: "Драма",
+    genreHorror: "Ужасы",
+    genreSciFi: "Фантастика",
+    genreRomance: "Романтика",
+    genreThriller: "Триллер",
+    genreAnimation: "Анимация",
+    genreDocumentary: "Документальный",
+    genreFantasy: "Фэнтези",
+    genreMystery: "Детектив",
+    genreAdventure: "Приключения",
+    letsGetStarted: "Начнём",
+    quickSetup: "Быстрая настройка — 10 секунд",
+    yourName: "Ваше имя",
+    age: "Возраст",
+    whatCanYouWatch: "Что вы можете смотреть?",
+    startPickingMovies: "Выбирать фильмы",
+    addMember: "Добавить члена",
+    everyone: "Все",
+    ratingKids: "Дети",
+    ratingFamily: "Семья",
+    ratingTeens: "Подростки",
+    ratingAdult: "Взрослые",
+    ratingNoLimit: "Без ограничений",
+    allRatings: "Все возрасты",
+    history: "история",
+    picks: "выборы",
+  },
+
+  de: {
+    brandName: "Next Movie",
+    heroHeadline: "KI-Filmempfehlungen für die ganze Familie — ohne Streit.",
+    heroSubtext: "Kein endloses Scrollen, keine Debatten mehr. Nur der richtige Film für alle — sofort.",
+    free: "100% Kostenlos",
+    poweredByAI: "KI-gestützt",
+    worksWithServices: "Funktioniert mit Netflix, Disney+, Prime & mehr",
+    freeForever: "Für immer kostenlos, keine Kreditkarte nötig",
+    likedExplainer: "Gefällt mir = mehr davon",
+    passExplainer: "Überspringen = kein Effekt",
+    nopeExplainer: "Nein = Ähnliches vermeiden",
+    hoverExplainer: "Hover zum Lesen, dann mögen oder nicht",
+    whosWatching: "Wer schaut heute Abend?",
+    pickProfile: "Wähle dein Profil für personalisierte Empfehlungen — oder füge ein Familienmitglied hinzu",
+    startPicking: "Auswählen",
+    tryAsGuest: "Als Gast ausprobieren",
+    signIn: "Anmelden",
+    signOut: "Abmelden",
+    signInToSave: "Anmelden zum Speichern",
+    hey: "Hey {name}!",
+    searchPrompt: "Sag uns einen Film den du liebst und wir finden deinen nächsten",
+    searchPlaceholder: "Gib einen Film ein den du liebst...",
+    search: "Suchen",
+    orBrowseByCategory: "Oder nach Kategorie stöbern",
+    continueWhereYouLeftOff: "Weitermachen wo du aufgehört hast",
+    changeCategory: "Kategorie wechseln",
+    switchLabel: "Wechseln",
+    browseDifferentCategory: "Andere Kategorie durchsuchen",
+    startOverDifferentMovie: "Mit einem anderen Film neu beginnen",
+    liked: "Gefällt mir",
+    pass: "Überspringen",
+    nope: "Nein",
+    genreAction: "Action",
+    genreComedy: "Komödie",
+    genreDrama: "Drama",
+    genreHorror: "Horror",
+    genreSciFi: "Science-Fiction",
+    genreRomance: "Romantik",
+    genreThriller: "Thriller",
+    genreAnimation: "Animation",
+    genreDocumentary: "Dokumentarfilm",
+    genreFantasy: "Fantasy",
+    genreMystery: "Mystery",
+    genreAdventure: "Abenteuer",
+    letsGetStarted: "Legen wir los",
+    quickSetup: "Schnelles Setup — 10 Sekunden",
+    yourName: "Dein Name",
+    age: "Alter",
+    whatCanYouWatch: "Was kannst du schauen?",
+    startPickingMovies: "Filme auswählen",
+    addMember: "Mitglied hinzufügen",
+    everyone: "Alle",
+    ratingKids: "Kinder",
+    ratingFamily: "Familie",
+    ratingTeens: "Jugendliche",
+    ratingAdult: "Erwachsene",
+    ratingNoLimit: "Kein Limit",
+    allRatings: "Alle Altersgruppen",
+    history: "Verlauf",
+    picks: "Auswahl",
   },
 } as Record<string, Record<string, string>>;
 
 export type TranslationStrings = typeof translations.en;
 
-/**
- * Detect locale from browser settings.
- * Returns 'he' if browser language starts with 'he', otherwise 'en'.
- * Safe to call on the server (returns 'en' when navigator is unavailable).
- */
 const RTL_LOCALES: Locale[] = ["he", "ar"];
 
 export function isRTL(locale: Locale): boolean {
@@ -204,35 +456,32 @@ export function getLocale(): Locale {
   if (lang.startsWith("fr")) return "fr";
   if (lang.startsWith("es")) return "es";
   if (lang.startsWith("ru")) return "ru";
+  if (lang.startsWith("de")) return "de";
   return "en";
 }
 
 export function tmdbLocale(locale: Locale): string {
   const map: Record<Locale, string> = {
-    en: "en-US", he: "he", fr: "fr-FR", es: "es-MX", ar: "ar", ru: "ru-RU",
+    en: "en-US",
+    he: "he",
+    fr: "fr-FR",
+    es: "es-MX",
+    ar: "ar",
+    ru: "ru-RU",
+    de: "de-DE",
   };
   return map[locale] || "en-US";
 }
 
-/**
- * React hook that returns the current locale and its translation strings.
- * On mount, detects locale from the browser and also checks the cookie-based
- * preference (set via /api/locale). Syncs the cookie so server API routes
- * can serve TMDB data in the correct language.
- */
 export function useLocale() {
   const [locale, setLocale] = useState<Locale>("en");
 
   useEffect(() => {
-    // Detect from browser
     const detected = getLocale();
     setLocale(detected);
 
-    // Sync cookie for server-side API routes
     fetch("/api/locale", { method: "POST", body: JSON.stringify({ locale: detected }) })
-      .catch(() => {
-        // Silently fail — locale cookie is a nice-to-have
-      });
+      .catch(() => {});
   }, []);
 
   const t = translations[locale] || translations.en;
