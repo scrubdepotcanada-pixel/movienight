@@ -1,7 +1,5 @@
 "use client";
 
-import Image from "next/image";
-
 interface HeroSectionProps {
   onSignIn: () => void;
   onGuest: () => void;
@@ -17,11 +15,6 @@ export default function HeroSection({ onSignIn, onGuest }: HeroSectionProps) {
       </div>
 
       <div className="relative max-w-4xl mx-auto text-center">
-        {/* Mascot */}
-        <div className="flex justify-center mb-6">
-          <Image src="/popcorn-12-peace.png" alt="Reel the popcorn" width={130} height={130} className="drop-shadow-2xl" unoptimized />
-        </div>
-
         {/* Badge */}
         <div className="inline-flex items-center gap-2 bg-gray-800/60 backdrop-blur border border-gray-700/50 rounded-full px-4 py-1.5 mb-8">
           <span className="text-sm text-green-400 font-medium">100% Free</span>
