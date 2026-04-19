@@ -2,32 +2,46 @@
 
 const benefits = [
   {
+    pain: "\"Everyone wants something different\"",
+    solution: "No more arguing",
+    description:
+      "Dad wants action. Mom wants drama. The kid wants animation. Our AI finds the overlap — one movie everyone actually wants to watch.",
     icon: "🤝",
-    title: "No more arguing",
-    description:
-      "Dad wants action. Mom wants drama. The kid wants animation. Our AI finds the movie that makes everyone happy.",
-    highlight: "The #1 reason families use us",
   },
   {
+    pain: "\"We spent 30 minutes just deciding\"",
+    solution: "30 seconds, done",
+    description:
+      "Pick a mood or genre, tap go, and get your pick. The average family saves half an hour every movie night.",
     icon: "⚡",
-    title: "30 seconds, not 30 minutes",
-    description:
-      "The average family spends 30 minutes deciding what to watch. With us? Pick a mood, tap a poster, done.",
-    highlight: "More watching, less scrolling",
   },
   {
+    pain: "\"My 8-year-old saw something inappropriate\"",
+    solution: "Safe for every age",
+    description:
+      "Set each person's rating limit — G for the little ones, PG-13 for teens, R for date night. No awkward moments, ever.",
     icon: "🛡️",
-    title: "Safe for every age",
-    description:
-      "Set each person's rating limit — G for the kids, PG-13 for the teens, R for date night. No awkward moments.",
-    highlight: "Per-person content filtering",
   },
   {
-    icon: "🧠",
-    title: "Gets smarter every time",
+    pain: "\"It keeps suggesting stuff we've seen\"",
+    solution: "Gets smarter every time",
     description:
-      "Like it? Nope it? Pass? Every tap teaches us your taste. The more you use it, the better the picks get.",
-    highlight: "Your personal taste engine",
+      "Like it, skip it, or mark it watched. Every tap teaches us your taste. The more you use it, the better the picks get.",
+    icon: "🧠",
+  },
+  {
+    pain: "\"I don't know what mood I'm in\"",
+    solution: "Moods, themes & vibes",
+    description:
+      "Feeling cozy? Want a plot twist? Just tap a feeling or describe what you want in plain words — we'll find it.",
+    icon: "🎭",
+  },
+  {
+    pain: "\"Where can I actually watch it?\"",
+    solution: "Stream links built in",
+    description:
+      "Every recommendation shows where to stream it — Netflix, Disney+, Prime, Crave, Apple TV+ and more. One tap to play.",
+    icon: "📺",
   },
 ];
 
@@ -38,7 +52,7 @@ export default function BenefitsSection() {
         {/* Header */}
         <div className="text-center mb-14">
           <p className="text-sm font-medium text-purple-400 uppercase tracking-wider mb-3">
-            Why it works
+            Why families love it
           </p>
           <h2 className="text-3xl sm:text-4xl font-bold">
             Movie night{" "}
@@ -52,19 +66,17 @@ export default function BenefitsSection() {
         </div>
 
         {/* Benefits grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          {benefits.map((benefit) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {benefits.map((b) => (
             <div
-              key={benefit.title}
-              className="bg-gray-800/50 backdrop-blur border border-gray-700/50 rounded-2xl p-6 sm:p-8 hover:border-purple-600/30 transition-colors"
+              key={b.solution}
+              className="bg-gray-800/40 backdrop-blur border border-gray-700/40 rounded-2xl p-6 hover:border-purple-600/30 transition-colors group"
             >
-              <div className="text-4xl mb-4">{benefit.icon}</div>
-              <h3 className="text-xl font-semibold mb-2">{benefit.title}</h3>
-              <p className="text-gray-400 leading-relaxed mb-3">
-                {benefit.description}
-              </p>
-              <p className="text-purple-400 text-xs font-medium uppercase tracking-wider">
-                {benefit.highlight}
+              <div className="text-3xl mb-3">{b.icon}</div>
+              <p className="text-gray-500 text-xs font-medium mb-2">{b.pain}</p>
+              <h3 className="text-lg font-bold text-white mb-2">{b.solution}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">
+                {b.description}
               </p>
             </div>
           ))}

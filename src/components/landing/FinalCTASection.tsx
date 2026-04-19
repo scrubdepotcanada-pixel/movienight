@@ -23,25 +23,23 @@ export default function FinalCTASection({ onSignIn, onGuest }: FinalCTASectionPr
             </span>
           </h2>
           <p className="text-gray-400 text-lg mb-10 max-w-lg mx-auto">
-            Stop scrolling Netflix for 30 minutes. Get the perfect pick in 30 seconds.
+            No signup. No credit card. Just the perfect movie for your family in 30 seconds.
           </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button
-              onClick={onGuest}
-              className="group bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl px-8 py-4 text-lg font-semibold transition-all shadow-lg shadow-purple-900/30 hover:shadow-purple-900/50 hover:scale-105"
-            >
-              Find Tonight&apos;s Movie
-              <span className="ml-2 inline-block transition-transform group-hover:translate-x-1">
-                &rarr;
-              </span>
-            </button>
-            <button
-              onClick={onSignIn}
-              className="text-gray-400 hover:text-white transition-colors text-sm underline"
-            >
-              Or sign in to save your taste
-            </button>
-          </div>
+          <button
+            onClick={onGuest}
+            className="group bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-2xl px-10 py-5 text-xl font-bold transition-all shadow-xl shadow-purple-900/40 hover:shadow-purple-900/60 hover:scale-105 active:scale-100"
+          >
+            🍿 Start Movie Night
+            <span className="ml-2 inline-block transition-transform group-hover:translate-x-1">
+              &rarr;
+            </span>
+          </button>
+          <button
+            onClick={onSignIn}
+            className="block mx-auto mt-4 text-gray-500 hover:text-gray-300 transition-colors text-sm"
+          >
+            or <span className="underline">sign in</span> to save your taste
+          </button>
         </div>
       </div>
     </section>

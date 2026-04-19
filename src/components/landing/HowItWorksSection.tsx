@@ -3,23 +3,23 @@
 const steps = [
   {
     number: 1,
-    title: "Pick who\u2019s watching",
+    title: "Add who\u2019s watching",
     description:
-      "Add everyone on the couch. Each person gets their own taste profile and age-appropriate filter.",
+      "Everyone on the couch gets their own profile with age-appropriate filters. G for the kids, R for date night.",
     visual: "👨 👩 👦 👧",
   },
   {
     number: 2,
-    title: "Tell us the vibe",
+    title: "Set tonight\u2019s mood",
     description:
-      "Feeling funny? Want something mind-bending? Just tap a mood or pick a genre. Or type exactly what you want.",
+      "Pick a genre, tap a mood, or just type what you\u2019re feeling. \u201CSomething funny but not dumb\u201D works too.",
     visual: "😂 🧠 💕 😱",
   },
   {
     number: 3,
-    title: "Get THE movie",
+    title: "Get the one movie",
     description:
-      "Our AI matches everyone\u2019s tastes, checks age ratings, and serves up picks you\u2019ll all love. Tap to see where to stream it.",
+      "Our AI merges everyone\u2019s taste, finds the overlap, and serves up picks the whole family will love. Tap to stream.",
     visual: "🎬 ✅",
   },
 ];
@@ -36,35 +36,26 @@ export default function HowItWorksSection() {
           <h2 className="text-3xl sm:text-4xl font-bold">
             From couch to movie in{" "}
             <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              30 seconds
+              3 taps
             </span>
           </h2>
         </div>
 
         {/* Steps */}
-        <div className="space-y-8 sm:space-y-12">
-          {steps.map((step, i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {steps.map((step) => (
             <div
               key={step.number}
-              className="flex gap-5 items-start bg-gray-800/30 border border-gray-700/30 rounded-2xl p-5 sm:p-8"
+              className="bg-gray-800/30 border border-gray-700/30 rounded-2xl p-6 text-center"
             >
-              {/* Number badge */}
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-xl font-bold shadow-lg shadow-purple-900/30">
-                  {step.number}
-                </div>
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-2xl font-bold shadow-lg shadow-purple-900/30 mx-auto mb-4">
+                {step.number}
               </div>
-
-              {/* Content */}
-              <div className="flex-1">
-                <h3 className="text-xl sm:text-2xl font-semibold mb-2">
-                  {step.title}
-                </h3>
-                <p className="text-gray-400 leading-relaxed mb-3">
-                  {step.description}
-                </p>
-                <div className="text-2xl tracking-wider">{step.visual}</div>
-              </div>
+              <h3 className="text-lg font-bold mb-2">{step.title}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed mb-3">
+                {step.description}
+              </p>
+              <div className="text-2xl tracking-wider">{step.visual}</div>
             </div>
           ))}
         </div>

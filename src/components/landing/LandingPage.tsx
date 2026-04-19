@@ -1,9 +1,10 @@
 "use client";
 
 import HeroSection from "./HeroSection";
-import ProductPreviewSection from "./ProductPreviewSection";
-import BenefitsSection from "./BenefitsSection";
+import SocialProofStrip from "./SocialProofStrip";
 import HowItWorksSection from "./HowItWorksSection";
+import BenefitsSection from "./BenefitsSection";
+import ProductPreviewSection from "./ProductPreviewSection";
 import FinalCTASection from "./FinalCTASection";
 
 interface LandingPageProps {
@@ -23,29 +24,22 @@ export default function LandingPage({ onSignIn, onGuest }: LandingPageProps) {
               Next Movie
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onGuest}
-              className="cursor-pointer text-gray-400 hover:text-white text-sm font-medium transition-colors"
-            >
-              Try as Guest
-            </button>
-            <button
-              onClick={onSignIn}
-              className="cursor-pointer bg-gray-800/80 hover:bg-gray-700/80 border border-gray-700/50 text-gray-200 rounded-xl px-5 py-2 text-sm font-medium transition-colors"
-            >
-              Sign In
-            </button>
-          </div>
+          <button
+            onClick={onGuest}
+            className="cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl px-5 py-2 text-sm font-bold transition-all shadow-md shadow-purple-900/30"
+          >
+            Start Movie Night
+          </button>
         </div>
       </header>
 
-      {/* Page sections */}
+      {/* Page journey: Hero → Social proof → How it works → Benefits → Preview → CTA */}
       <main>
         <HeroSection onSignIn={onSignIn} onGuest={onGuest} />
-        <ProductPreviewSection />
-        <BenefitsSection />
+        <SocialProofStrip />
         <HowItWorksSection />
+        <BenefitsSection />
+        <ProductPreviewSection />
         <FinalCTASection onSignIn={onSignIn} onGuest={onGuest} />
       </main>
 
