@@ -155,6 +155,33 @@ export async function getReplacementMoviesAI(
   );
 }
 
+// ── Mood-Based Search ───────────────────────────────────────────
+
+export async function getMoodRecommendationsAI(
+  mood: string,
+  contentType: "movie" | "show",
+  watchedTitles: string[],
+  dislikedTitles: string[],
+  maxRating: MaxRating | null = null
+): Promise<MovieSuggestion[]> {
+  const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
+  const ratingBlock = ratingRestrictionPrompt(maxRating);
+  const count = 8 + bonusCount(maxRating);
+  const type = contentType === "show" ? "TV shows (series)" : "movies";
+  const typeNote = contentType === "show" ? "Only suggest TV series, NOT movies." : "Only suggest movies, NOT TV shows.";
+
+  const prompt = `The user is in this mood and wants ${type}: "${mood}"
+
+Suggest ${count} ${type} that perfectly match this vibe/mood/description. Be creative — think about tone, themes, setting, and emotional feel. ${typeNote}${excludeBlock}${ratingBlock}
+
+Return exactly ${count} ${contentType === "show" ? "shows" : "movies"}.`;
+
+  if (contentType === "show") {
+    return askForShows(prompt, count);
+  }
+  return askForMovies(prompt, count);
+}
+
 // ── TV Show Support ──────────────────────────────────────────────
 
 interface ShowSuggestion {

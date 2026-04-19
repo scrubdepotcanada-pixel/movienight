@@ -8,6 +8,7 @@ import MemberSelector from "@/components/MemberSelector";
 import GenreSelector, { GENRES } from "@/components/GenreSelector";
 import CategorySidebar from "@/components/CategorySidebar";
 import ContentTypeToggle from "@/components/ContentTypeToggle";
+import MoodSearch from "@/components/MoodSearch";
 import { useLocale } from "@/lib/i18n";
 import LandingPage from "@/components/landing/LandingPage";
 
@@ -292,6 +293,32 @@ export default function Home() {
       setRecommendations(data.movies || []);
       setWatchedSelection(new Set());
       await loadCategoryHistory(selectedMember!.id, "general");
+    } catch (err) {
+      console.error(err);
+    }
+    setLoading(false);
+  };
+
+  const handleMoodSearch = async (mood: string) => {
+    setSearchResults([]);
+    setSelectedSearchId(null);
+    setStep("recommendations");
+    setLoading(true);
+    setActiveCategory("general");
+    try {
+      const res = await fetch("/api/movies/mood", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId: selectedMember!.id,
+          mood,
+          category: "general",
+          contentType,
+        }),
+      });
+      const data = await res.json();
+      setRecommendations(data.movies || []);
+      setWatchedSelection(new Set());
     } catch (err) {
       console.error(err);
     }
@@ -855,6 +882,10 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+            <div className="mt-10">
+              <MoodSearch onSearch={handleMoodSearch} loading={loading} />
+            </div>
 
             <div className="mt-10">
               <GenreSelector onSelect={handleSelectCategory} loading={loading} />
