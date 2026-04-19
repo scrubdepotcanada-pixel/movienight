@@ -17,6 +17,15 @@ interface Stats {
     totalWatchlist: number;
     totalSwipeSessions: number;
   };
+  revenue: {
+    mrr: number;
+    arr: number;
+    totalRevenue: number;
+    monthlySubscribers: number;
+    yearlySubscribers: number;
+    payingSubscribers: { email: string; name: string; plan: string; premiumUntil: string }[];
+    paymentHistory: { email: string; name: string; plan: string; amount: number; currency: string; status: string; paidAt: string }[];
+  };
   recentSignups: { email: string; name: string; signedUp: string }[];
   userDetails: {
     email: string;
@@ -60,7 +69,7 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
-  const [tab, setTab] = useState<"overview" | "users" | "analytics">("overview");
+  const [tab, setTab] = useState<"overview" | "users" | "revenue" | "analytics">("overview");
 
   useEffect(() => {
     if (status !== "authenticated") return;
@@ -152,8 +161,8 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-900 rounded-xl p-1 mb-8 max-w-md">
-          {(["overview", "users", "analytics"] as const).map(t => (
+        <div className="flex gap-1 bg-gray-900 rounded-xl p-1 mb-8 max-w-lg">
+          {(["overview", "users", "revenue", "analytics"] as const).map(t => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -186,6 +195,22 @@ export default function AdminPage() {
               <MetricCard label="Guest Sessions" value={stats.users.guestSessions} color="text-gray-400" />
               <MetricCard label="Total Members" value={stats.users.totalMembers} color="text-blue-400" />
               <MetricCard label="Premium Users" value={stats.users.premiumUsers} color="text-green-400" />
+            </div>
+
+            {/* Revenue summary */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
+              <div className="bg-gray-900 border border-green-800/20 rounded-xl p-4 text-center">
+                <p className="text-green-400 text-2xl font-bold">${stats.revenue.mrr.toFixed(2)}</p>
+                <p className="text-gray-500 text-xs mt-1">MRR</p>
+              </div>
+              <div className="bg-gray-900 border border-blue-800/20 rounded-xl p-4 text-center">
+                <p className="text-blue-400 text-2xl font-bold">${stats.revenue.arr.toFixed(2)}</p>
+                <p className="text-gray-500 text-xs mt-1">ARR</p>
+              </div>
+              <div className="bg-gray-900 border border-gray-700/40 rounded-xl p-4 text-center col-span-2 sm:col-span-1 cursor-pointer hover:border-purple-700/40 transition-colors" onClick={() => setTab("revenue")}>
+                <p className="text-white text-2xl font-bold">{stats.revenue.monthlySubscribers + stats.revenue.yearlySubscribers}</p>
+                <p className="text-gray-500 text-xs mt-1">Paying Subscribers →</p>
+              </div>
             </div>
 
             {/* Activity */}
@@ -277,6 +302,140 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+        )}
+
+        {/* REVENUE TAB */}
+        {tab === "revenue" && stats && (
+          <div className="space-y-6">
+            {/* Revenue summary cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="bg-gray-900 border border-green-800/30 rounded-xl p-4 text-center">
+                <p className="text-green-400 text-3xl font-bold">${stats.revenue.mrr.toFixed(2)}</p>
+                <p className="text-gray-500 text-xs mt-1">MRR</p>
+              </div>
+              <div className="bg-gray-900 border border-blue-800/30 rounded-xl p-4 text-center">
+                <p className="text-blue-400 text-3xl font-bold">${stats.revenue.arr.toFixed(2)}</p>
+                <p className="text-gray-500 text-xs mt-1">ARR</p>
+              </div>
+              <div className="bg-gray-900 border border-purple-800/30 rounded-xl p-4 text-center">
+                <p className="text-purple-400 text-3xl font-bold">{stats.revenue.monthlySubscribers}</p>
+                <p className="text-gray-500 text-xs mt-1">Monthly @ $3.99</p>
+              </div>
+              <div className="bg-gray-900 border border-pink-800/30 rounded-xl p-4 text-center">
+                <p className="text-pink-400 text-3xl font-bold">{stats.revenue.yearlySubscribers}</p>
+                <p className="text-gray-500 text-xs mt-1">Yearly @ $39.99</p>
+              </div>
+            </div>
+
+            {/* Total revenue from payment records */}
+            {stats.revenue.totalRevenue > 0 && (
+              <div className="bg-gradient-to-r from-purple-950/40 to-pink-950/40 border border-purple-700/30 rounded-2xl p-5 flex items-center justify-between">
+                <div>
+                  <p className="text-gray-400 text-xs uppercase tracking-wider mb-1">Total Revenue Collected</p>
+                  <p className="text-white text-4xl font-bold">${stats.revenue.totalRevenue.toFixed(2)}</p>
+                </div>
+                <div className="text-4xl opacity-30">💰</div>
+              </div>
+            )}
+
+            {/* Paying subscribers table */}
+            <div className="bg-gray-900 border border-gray-700/50 rounded-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+                <h2 className="text-lg font-bold">Active Subscribers ({stats.revenue.payingSubscribers.length})</h2>
+                <span className="text-gray-500 text-xs">Excludes admin accounts</span>
+              </div>
+              {stats.revenue.payingSubscribers.length === 0 ? (
+                <div className="px-6 py-12 text-center">
+                  <p className="text-gray-500 text-sm">No paying subscribers yet</p>
+                  <p className="text-gray-600 text-xs mt-1">Stripe integration will populate this automatically</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
+                        <th className="text-left px-6 py-3">Subscriber</th>
+                        <th className="text-center px-4 py-3">Plan</th>
+                        <th className="text-center px-4 py-3">Value/mo</th>
+                        <th className="text-right px-6 py-3">Renews</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.revenue.payingSubscribers.map((s, i) => (
+                        <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                          <td className="px-6 py-3">
+                            <p className="text-white font-medium">{s.name || "—"}</p>
+                            <p className="text-gray-500 text-xs">{s.email || "—"}</p>
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+                              s.plan === "yearly"
+                                ? "bg-blue-900/50 text-blue-300 border border-blue-700/50"
+                                : "bg-purple-900/50 text-purple-300 border border-purple-700/50"
+                            }`}>
+                              {s.plan === "yearly" ? "YEARLY" : "MONTHLY"}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-center text-green-400 font-semibold">
+                            ${s.plan === "yearly" ? (39.99 / 12).toFixed(2) : "3.99"}
+                          </td>
+                          <td className="px-6 py-3 text-right text-gray-400 text-xs">
+                            {s.premiumUntil ? new Date(s.premiumUntil).toLocaleDateString() : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Payment history */}
+            {stats.revenue.paymentHistory.length > 0 && (
+              <div className="bg-gray-900 border border-gray-700/50 rounded-2xl overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-800">
+                  <h2 className="text-lg font-bold">Payment History</h2>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
+                        <th className="text-left px-6 py-3">Customer</th>
+                        <th className="text-center px-4 py-3">Plan</th>
+                        <th className="text-center px-4 py-3">Amount</th>
+                        <th className="text-center px-4 py-3">Status</th>
+                        <th className="text-right px-6 py-3">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.revenue.paymentHistory.map((p, i) => (
+                        <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                          <td className="px-6 py-3">
+                            <p className="text-white font-medium">{p.name || "—"}</p>
+                            <p className="text-gray-500 text-xs">{p.email || "—"}</p>
+                          </td>
+                          <td className="px-4 py-3 text-center text-gray-300 text-xs capitalize">{p.plan}</td>
+                          <td className="px-4 py-3 text-center text-green-400 font-semibold">
+                            ${p.amount.toFixed(2)} {p.currency.toUpperCase()}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              p.status === "active" ? "bg-green-900/50 text-green-300" : "bg-gray-800 text-gray-500"
+                            }`}>
+                              {p.status.toUpperCase()}
+                            </span>
+                          </td>
+                          <td className="px-6 py-3 text-right text-gray-400 text-xs">
+                            {p.paidAt ? new Date(p.paidAt).toLocaleDateString() : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

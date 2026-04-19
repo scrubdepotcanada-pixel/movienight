@@ -126,6 +126,17 @@ export async function initDB() {
       FOREIGN KEY (member_id) REFERENCES members(id),
       UNIQUE(member_id, tmdb_id)
     )`,
+    `CREATE TABLE IF NOT EXISTS payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      family_id TEXT NOT NULL,
+      plan TEXT NOT NULL,
+      amount REAL NOT NULL,
+      currency TEXT DEFAULT 'usd',
+      status TEXT DEFAULT 'active',
+      stripe_payment_id TEXT,
+      paid_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (family_id) REFERENCES families(id)
+    )`,
   ]);
 
   // Migrations: add new columns to existing tables if missing

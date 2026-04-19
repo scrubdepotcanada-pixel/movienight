@@ -26,6 +26,8 @@ export async function GET(req: NextRequest) {
     totalSwipeSessions,
     recentSignups,
     userDetails,
+    payingSubscribers,
+    paymentHistory,
   ] = await Promise.all([
     db.execute("SELECT COUNT(*) as count FROM families WHERE google_id IS NOT NULL"),
     db.execute("SELECT COUNT(*) as count FROM families WHERE google_id IS NULL"),
@@ -47,7 +49,36 @@ export async function GET(req: NextRequest) {
       ORDER BY f.created_at DESC
       LIMIT 50
     `),
+    db.execute(`
+      SELECT f.id, f.email, f.name, f.subscription_plan, f.premium_until
+      FROM families f
+      WHERE f.subscription_plan IN ('monthly', 'yearly')
+        AND f.premium_until > datetime('now')
+      ORDER BY f.premium_until DESC
+    `),
+    db.execute(`
+      SELECT p.id, p.family_id, p.plan, p.amount, p.currency, p.status, p.paid_at,
+        f.email, f.name
+      FROM payments p
+      JOIN families f ON p.family_id = f.id
+      ORDER BY p.paid_at DESC
+      LIMIT 100
+    `),
   ]);
+
+  // Revenue calculations from active paying subscribers
+  const monthlyCount = payingSubscribers.rows.filter(r => r.subscription_plan === "monthly").length;
+  const yearlyCount = payingSubscribers.rows.filter(r => r.subscription_plan === "yearly").length;
+  const mrr = Number(((monthlyCount * 3.99) + (yearlyCount * 39.99 / 12)).toFixed(2));
+  const arr = Number((mrr * 12).toFixed(2));
+
+  // Total revenue from actual payment records
+  const totalRevenue = Number(
+    paymentHistory.rows
+      .filter(r => r.status === "active")
+      .reduce((sum, r) => sum + Number(r.amount), 0)
+      .toFixed(2)
+  );
 
   return NextResponse.json({
     users: {
@@ -62,6 +93,28 @@ export async function GET(req: NextRequest) {
       totalWatched: Number(totalWatched.rows[0].count),
       totalWatchlist: Number(totalWatchlist.rows[0].count),
       totalSwipeSessions: Number(totalSwipeSessions.rows[0].count),
+    },
+    revenue: {
+      mrr,
+      arr,
+      totalRevenue,
+      monthlySubscribers: monthlyCount,
+      yearlySubscribers: yearlyCount,
+      payingSubscribers: payingSubscribers.rows.map(r => ({
+        email: r.email,
+        name: r.name,
+        plan: r.subscription_plan,
+        premiumUntil: r.premium_until,
+      })),
+      paymentHistory: paymentHistory.rows.map(r => ({
+        email: r.email,
+        name: r.name,
+        plan: r.plan,
+        amount: Number(r.amount),
+        currency: r.currency,
+        status: r.status,
+        paidAt: r.paid_at,
+      })),
     },
     recentSignups: recentSignups.rows.map(r => ({
       email: r.email,
