@@ -79,6 +79,38 @@ export async function initDB() {
       FOREIGN KEY (member_id) REFERENCES members(id),
       UNIQUE(member_id, tmdb_id)
     )`,
+    `CREATE TABLE IF NOT EXISTS swipe_sessions (
+      id TEXT PRIMARY KEY,
+      family_id TEXT NOT NULL,
+      category TEXT DEFAULT 'general',
+      content_type TEXT DEFAULT 'movie',
+      status TEXT DEFAULT 'active',
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (family_id) REFERENCES families(id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS swipe_candidates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      tmdb_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      poster_path TEXT,
+      vote_average REAL,
+      certification TEXT,
+      overview TEXT,
+      release_date TEXT,
+      FOREIGN KEY (session_id) REFERENCES swipe_sessions(id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS swipe_votes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      member_id INTEGER NOT NULL,
+      tmdb_id INTEGER NOT NULL,
+      vote TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (session_id) REFERENCES swipe_sessions(id),
+      FOREIGN KEY (member_id) REFERENCES members(id),
+      UNIQUE(session_id, member_id, tmdb_id)
+    )`,
   ]);
 
   // Migrations: add new columns to existing tables if missing

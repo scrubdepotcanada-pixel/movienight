@@ -155,6 +155,36 @@ export async function getReplacementMoviesAI(
   );
 }
 
+// ── Family Swipe ────────────────────────────────────────────────
+
+export async function getFamilySwipeMoviesAI(
+  category: string | null,
+  contentType: "movie" | "show",
+  watchedTitles: string[],
+  maxRating: MaxRating | null
+): Promise<MovieSuggestion[]> {
+  const ratingBlock = ratingRestrictionPrompt(maxRating);
+  const count = 15 + bonusCount(maxRating);
+  const type = contentType === "show" ? "TV shows" : "movies";
+
+  let categoryBlock = "";
+  if (category && category !== "general") {
+    categoryBlock = ` Focus on the ${category} genre.`;
+  }
+
+  let excludeBlock = "";
+  if (watchedTitles.length > 0) {
+    excludeBlock = `\n\nDo NOT suggest any of these (already watched): ${watchedTitles.join(", ")}`;
+  }
+
+  const prompt = `Suggest ${count} widely-appealing ${type} that a family with mixed tastes would enjoy. Include a variety of genres and styles so there's something for everyone. These should be crowd-pleasers that appeal across different age groups and preferences.${categoryBlock}${excludeBlock}${ratingBlock}\n\nReturn exactly ${count} ${contentType === "show" ? "shows" : "movies"}.`;
+
+  if (contentType === "show") {
+    return askForShows(prompt, count);
+  }
+  return askForMovies(prompt, count);
+}
+
 // ── Mood-Based Search ───────────────────────────────────────────
 
 export async function getMoodRecommendationsAI(
