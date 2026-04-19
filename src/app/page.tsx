@@ -9,6 +9,8 @@ import GenreSelector, { GENRES } from "@/components/GenreSelector";
 import CategorySidebar from "@/components/CategorySidebar";
 import ContentTypeToggle from "@/components/ContentTypeToggle";
 import MoodSearch from "@/components/MoodSearch";
+import SwipeFlow from "@/components/SwipeFlow";
+import SwipeResults from "@/components/SwipeResults";
 import { useLocale } from "@/lib/i18n";
 import LandingPage from "@/components/landing/LandingPage";
 
@@ -42,7 +44,10 @@ type Step =
   | "returning"
   | "all-members"
   | "category-recs"
-  | "category-returning";
+  | "category-returning"
+  | "swipe-setup"
+  | "swiping"
+  | "swipe-results";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -84,6 +89,25 @@ export default function Home() {
 
   // Content type state (movies vs shows)
   const [contentType, setContentType] = useState<"movie" | "show">("movie");
+
+  // Swipe state
+  const [swipeSessionId, setSwipeSessionId] = useState<string | null>(null);
+  const [swipeCandidates, setSwipeCandidates] = useState<Movie[]>([]);
+  const [swipeMembers, setSwipeMembers] = useState<{ id: number | string; name: string; avatar: string }[]>([]);
+  const [swipeResults, setSwipeResults] = useState<{
+    perfectMatches: Array<{
+      tmdb_id: number; title: string; poster_path: string | null;
+      vote_average: number | null; certification: string | null;
+      overview: string | null; release_date: string | null;
+    }>;
+    closeMatches: Array<{
+      tmdb_id: number; title: string; poster_path: string | null;
+      vote_average: number | null; certification: string | null;
+      overview: string | null; release_date: string | null;
+      yesCount: number;
+    }>;
+    totalMembers: number;
+  } | null>(null);
 
   // Load members when signed in or in guest mode
   useEffect(() => {
@@ -556,6 +580,65 @@ export default function Home() {
     setStep("search");
   };
 
+  const handleStartSwipe = async () => {
+    if (members.length < 2) return;
+    setLoading(true);
+    setStep("swiping");
+    try {
+      // Fetch the familyId from the server
+      const familyRes = await fetch("/api/family");
+      const familyData = await familyRes.json();
+      if (!familyData.familyId) throw new Error("Could not get family ID");
+
+      const res = await fetch("/api/swipe/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ familyId: familyData.familyId }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+
+      setSwipeSessionId(data.sessionId);
+      setSwipeCandidates(
+        data.candidates.map((c: Record<string, unknown>) => ({
+          id: Number(c.tmdb_id),
+          title: String(c.title),
+          poster_path: c.poster_path ? String(c.poster_path) : null,
+          vote_average: Number(c.vote_average),
+          certification: c.certification ? String(c.certification) : undefined,
+          overview: c.overview ? String(c.overview) : undefined,
+          release_date: c.release_date ? String(c.release_date) : undefined,
+        }))
+      );
+      setSwipeMembers(
+        data.members.map((m: Record<string, unknown>) => ({
+          id: m.id,
+          name: String(m.name),
+          avatar: String(m.avatar),
+        }))
+      );
+    } catch (err) {
+      console.error("Swipe creation error:", err);
+      setError("Failed to create swipe session. Please try again.");
+      setStep("select-member");
+    }
+    setLoading(false);
+  };
+
+  const handleSwipeComplete = async () => {
+    if (!swipeSessionId) return;
+    try {
+      const res = await fetch(`/api/swipe/results?sessionId=${swipeSessionId}`);
+      const data = await res.json();
+      setSwipeResults(data);
+      setStep("swipe-results");
+    } catch (err) {
+      console.error("Swipe results error:", err);
+      setError("Failed to load results.");
+      setStep("select-member");
+    }
+  };
+
   const handleRemoveLike = async (title: string) => {
     setCategoryLiked((prev) => prev.filter((m) => m.title !== title));
     try {
@@ -794,6 +877,23 @@ export default function Home() {
                   viewingAll={viewingAll}
                   onViewAll={handleViewAll}
                 />
+
+                {/* Family Swipe button — only for signed-in users with 2+ members */}
+                {!isGuest && members.length >= 2 && (
+                  <div className="mt-10 text-center">
+                    <button
+                      onClick={handleStartSwipe}
+                      disabled={loading}
+                      className="inline-flex items-center gap-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-500 hover:via-pink-500 hover:to-orange-400 text-white px-8 py-4 rounded-2xl text-lg font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-purple-900/40 disabled:opacity-50"
+                    >
+                      <span className="text-2xl">&#x1F3AC;</span>
+                      Find a movie everyone agrees on
+                    </button>
+                    <p className="text-gray-500 text-sm mt-2">
+                      Everyone swipes, we find the match
+                    </p>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -1079,6 +1179,57 @@ export default function Home() {
                 Back to member selection
               </button>
             </div>
+          </div>
+        )}
+
+        {/* STEP: Swiping */}
+        {step === "swiping" && (
+          <div className="pt-4">
+            {loading || !swipeSessionId || swipeCandidates.length === 0 ? (
+              <div className="text-center py-16 max-w-md mx-auto">
+                <div className="text-6xl mb-6 animate-bounce">&#x1F3AC;</div>
+                <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+                  Setting up family swipe...
+                </h3>
+                <p className="text-gray-300 text-base mb-8">
+                  Our AI is picking movies for the whole family
+                </p>
+                <div className="w-14 h-14 mx-auto rounded-full border-4 border-gray-700 border-t-purple-500 animate-spin" />
+              </div>
+            ) : (
+              <SwipeFlow
+                sessionId={swipeSessionId}
+                candidates={swipeCandidates}
+                members={swipeMembers}
+                onComplete={handleSwipeComplete}
+              />
+            )}
+          </div>
+        )}
+
+        {/* STEP: Swipe Results */}
+        {step === "swipe-results" && swipeResults && (
+          <div className="pt-4">
+            <SwipeResults
+              perfectMatches={swipeResults.perfectMatches}
+              closeMatches={swipeResults.closeMatches}
+              totalMembers={swipeResults.totalMembers}
+              onPlayAgain={() => {
+                setSwipeSessionId(null);
+                setSwipeCandidates([]);
+                setSwipeMembers([]);
+                setSwipeResults(null);
+                handleStartSwipe();
+              }}
+              onGoHome={() => {
+                setSwipeSessionId(null);
+                setSwipeCandidates([]);
+                setSwipeMembers([]);
+                setSwipeResults(null);
+                setStep("select-member");
+                setSelectedMember(null);
+              }}
+            />
           </div>
         )}
       </div>
