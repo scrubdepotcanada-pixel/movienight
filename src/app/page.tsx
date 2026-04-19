@@ -886,7 +886,7 @@ export default function Home() {
                   </div>
                 )}
               </div>
-            )}
+            </div>
 
             {loading && (
               <div className="mt-8">
