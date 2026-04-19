@@ -281,8 +281,8 @@ export default function SwipeResults({
         <>
           {/* Confetti headline */}
           <div className="text-center mb-8">
-            <div className="text-5xl mb-3">
-              &#x1F389; &#x1F37F; &#x1F38A;
+            <div className="flex justify-center mb-3">
+              <Image src="/popcorn-11-ticket.png" alt="Reel" width={110} height={110} className="drop-shadow-lg" unoptimized />
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold mb-2">
               <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">

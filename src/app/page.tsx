@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
 import { useSession, signIn, signOut } from "next-auth/react";
 import SearchBar from "@/components/SearchBar";
 import MovieCard from "@/components/MovieCard";
@@ -763,7 +764,8 @@ export default function Home() {
       <header className="border-b border-gray-800/50 bg-black/20 backdrop-blur sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-3 py-2 sm:px-4 sm:py-3">
           <div className="flex items-center justify-between">
-            <button onClick={() => { setStep("select-member"); setSelectedMember(null); setViewingAll(false); }} className="flex-shrink-0">
+            <button onClick={() => { setStep("select-member"); setSelectedMember(null); setViewingAll(false); }} className="flex-shrink-0 flex items-center gap-2">
+              <Image src="/popcorn-12-peace.png" alt="Reel" width={28} height={28} className="drop-shadow" unoptimized />
               <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
                 Next Movie
               </h1>
@@ -872,7 +874,9 @@ export default function Home() {
                     <div className="absolute top-20 left-1/3 w-[300px] h-[300px] bg-pink-600/8 rounded-full blur-3xl" />
                   </div>
                   <div className="relative">
-                    <div className="text-5xl mb-4">🎬</div>
+                    <div className="flex justify-center mb-4">
+                      <Image src="/popcorn-9-clapperboard.png" alt="Reel" width={100} height={100} className="drop-shadow-lg" unoptimized />
+                    </div>
                     <h2 className="text-4xl sm:text-5xl font-bold mb-4">
                       <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Who&apos;s watching</span> tonight?
                     </h2>
@@ -1284,7 +1288,9 @@ function GuestSetup({ onDone }: { existingMember: Member | null; onDone: (name: 
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-3xl" />
       </div>
       <div className="relative max-w-sm mx-auto">
-        <div className="text-5xl mb-4">🎬</div>
+        <div className="flex justify-center mb-4">
+          <Image src="/popcorn-9-clapperboard.png" alt="Reel" width={100} height={100} className="drop-shadow-lg" unoptimized />
+        </div>
         <h2 className="text-3xl sm:text-4xl font-bold mb-2">
           <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">What can you watch?</span>
         </h2>
@@ -1318,7 +1324,7 @@ function GuestSetup({ onDone }: { existingMember: Member | null; onDone: (name: 
             onClick={handleSubmit}
             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white py-4 rounded-xl text-lg font-semibold transition-all hover:scale-[1.02]"
           >
-            Start Picking Movies 🍿
+            Start Picking Movies →
           </button>
         </div>
       </div>
@@ -1329,7 +1335,9 @@ function GuestSetup({ onDone }: { existingMember: Member | null; onDone: (name: 
 function MovieLoadingScreen() {
   return (
     <div className="text-center py-10 max-w-md mx-auto">
-      <div className="text-6xl mb-6 animate-bounce">🍿</div>
+      <div className="flex justify-center mb-6 animate-bounce">
+        <Image src="/popcorn-10-drink.png" alt="Reel" width={120} height={120} className="drop-shadow-lg" unoptimized />
+      </div>
       <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">Finding your perfect picks...</h3>
       <p className="text-gray-300 text-base mb-8">This takes a few seconds — our AI is matching your taste</p>
 
