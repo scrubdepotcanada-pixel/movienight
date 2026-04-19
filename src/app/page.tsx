@@ -802,20 +802,22 @@ export default function Home() {
         {/* STEP: Search */}
         {step === "search" && selectedMember && (
           <div className="pt-6">
+            {/* Greeting */}
             <div className="text-center mb-6">
-              <h2 className="text-2xl sm:text-3xl font-bold mb-2">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-1">
                 Hey {selectedMember.name}! {selectedMember.avatar}
               </h2>
+              <p className="text-gray-300 text-lg">What are you in the mood for?</p>
             </div>
 
             {/* Movies / Shows toggle */}
-            <div className="flex justify-center mb-5">
+            <div className="flex justify-center mb-6">
               <ContentTypeToggle value={contentType} onChange={(v) => { setContentType(v); setSearchResults([]); setSelectedSearchId(null); }} />
             </div>
 
             {/* Continue where you left off */}
             {activeCategories.length > 0 && (
-              <div className="mb-6 max-w-3xl mx-auto">
+              <div className="mb-8 max-w-3xl mx-auto">
                 <h3 className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Continue where you left off</h3>
                 <div className="flex flex-wrap justify-center gap-2">
                   {activeCategories.map(({ category, count }) => {
@@ -838,33 +840,21 @@ export default function Home() {
               </div>
             )}
 
-            {/* How do you want to find content? */}
-            <div className="flex justify-center gap-1 mb-6 max-w-md mx-auto bg-gray-800/60 rounded-xl p-1">
-              {[
-                { id: "search" as const, icon: "🔍", label: "By Title" },
-                { id: "mood" as const, icon: "✨", label: "By Mood" },
-                { id: "category" as const, icon: "📂", label: "By Category" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setSearchTab(tab.id)}
-                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium transition-all
-                    ${searchTab === tab.id
-                      ? "bg-purple-600 text-white shadow"
-                      : "text-gray-400 hover:text-white"}`}
-                >
-                  <span>{tab.icon}</span>
-                  <span>{tab.label}</span>
-                </button>
-              ))}
+            {/* Mood chips — primary action, always visible */}
+            <MoodSearch onSearch={handleMoodSearch} loading={loading} />
+
+            {/* Category grid */}
+            <div className="mt-8">
+              <h3 className="text-center text-gray-400 text-sm mb-4">Or pick a genre</h3>
+              <GenreSelector onSelect={handleSelectCategory} loading={loading} />
             </div>
 
-            {/* TAB: Search by title */}
-            {searchTab === "search" && (
-              <div>
-                <SearchBar onSearch={handleSearch} loading={loading} />
+            {/* Search by title — secondary */}
+            <div className="mt-8 max-w-xl mx-auto">
+              <h3 className="text-center text-gray-400 text-sm mb-3">Know what you like? Search by title</h3>
+              <SearchBar onSearch={handleSearch} loading={loading} />
 
-                {searchResults.length > 0 && (
+              {searchResults.length > 0 && (
                   <div className="mt-6">
                     <h3 className="text-lg font-medium text-gray-300 mb-4">
                       {selectedSearchId
@@ -898,16 +888,6 @@ export default function Home() {
               </div>
             )}
 
-            {/* TAB: By mood */}
-            {searchTab === "mood" && (
-              <MoodSearch onSearch={handleMoodSearch} loading={loading} />
-            )}
-
-            {/* TAB: By category */}
-            {searchTab === "category" && (
-              <GenreSelector onSelect={handleSelectCategory} loading={loading} />
-            )}
-
             {loading && (
               <div className="mt-8">
                 <LoadingSpinner />
@@ -919,16 +899,31 @@ export default function Home() {
         {/* STEP: Recommendations (general) */}
         {step === "recommendations" && selectedMember && (
           <div className="pt-6">
-            <div className="text-center mb-8">
-              <div className="text-4xl mb-3">🎬</div>
-              <h2 className="text-3xl sm:text-4xl font-bold mb-3">
-                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Here&apos;s what we recommend</span>
+            <div className="text-center mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Here&apos;s what you should watch</span>
               </h2>
-              <p className="text-gray-300 text-lg mb-2">Tap a poster to learn more. Already watched? Let us know!</p>
-              <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-4 text-xs sm:text-sm">
-                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-green-600 rounded-full w-6 h-6 flex items-center justify-center text-white text-[10px]">👍</span> Liked = more like this</span>
-                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-gray-500 rounded-full w-6 h-6 flex items-center justify-center text-white text-[10px]">⏭</span> Pass = skip</span>
-                <span className="flex items-center gap-1.5 text-gray-400"><span className="bg-red-600 rounded-full w-6 h-6 flex items-center justify-center text-white text-[10px]">👎</span> Nope = avoid similar</span>
+
+              {/* How to use — big and obvious */}
+              <div className="max-w-lg mx-auto bg-gray-800/50 border border-gray-700/50 rounded-2xl p-4 mb-2">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2 bg-gray-900/50 rounded-xl px-3 py-2.5">
+                    <span className="text-xl">👆</span>
+                    <span className="text-gray-300 text-left"><strong className="text-white">Tap poster</strong> to read about it</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-gray-900/50 rounded-xl px-3 py-2.5">
+                    <span className="text-xl">▶️</span>
+                    <span className="text-gray-300 text-left"><strong className="text-white">Watch Now</strong> to find where to stream</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-green-900/30 rounded-xl px-3 py-2.5">
+                    <span className="text-xl">👍</span>
+                    <span className="text-gray-300 text-left"><strong className="text-green-400">Liked</strong> — show me more like this</span>
+                  </div>
+                  <div className="flex items-center gap-2 bg-red-900/30 rounded-xl px-3 py-2.5">
+                    <span className="text-xl">👎</span>
+                    <span className="text-gray-300 text-left"><strong className="text-red-400">Nope</strong> — avoid movies like this</span>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -959,7 +954,7 @@ export default function Home() {
               <h2 className="text-3xl sm:text-4xl font-bold mb-3">
                 <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">{genreLabel} We Recommend</span>
               </h2>
-              <p className="text-gray-300 text-lg">Tap a poster to learn more, then like or dislike</p>
+              <p className="text-gray-300">Tap a poster to read about it. Like or dislike to get better picks.</p>
             </div>
 
             {loading ? (
