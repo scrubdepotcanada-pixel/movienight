@@ -664,82 +664,74 @@ export default function Home() {
     <main dir={dir} className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-purple-950 text-white">
       {/* Header */}
       <header className="border-b border-gray-800/50 bg-black/20 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-3 py-3 sm:px-4 sm:py-4 flex items-center justify-between gap-2">
-          <button onClick={() => { setStep("select-member"); setSelectedMember(null); setViewingAll(false); }} className="flex-shrink-0">
-            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Next Movie
-            </h1>
-          </button>
-          <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
-            {isCategoryStep && (
-              <button
-                onClick={handleStartFresh}
-                className="text-xs sm:text-sm bg-gray-800 hover:bg-gray-700 text-gray-300 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-lg transition-colors"
-              >
-                Change category
-              </button>
-            )}
-            {selectedMember && (
-              <div className="flex items-center gap-1.5 sm:gap-2 text-sm text-gray-300">
-                <span className="text-lg sm:text-xl">{selectedMember.avatar}</span>
-                <span className="hidden sm:inline">{selectedMember.name}</span>
-                {(() => {
-                  const r = selectedMember.max_rating || (selectedMember.age != null ? (selectedMember.age < 7 ? "G" : selectedMember.age < 10 ? "PG" : selectedMember.age < 14 ? "PG-13" : selectedMember.age < 17 ? "R" : "ALL") : "ALL");
-                  const color = r === "G" ? "bg-green-600" : r === "PG" ? "bg-blue-600" : r === "PG-13" ? "bg-yellow-600" : r === "R" ? "bg-red-600" : "bg-purple-600";
-                  const label = r === "ALL" ? "All Ratings" : `Rated ${r}`;
-                  return (
-                    <span className={`${color} text-white text-[11px] sm:text-xs font-bold px-2 py-0.5 rounded-full`}>
-                      {label}
-                    </span>
-                  );
-                })()}
+        <div className="max-w-7xl mx-auto px-3 py-2 sm:px-4 sm:py-3">
+          <div className="flex items-center justify-between">
+            <button onClick={() => { setStep("select-member"); setSelectedMember(null); setViewingAll(false); }} className="flex-shrink-0">
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                Next Movie
+              </h1>
+            </button>
+            <div className="flex items-center gap-2">
+              {isCategoryStep && (
                 <button
-                  onClick={async () => {
-                    if (isGuest) {
-                      await fetch("/api/guest/clear", { method: "POST" });
-                      setMembers([]);
-                      setGuestMode(false);
-                    }
-                    setSelectedMember(null);
-                    setRecommendations([]);
-                    setSearchResults([]);
-                    setCategoryLiked([]);
-                    setCategoryDisliked([]);
-                    setActiveCategories([]);
-                    setStep("select-member");
-                  }}
-                  className="text-purple-400 hover:text-purple-300 underline text-xs sm:text-sm"
+                  onClick={handleStartFresh}
+                  className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-2 py-1 rounded-lg"
                 >
-                  {isGuest ? "Restart" : "Switch"}
+                  Change
                 </button>
-              </div>
-            )}
-            {isGuest ? (
-              <button
-                onClick={() => signIn("google")}
-                className="text-xs sm:text-sm bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg transition-colors flex-shrink-0"
-              >
-                Sign in
-              </button>
-            ) : (
-              <>
-                {session?.user?.image && (
-                  <img
-                    src={session.user.image}
-                    alt=""
-                    className="w-7 h-7 rounded-full"
-                  />
-                )}
-              </>
-            )}
-            {!isGuest && (
-              <button
-                onClick={() => signOut()}
-                className="text-xs text-gray-400 hover:text-white underline"
-              >
-                Sign out
-              </button>
-            )}
+              )}
+              {selectedMember && (
+                <>
+                  <span className="text-base">{selectedMember.avatar}</span>
+                  {(() => {
+                    const r = selectedMember.max_rating || (selectedMember.age != null ? (selectedMember.age < 7 ? "G" : selectedMember.age < 10 ? "PG" : selectedMember.age < 14 ? "PG-13" : selectedMember.age < 17 ? "R" : "ALL") : "ALL");
+                    const color = r === "G" ? "bg-green-600" : r === "PG" ? "bg-blue-600" : r === "PG-13" ? "bg-yellow-600" : r === "R" ? "bg-red-600" : "bg-purple-600";
+                    const label = r === "ALL" ? "All" : r;
+                    return (
+                      <span className={`${color} text-white text-[11px] font-bold px-1.5 py-0.5 rounded`}>
+                        {label}
+                      </span>
+                    );
+                  })()}
+                  <button
+                    onClick={async () => {
+                      if (isGuest) {
+                        await fetch("/api/guest/clear", { method: "POST" });
+                        setMembers([]);
+                        setGuestMode(false);
+                      }
+                      setSelectedMember(null);
+                      setRecommendations([]);
+                      setSearchResults([]);
+                      setCategoryLiked([]);
+                      setCategoryDisliked([]);
+                      setActiveCategories([]);
+                      setStep("select-member");
+                    }}
+                    className="text-purple-400 hover:text-purple-300 text-xs underline"
+                  >
+                    {isGuest ? "Restart" : "Switch"}
+                  </button>
+                </>
+              )}
+              {isGuest ? (
+                <button
+                  onClick={() => signIn("google")}
+                  className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-2.5 py-1 rounded-lg"
+                >
+                  Sign in
+                </button>
+              ) : (
+                <>
+                  {session?.user?.image && (
+                    <img src={session.user.image} alt="" className="w-6 h-6 rounded-full" />
+                  )}
+                  <button onClick={() => signOut()} className="text-xs text-gray-400 hover:text-white underline">
+                    Sign out
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
