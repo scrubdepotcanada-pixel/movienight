@@ -167,8 +167,8 @@ export default function MovieCard({
             </div>
             <div className="px-3 pt-2 pb-1">
               <h3 className="text-white text-sm font-medium truncate">{movie.title}</h3>
+              {year && <p className="text-gray-400 text-xs mt-0.5">{year}</p>}
               <div className="flex items-center gap-2 mt-0.5">
-                {year && <span className="text-gray-400 text-xs">{year}</span>}
                 {movie.certification && <span className="text-gray-400 text-xs">{movie.certification}</span>}
                 <span className="text-gray-400 text-xs">{movie.vote_average.toFixed(1)}/10</span>
               </div>
