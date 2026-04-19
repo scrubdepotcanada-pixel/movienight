@@ -146,3 +146,125 @@ export async function getWatchProviders(movieId: number, region: string = "CA"):
 export function providerLogoUrl(path: string): string {
   return `${TMDB_IMAGE_BASE}/w92${path}`;
 }
+
+// ── TV Show Support ──────────────────────────────────────────────
+
+export interface TVShow {
+  id: number;
+  name: string;
+  poster_path: string | null;
+  vote_average: number;
+  overview: string;
+  first_air_date: string;
+  certification?: string;
+}
+
+/** Unified interface for both movies and shows */
+export interface ContentItem {
+  id: number;
+  title: string;
+  poster_path: string | null;
+  vote_average: number;
+  overview: string;
+  release_date: string;
+  certification?: string;
+  content_type: "movie" | "show";
+}
+
+export async function searchTVShows(query: string, locale?: string): Promise<TVShow[]> {
+  const res = await fetch(
+    `${TMDB_BASE}/search/tv?query=${encodeURIComponent(query)}&include_adult=false&language=${tmdbLanguage(locale)}&page=1`,
+    { headers: headers() }
+  );
+  const data = await res.json();
+  return data.results || [];
+}
+
+export async function getTVShowCertification(showId: number): Promise<string> {
+  const res = await fetch(
+    `${TMDB_BASE}/tv/${showId}/content_ratings`,
+    { headers: headers() }
+  );
+  const data = await res.json();
+  const usResult = data.results?.find(
+    (r: { iso_3166_1: string }) => r.iso_3166_1 === "US"
+  );
+  return usResult?.rating || "NR";
+}
+
+/** Normalize a TVShow into our Movie-compatible shape (title instead of name, release_date instead of first_air_date) */
+function normalizeTVShow(show: TVShow, certification: string): Movie & { certification: string } {
+  return {
+    id: show.id,
+    title: show.name,
+    poster_path: show.poster_path,
+    vote_average: show.vote_average,
+    overview: show.overview,
+    release_date: show.first_air_date,
+    certification,
+  };
+}
+
+export async function enrichTVShowsWithCertifications(shows: TVShow[], _locale?: string): Promise<(Movie & { certification: string })[]> {
+  const enriched = await Promise.all(
+    shows.map(async (show) => {
+      const cert = await getTVShowCertification(show.id);
+      return normalizeTVShow(show, cert);
+    })
+  );
+  return enriched;
+}
+
+/**
+ * Look up a TV show by title and optional year via TMDB search,
+ * then enrich it with certification.
+ */
+export async function lookupTVShow(
+  title: string,
+  year?: number,
+  locale?: string
+): Promise<(Movie & { certification: string }) | null> {
+  const yearParam = year ? `&first_air_date_year=${year}` : "";
+  const res = await fetch(
+    `${TMDB_BASE}/search/tv?query=${encodeURIComponent(title)}${yearParam}&include_adult=false&language=${tmdbLanguage(locale)}&page=1`,
+    { headers: headers() }
+  );
+  const data = await res.json();
+  const results: TVShow[] = data.results || [];
+  if (results.length === 0) return null;
+
+  const show = results[0];
+  const cert = await getTVShowCertification(show.id);
+  return normalizeTVShow(show, cert);
+}
+
+/**
+ * Take an array of {title, year} from OpenAI and resolve them
+ * to full TV show objects with posters, ratings, and certifications.
+ * Normalized to use `title` and `release_date` fields for consistency with movies.
+ */
+export async function resolveAIShowSuggestions(
+  suggestions: { title: string; year: number }[],
+  locale?: string
+): Promise<(Movie & { certification: string })[]> {
+  const results = await Promise.all(
+    suggestions.map((s) => lookupTVShow(s.title, s.year, locale))
+  );
+  return results.filter((m): m is Movie & { certification: string } => m !== null);
+}
+
+export async function getTVWatchProviders(showId: number, region: string = "CA"): Promise<WatchProviders> {
+  const res = await fetch(
+    `${TMDB_BASE}/tv/${showId}/watch/providers`,
+    { headers: headers() }
+  );
+  const data = await res.json();
+  const countryData = data.results?.[region];
+  if (!countryData) return {};
+  return {
+    flatrate: countryData.flatrate || [],
+    rent: countryData.rent || [],
+    buy: countryData.buy || [],
+    link: countryData.link,
+  };
+}

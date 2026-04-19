@@ -7,6 +7,7 @@ import MovieCard from "@/components/MovieCard";
 import MemberSelector from "@/components/MemberSelector";
 import GenreSelector, { GENRES } from "@/components/GenreSelector";
 import CategorySidebar from "@/components/CategorySidebar";
+import ContentTypeToggle from "@/components/ContentTypeToggle";
 import { useLocale } from "@/lib/i18n";
 import LandingPage from "@/components/landing/LandingPage";
 
@@ -79,6 +80,9 @@ export default function Home() {
   const [categoryDisliked, setCategoryDisliked] = useState<SidebarMovie[]>([]);
   const [activeCategories, setActiveCategories] = useState<{ category: string; count: number }[]>([]);
 
+  // Content type state (movies vs shows)
+  const [contentType, setContentType] = useState<"movie" | "show">("movie");
+
   // Load members when signed in or in guest mode
   useEffect(() => {
     if (status !== "authenticated" && !guestMode) return;
@@ -89,12 +93,14 @@ export default function Home() {
   }, [status, guestMode]);
 
   // Top up recommendations to 5 if some were lost to dedup/filtering
-  const topUpRecommendations = useCallback(async (currentRecs: Movie[], memberId: number, category: string) => {
+  const topUpRecommendations = useCallback(async (currentRecs: Movie[], memberId: number, category: string, type: "movie" | "show" = "movie") => {
     const missing = 6 - currentRecs.length;
     if (missing <= 0) return currentRecs;
 
+    const refreshUrl = type === "show" ? "/api/shows/refresh" : "/api/movies/refresh";
+
     try {
-      const res = await fetch("/api/movies/refresh", {
+      const res = await fetch(refreshUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ memberId, count: missing, category }),
@@ -168,6 +174,7 @@ export default function Home() {
     setActiveCategory("general");
     setCategoryLiked([]);
     setCategoryDisliked([]);
+    setContentType("movie");
     loadMemberSession(member);
   };
 
@@ -252,7 +259,10 @@ export default function Home() {
   const handleSearch = async (query: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/movies/search?q=${encodeURIComponent(query)}`);
+      const searchUrl = contentType === "show"
+        ? `/api/shows/search?q=${encodeURIComponent(query)}`
+        : `/api/movies/search?q=${encodeURIComponent(query)}`;
+      const res = await fetch(searchUrl);
       const data = await res.json();
       setSearchResults(data);
       setSelectedSearchId(null);
@@ -328,9 +338,10 @@ export default function Home() {
         setStep("category-returning");
       } else {
         // Fresh category — get new recommendations
-        const res = await fetch(
-          `/api/movies/category?category=${encodeURIComponent(genreId)}&memberId=${selectedMember!.id}`
-        );
+        const categoryUrl = contentType === "show"
+          ? `/api/shows/category?category=${encodeURIComponent(genreId)}&memberId=${selectedMember!.id}`
+          : `/api/movies/category?category=${encodeURIComponent(genreId)}&memberId=${selectedMember!.id}`;
+        const res = await fetch(categoryUrl);
 
         if (!res.ok) {
           throw new Error(`Category fetch failed: ${res.status}`);
@@ -359,7 +370,8 @@ export default function Home() {
 
     try {
       // 2. Fire off the API call - it returns a replacement movie
-      const res = await fetch("/api/movies/watched", {
+      const watchedUrl = contentType === "show" ? "/api/shows/watched" : "/api/movies/watched";
+      const res = await fetch(watchedUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -403,7 +415,8 @@ export default function Home() {
   const handleLike = async (movie: Movie) => {
     setLikeLoadingId(movie.id);
     try {
-      const res = await fetch("/api/movies/like", {
+      const likeUrl = contentType === "show" ? "/api/shows/like" : "/api/movies/like";
+      const res = await fetch(likeUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -441,7 +454,8 @@ export default function Home() {
   const handlePass = async (movie: Movie) => {
     setPassLoadingId(movie.id);
     try {
-      const res = await fetch("/api/movies/watched", {
+      const passUrl = contentType === "show" ? "/api/shows/watched" : "/api/movies/watched";
+      const res = await fetch(passUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -469,7 +483,8 @@ export default function Home() {
   const handleDislike = async (movie: Movie) => {
     setDislikeLoadingId(movie.id);
     try {
-      const res = await fetch("/api/movies/dislike", {
+      const dislikeUrl = contentType === "show" ? "/api/shows/dislike" : "/api/movies/dislike";
+      const res = await fetch(dislikeUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -509,13 +524,15 @@ export default function Home() {
     setActiveCategory("general");
     setCategoryLiked([]);
     setCategoryDisliked([]);
+    setContentType("movie");
     setStep("search");
   };
 
   const handleRemoveLike = async (title: string) => {
     setCategoryLiked((prev) => prev.filter((m) => m.title !== title));
     try {
-      await fetch("/api/movies/like", {
+      const removeLikeUrl = contentType === "show" ? "/api/shows/like" : "/api/movies/like";
+      await fetch(removeLikeUrl, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -532,7 +549,8 @@ export default function Home() {
   const handleRemoveDislike = async (tmdbId: number) => {
     setCategoryDisliked((prev) => prev.filter((m) => m.tmdb_id !== tmdbId));
     try {
-      await fetch("/api/movies/dislike", {
+      const removeDislikeUrl = contentType === "show" ? "/api/shows/dislike" : "/api/movies/dislike";
+      await fetch(removeDislikeUrl, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -568,7 +586,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Movie row - 6 cards */}
+      {/* Movie/Show row - 6 cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
         {recommendations
           .filter((m) => !categoryLiked.some((l) => l.title === m.title))
@@ -586,6 +604,7 @@ export default function Home() {
             showDislike
             onDislike={() => handleDislike(movie)}
             dislikeLoading={dislikeLoadingId === movie.id}
+            contentType={contentType}
           />
         ))}
       </div>
@@ -767,7 +786,15 @@ export default function Home() {
               <h2 className="text-3xl font-bold mb-2">
                 Hey {selectedMember.name}! {selectedMember.avatar}
               </h2>
-              <p className="text-gray-400">Search a movie you love and tap it to get started</p>
+              <p className="text-gray-400">
+                {contentType === "show"
+                  ? "Search a TV show you love and tap it to get started"
+                  : "Search a movie you love and tap it to get started"}
+              </p>
+            </div>
+
+            <div className="flex justify-center mb-6">
+              <ContentTypeToggle value={contentType} onChange={(v) => { setContentType(v); setSearchResults([]); setSelectedSearchId(null); }} />
             </div>
 
             <SearchBar onSearch={handleSearch} loading={loading} />
@@ -775,7 +802,9 @@ export default function Home() {
             {searchResults.length > 0 && (
               <div className="mt-6">
                 <h3 className="text-lg font-medium text-gray-300 mb-4">
-                  {selectedSearchId ? "Tap again to deselect, or confirm below:" : "Tap the movie you love:"}
+                  {selectedSearchId
+                    ? "Tap again to deselect, or confirm below:"
+                    : contentType === "show" ? "Tap the show you love:" : "Tap the movie you love:"}
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {searchResults.map((movie) => (
@@ -784,6 +813,7 @@ export default function Home() {
                       movie={movie}
                       selected={selectedSearchId === movie.id}
                       onClick={() => handleSelectSearchMovie(movie)}
+                      contentType={contentType}
                     />
                   ))}
                 </div>
@@ -794,7 +824,7 @@ export default function Home() {
                       disabled={loading}
                       className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-3 rounded-xl text-lg font-semibold transition-all hover:scale-105"
                     >
-                      Find Movies Like This →
+                      {contentType === "show" ? "Find Shows Like This" : "Find Movies Like This"} →
                     </button>
                   </div>
                 )}

@@ -30,6 +30,7 @@ interface MovieCardProps {
   likeLoading?: boolean;
   passLoading?: boolean;
   onClick?: () => void;
+  contentType?: "movie" | "show";
 }
 
 const PROVIDER_SEARCH_NAMES: Record<number, string> = {
@@ -76,6 +77,7 @@ export default function MovieCard({
   movie, selected, onDislike, onLike, onPass,
   showDislike, showLike, showPass,
   dislikeLoading, likeLoading, passLoading, onClick,
+  contentType = "movie",
 }: MovieCardProps) {
   const [flipped, setFlipped] = useState(false);
   const [showProviders, setShowProviders] = useState(false);
@@ -105,7 +107,10 @@ export default function MovieCard({
   const handleWatchNow = async () => {
     setLoadingProviders(true);
     try {
-      const res = await fetch(`/api/movies/providers?movieId=${movie.id}`);
+      const providerUrl = contentType === "show"
+        ? `/api/shows/providers?showId=${movie.id}`
+        : `/api/movies/providers?movieId=${movie.id}`;
+      const res = await fetch(providerUrl);
       const data = await res.json();
       const all = [...(data.flatrate || []), ...(data.rent || [])];
       const unique = all.filter((p: WatchProvider, i: number, arr: WatchProvider[]) =>

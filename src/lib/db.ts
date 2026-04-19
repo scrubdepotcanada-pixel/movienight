@@ -93,6 +93,8 @@ export async function initDB() {
     "ALTER TABLE families ADD COLUMN name TEXT",
     "ALTER TABLE families ADD COLUMN avatar TEXT",
     "ALTER TABLE recommendations ADD COLUMN release_date TEXT",
+    "ALTER TABLE recommendations ADD COLUMN content_type TEXT DEFAULT 'movie'",
+    "ALTER TABLE watched_movies ADD COLUMN content_type TEXT DEFAULT 'movie'",
   ];
   for (const sql of migrations) {
     try {

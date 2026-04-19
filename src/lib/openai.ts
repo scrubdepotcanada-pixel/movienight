@@ -154,3 +154,121 @@ export async function getReplacementMoviesAI(
     fetchCount
   );
 }
+
+// ── TV Show Support ──────────────────────────────────────────────
+
+interface ShowSuggestion {
+  title: string;
+  year: number;
+}
+
+async function askForShows(prompt: string, count: number): Promise<ShowSuggestion[]> {
+  const response = await getOpenAI().chat.completions.create({
+    model: "gpt-4o-mini",
+    temperature: 0.9,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content: `You are a TV show recommendation expert. You always respond in JSON format with a "movies" array containing objects with "title" (string) and "year" (number) fields. Only suggest real, well-known TV shows (NOT movies). The "year" should be the year the show first aired. Never repeat shows. Always return exactly ${count} TV shows. Strictly respect any content rating restrictions specified by the user.`,
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+  });
+
+  const content = response.choices[0]?.message?.content;
+  if (!content) return [];
+
+  try {
+    const parsed = JSON.parse(content);
+    return (parsed.movies || []).slice(0, count);
+  } catch {
+    return [];
+  }
+}
+
+function buildShowExcludeBlock(watchedTitles: string[], dislikedTitles: string[]): string {
+  let block = "";
+  if (watchedTitles.length > 0) {
+    block += `\n\nDo NOT suggest any of these TV shows (already watched): ${watchedTitles.join(", ")}`;
+  }
+  if (dislikedTitles.length > 0) {
+    block += `\n\nThe user DISLIKED these TV shows, so do NOT suggest anything similar to them: ${dislikedTitles.join(", ")}. Avoid TV series with a similar tone, style, or themes to the disliked ones.`;
+  }
+  return block;
+}
+
+export async function getCategoryShowsAI(
+  category: string,
+  watchedTitles: string[],
+  dislikedTitles: string[],
+  maxRating: MaxRating | null = null
+): Promise<ShowSuggestion[]> {
+  const excludeBlock = buildShowExcludeBlock(watchedTitles, dislikedTitles);
+  const ratingBlock = ratingRestrictionPrompt(maxRating);
+  const count = 8 + bonusCount(maxRating);
+
+  return askForShows(
+    `Suggest ${count} must-watch ${category} TV shows (television series only, NOT movies) for a TV binge night. Include a mix of all-time classic TV series and great recent shows in the ${category} genre. Pick TV shows that best represent what makes ${category} great — the ones that fans of the genre absolutely need to see.${excludeBlock}${ratingBlock}\n\nReturn exactly ${count} TV shows. Remember: only TV series, never movies.`,
+    count
+  );
+}
+
+export async function getShowRecommendationsAI(
+  likedShow: string,
+  watchedTitles: string[],
+  dislikedTitles: string[] = [],
+  maxRating: MaxRating | null = null
+): Promise<ShowSuggestion[]> {
+  const excludeBlock = buildShowExcludeBlock(watchedTitles, dislikedTitles);
+  const ratingBlock = ratingRestrictionPrompt(maxRating);
+  const count = 3 + bonusCount(maxRating);
+
+  return askForShows(
+    `The user loves the TV show "${likedShow}". Suggest ${count} TV shows (television series only, NOT movies) that are similar in tone, genre, and style. These should be TV series that someone who loved "${likedShow}" would also enjoy.${excludeBlock}${ratingBlock}\n\nReturn exactly ${count} TV shows. Remember: only TV series, never movies.`,
+    count
+  );
+}
+
+export async function getReplacementShowsAI(
+  context: { likedShow1?: string; likedShow2?: string; category?: string },
+  currentRecommendations: string[],
+  watchedTitles: string[],
+  dislikedTitles: string[],
+  count: number,
+  maxRating: MaxRating | null = null
+): Promise<ShowSuggestion[]> {
+  const allExclude = [...new Set([
+    ...watchedTitles,
+    ...currentRecommendations,
+    ...(context.likedShow1 ? [context.likedShow1] : []),
+    ...(context.likedShow2 ? [context.likedShow2] : []),
+  ])];
+
+  let dislikeBlock = "";
+  if (dislikedTitles.length > 0) {
+    dislikeBlock = `\n\nThe user DISLIKED these TV shows, so avoid anything similar in tone, style, or themes: ${dislikedTitles.join(", ")}`;
+  }
+
+  const ratingBlock = ratingRestrictionPrompt(maxRating);
+  const fetchCount = count + bonusCount(maxRating);
+
+  let tasteContext: string;
+  if (context.category && context.category !== "general") {
+    tasteContext = `The user wants ${context.category} TV shows (television series only, NOT movies) for a binge night. Suggest ${fetchCount} great ${context.category} TV series they haven't seen.`;
+  } else if (context.likedShow1 && context.likedShow2) {
+    tasteContext = `The user loves these TV shows: "${context.likedShow1}" and "${context.likedShow2}". They need ${fetchCount} new TV show recommendations (television series only, NOT movies) to replace shows they've already watched or didn't like. Suggest TV series similar in taste to their liked shows.`;
+  } else if (context.likedShow1) {
+    tasteContext = `The user loves the TV show "${context.likedShow1}". They need ${fetchCount} new TV show recommendations (television series only, NOT movies). Suggest TV series similar in tone, genre, and style.`;
+  } else {
+    tasteContext = `Suggest ${fetchCount} great TV shows (television series only, NOT movies) for a binge night.`;
+  }
+
+  return askForShows(
+    `${tasteContext}${dislikeBlock}${ratingBlock}\n\nDo NOT suggest any of these TV shows: ${allExclude.join(", ")}\n\nReturn exactly ${fetchCount} TV shows. Remember: only TV series, never movies.`,
+    fetchCount
+  );
+}

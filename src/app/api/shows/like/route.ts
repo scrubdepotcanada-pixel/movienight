@@ -1,0 +1,107 @@
+import { NextRequest, NextResponse } from "next/server";
+import { resolveAIShowSuggestions } from "@/lib/tmdb";
+import { getReplacementShowsAI } from "@/lib/openai";
+import { getMemberRestrictions } from "@/lib/member";
+import { isMovieAllowed } from "@/lib/ageRating";
+import db from "@/lib/db";
+
+// Like a show — save to liked_movies AND replace the card with a new recommendation
+export async function POST(req: NextRequest) {
+  const { memberId, movie, category = "general" } = await req.json();
+
+  if (!memberId || !movie) {
+    return NextResponse.json({ error: "Missing memberId or movie" }, { status: 400 });
+  }
+
+  await db.execute({
+    sql: "INSERT INTO liked_movies (member_id, title, category) VALUES (?, ?, ?)",
+    args: [memberId, movie.title, category],
+  });
+
+  // Liking = watched
+  await db.execute({
+    sql: `INSERT OR IGNORE INTO watched_movies (member_id, tmdb_id, title, poster_path, vote_average, certification, content_type)
+          VALUES (?, ?, ?, ?, ?, ?, 'show')`,
+    args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification || "NR"],
+  });
+
+  await db.execute({
+    sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND tmdb_id = ? AND content_type = 'show'",
+    args: [memberId, movie.id],
+  });
+
+  const [{ maxRating }, likedRows, watchedRows, dislikedRows, recsRows] = await Promise.all([
+    getMemberRestrictions(memberId),
+    db.execute({
+      sql: "SELECT DISTINCT title FROM liked_movies WHERE member_id = ? AND category = ? ORDER BY created_at DESC LIMIT 2",
+      args: [memberId, category],
+    }),
+    db.execute({
+      sql: "SELECT title FROM watched_movies WHERE member_id = ? AND content_type = 'show'",
+      args: [memberId],
+    }),
+    db.execute({
+      sql: "SELECT title FROM disliked_movies WHERE member_id = ? AND category = ?",
+      args: [memberId, category],
+    }),
+    db.execute({
+      sql: "SELECT title FROM recommendations WHERE member_id = ? AND is_active = 1 AND category = ? AND content_type = 'show'",
+      args: [memberId, category],
+    }),
+  ]);
+
+  const likedTitles = likedRows.rows.map((r) => String(r.title));
+  const watchedTitles = watchedRows.rows.map((r) => String(r.title));
+  const dislikedTitles = dislikedRows.rows.map((r) => String(r.title));
+  const currentRecTitles = recsRows.rows.map((r) => String(r.title));
+
+  const context = category !== "general"
+    ? { category }
+    : { likedShow1: likedTitles[0], likedShow2: likedTitles[1] || undefined };
+
+  if (category === "general" && likedTitles.length < 1) {
+    return NextResponse.json({ replacement: null });
+  }
+
+  const suggestions = await getReplacementShowsAI(
+    context,
+    currentRecTitles,
+    watchedTitles,
+    dislikedTitles,
+    1,
+    maxRating
+  );
+
+  const locale = req.cookies.get("locale")?.value;
+
+  const activeIds = new Set(recsRows.rows.map((r) => Number(r.tmdb_id)));
+  const shows = await resolveAIShowSuggestions(suggestions, locale);
+  const allowed = shows.filter((m) => isMovieAllowed(m.certification, maxRating) && !activeIds.has(m.id));
+  const replacement = allowed[0] || null;
+
+  if (replacement) {
+    await db.execute({
+      sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, release_date, category, content_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'show')`,
+      args: [memberId, replacement.id, replacement.title, replacement.poster_path, replacement.vote_average, replacement.certification, replacement.overview, replacement.release_date || null, category],
+    });
+  }
+
+  return NextResponse.json({ replacement });
+}
+
+// Remove a like
+export async function DELETE(req: NextRequest) {
+  const { memberId, movieTitle, category = "general" } = await req.json();
+
+  if (!memberId || !movieTitle) {
+    return NextResponse.json({ error: "Missing memberId or movieTitle" }, { status: 400 });
+  }
+
+  await db.execute({
+    sql: "DELETE FROM liked_movies WHERE member_id = ? AND title = ? AND category = ?",
+    args: [memberId, movieTitle, category],
+  });
+
+  return NextResponse.json({ success: true });
+}
