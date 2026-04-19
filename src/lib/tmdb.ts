@@ -24,7 +24,10 @@ export function posterUrl(path: string | null, size: string = "w342"): string {
 }
 
 function tmdbLanguage(locale?: string): string {
-  return locale === "he" ? "he" : "en-US";
+  const map: Record<string, string> = {
+    en: "en-US", he: "he", fr: "fr-FR", es: "es-MX", ar: "ar", ru: "ru-RU", de: "de-DE",
+  };
+  return (locale && map[locale]) || "en-US";
 }
 
 export async function searchMovies(query: string, locale?: string): Promise<Movie[]> {
