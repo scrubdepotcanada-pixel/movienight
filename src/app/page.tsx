@@ -921,7 +921,7 @@ export default function Home() {
               <h2 className="text-2xl sm:text-3xl font-bold mb-1">
                 Hey {selectedMember.name}! {selectedMember.avatar}
               </h2>
-              <p className="text-gray-300 text-lg">What are you in the mood for?</p>
+              <p className="text-gray-300 text-lg">What are you looking for?</p>
             </div>
 
             {/* Movies / Shows toggle */}
@@ -954,7 +954,7 @@ export default function Home() {
               </div>
             )}
 
-            {/* Mood chips — primary action, always visible */}
+            {/* Describe what you want — mood or theme */}
             <MoodSearch onSearch={handleMoodSearch} loading={loading} />
 
             {/* Category grid */}
