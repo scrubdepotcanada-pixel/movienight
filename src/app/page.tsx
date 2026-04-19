@@ -484,6 +484,7 @@ export default function Home() {
         const idx = prev.findIndex((m) => m.id === movie.id);
         if (idx === -1) return prev;
         if (!data.replacement) return prev;
+        if (prev.some((m, i2) => i2 !== idx && m.title.toLowerCase() === data.replacement.title.toLowerCase())) return prev;
         const next = [...prev];
         next[idx] = data.replacement;
         return next;
@@ -522,6 +523,7 @@ export default function Home() {
         const idx = prev.findIndex((m) => m.id === movie.id);
         if (idx === -1) return prev;
         if (!data.replacement) return prev;
+        if (prev.some((m, i2) => i2 !== idx && m.title.toLowerCase() === data.replacement.title.toLowerCase())) return prev;
         const next = [...prev];
         next[idx] = data.replacement;
         return next;
@@ -551,6 +553,7 @@ export default function Home() {
         const idx = prev.findIndex((m) => m.id === movie.id);
         if (idx === -1) return prev;
         if (!data.replacement) return prev;
+        if (prev.some((m, i2) => i2 !== idx && m.title.toLowerCase() === data.replacement.title.toLowerCase())) return prev;
         const next = [...prev];
         next[idx] = data.replacement;
         return next;
@@ -697,12 +700,22 @@ export default function Home() {
         </div>
       )}
 
-      {/* Movie/Show row - 6 cards */}
+      {/* Movie/Show row - 6 cards, deduped */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
-        {recommendations
-          .filter((m) => !categoryLiked.some((l) => l.title === m.title))
-          .slice(0, 6)
-          .map((movie) => (
+        {(() => {
+          const seen = new Set<string>();
+          return recommendations
+            .filter((m) => {
+              // Remove liked movies
+              if (categoryLiked.some((l) => l.title === m.title)) return false;
+              // Dedup by title (case-insensitive)
+              const key = m.title.toLowerCase();
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            })
+            .slice(0, 6)
+            .map((movie) => (
           <MovieCard
             key={movie.id}
             movie={movie}
@@ -717,7 +730,8 @@ export default function Home() {
             dislikeLoading={dislikeLoadingId === movie.id}
             contentType={contentType}
           />
-        ))}
+        ));
+        })()}
       </div>
     </div>
   );
