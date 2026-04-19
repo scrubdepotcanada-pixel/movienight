@@ -11,6 +11,9 @@ import ContentTypeToggle from "@/components/ContentTypeToggle";
 import MoodSearch from "@/components/MoodSearch";
 import SwipeFlow from "@/components/SwipeFlow";
 import SwipeResults from "@/components/SwipeResults";
+import PremiumModal from "@/components/PremiumModal";
+import TasteProfile from "@/components/TasteProfile";
+import Watchlist from "@/components/Watchlist";
 import { useLocale } from "@/lib/i18n";
 import LandingPage from "@/components/landing/LandingPage";
 
@@ -90,6 +93,13 @@ export default function Home() {
   // Content type state (movies vs shows)
   const [contentType, setContentType] = useState<"movie" | "show">("movie");
 
+  // Premium state
+  const [isPremium, setIsPremium] = useState(false);
+  const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [premiumFeature, setPremiumFeature] = useState<string>("");
+  const [showTasteProfile, setShowTasteProfile] = useState(false);
+  const [showWatchlist, setShowWatchlist] = useState(false);
+
   // Swipe state
   const [swipeSessionId, setSwipeSessionId] = useState<string | null>(null);
   const [swipeCandidates, setSwipeCandidates] = useState<Movie[]>([]);
@@ -109,9 +119,13 @@ export default function Home() {
     totalMembers: number;
   } | null>(null);
 
-  // Load members when signed in or in guest mode
+  // Load members + premium status when signed in or in guest mode
   useEffect(() => {
     if (status !== "authenticated" && !guestMode) return;
+    fetch("/api/premium")
+      .then((r) => r.json())
+      .then((d) => setIsPremium(!!d.isPremium))
+      .catch(() => {});
     fetch("/api/members")
       .then((r) => r.json())
       .then(setMembers)
@@ -237,6 +251,11 @@ export default function Home() {
     setLoading(false);
   };
 
+  const openPremiumModal = (feature: string) => {
+    setPremiumFeature(feature);
+    setShowPremiumModal(true);
+  };
+
   const handleAddMember = async (name: string, avatar: string, age: number | null, maxRating: string) => {
     try {
       const res = await fetch("/api/members", {
@@ -244,6 +263,10 @@ export default function Home() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, avatar, age, maxRating }),
       });
+      if (res.status === 403) {
+        openPremiumModal("Unlimited family members");
+        return;
+      }
       const member = await res.json();
       setMembers((prev) => [...prev, member]);
     } catch (err) {
@@ -791,6 +814,20 @@ export default function Home() {
                     );
                   })()}
                   <button
+                    onClick={() => isPremium ? setShowWatchlist(true) : openPremiumModal("Personal watchlist")}
+                    className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-lg"
+                    title="Watchlist"
+                  >
+                    {isPremium ? "📋" : "📋✨"}
+                  </button>
+                  <button
+                    onClick={() => isPremium ? setShowTasteProfile(true) : openPremiumModal("Taste profile & stats")}
+                    className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-lg"
+                    title="Taste Profile"
+                  >
+                    {isPremium ? "📊" : "📊✨"}
+                  </button>
+                  <button
                     onClick={async () => {
                       if (isGuest) {
                         await fetch("/api/guest/clear", { method: "POST" });
@@ -810,6 +847,14 @@ export default function Home() {
                     {isGuest ? "Restart" : "Switch"}
                   </button>
                 </>
+              )}
+              {!isPremium && (
+                <button
+                  onClick={() => openPremiumModal("")}
+                  className="text-[10px] bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-2 py-1 rounded-lg font-bold"
+                >
+                  Premium
+                </button>
               )}
               {isGuest ? (
                 <button
@@ -1247,6 +1292,17 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Premium modals */}
+      {showPremiumModal && (
+        <PremiumModal onClose={() => setShowPremiumModal(false)} feature={premiumFeature || undefined} />
+      )}
+      {showTasteProfile && selectedMember && (
+        <TasteProfile memberId={selectedMember.id} memberName={selectedMember.name} onClose={() => setShowTasteProfile(false)} />
+      )}
+      {showWatchlist && selectedMember && (
+        <Watchlist memberId={selectedMember.id} memberName={selectedMember.name} onClose={() => setShowWatchlist(false)} />
+      )}
     </main>
   );
 }

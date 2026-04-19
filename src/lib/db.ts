@@ -111,6 +111,21 @@ export async function initDB() {
       FOREIGN KEY (member_id) REFERENCES members(id),
       UNIQUE(session_id, member_id, tmdb_id)
     )`,
+    `CREATE TABLE IF NOT EXISTS watchlist (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      member_id INTEGER NOT NULL,
+      tmdb_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      poster_path TEXT,
+      vote_average REAL,
+      certification TEXT,
+      overview TEXT,
+      release_date TEXT,
+      content_type TEXT DEFAULT 'movie',
+      added_at TEXT DEFAULT (datetime('now')),
+      FOREIGN KEY (member_id) REFERENCES members(id),
+      UNIQUE(member_id, tmdb_id)
+    )`,
   ]);
 
   // Migrations: add new columns to existing tables if missing
@@ -127,6 +142,8 @@ export async function initDB() {
     "ALTER TABLE recommendations ADD COLUMN release_date TEXT",
     "ALTER TABLE recommendations ADD COLUMN content_type TEXT DEFAULT 'movie'",
     "ALTER TABLE watched_movies ADD COLUMN content_type TEXT DEFAULT 'movie'",
+    "ALTER TABLE families ADD COLUMN premium_until TEXT",
+    "ALTER TABLE families ADD COLUMN subscription_plan TEXT",
   ];
   for (const sql of migrations) {
     try {

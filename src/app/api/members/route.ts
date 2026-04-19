@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrCreateFamily } from "@/lib/session";
 import db from "@/lib/db";
+import { getFamilyPremiumStatus, getMemberCount, FREE_MEMBER_LIMIT } from "@/lib/premium";
 
 const VALID_RATINGS = ["G", "PG", "PG-13", "R", "NC-17", "ALL"];
 
@@ -30,6 +31,14 @@ export async function POST(req: NextRequest) {
 
   if (!name || !name.trim()) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  }
+
+  const premium = await getFamilyPremiumStatus(familyId);
+  if (!premium.isPremium) {
+    const count = await getMemberCount(familyId);
+    if (count >= FREE_MEMBER_LIMIT) {
+      return NextResponse.json({ error: "PREMIUM_REQUIRED", message: "Upgrade to add more family members", limit: FREE_MEMBER_LIMIT }, { status: 403 });
+    }
   }
 
   const ageValue = typeof age === "number" && age > 0 && age < 130 ? age : null;
