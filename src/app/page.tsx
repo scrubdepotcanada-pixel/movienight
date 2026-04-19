@@ -103,6 +103,7 @@ export default function Home() {
   const [showWatchlist, setShowWatchlist] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filmographyPerson, setFilmographyPerson] = useState<{ id: number; name: string; role: string } | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   // Swipe state
   const [swipeSessionId, setSwipeSessionId] = useState<string | null>(null);
@@ -128,7 +129,7 @@ export default function Home() {
     if (status !== "authenticated" && !guestMode) return;
     fetch("/api/premium")
       .then((r) => r.json())
-      .then((d) => setIsPremium(!!d.isPremium))
+      .then((d) => { setIsPremium(!!d.isPremium); setIsAdmin(!!d.isAdmin); })
       .catch(() => {});
     fetch("/api/members")
       .then((r) => r.json())

@@ -3,6 +3,15 @@ import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
 import db, { initDB } from "./db";
 
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "oreekoblentz@gmail.com")
+  .split(",")
+  .map((e) => e.trim().toLowerCase());
+
+export function isAdminEmail(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.toLowerCase());
+}
+
 export async function getOrCreateFamily(): Promise<string | null> {
   await initDB();
 
@@ -21,6 +30,12 @@ export async function getOrCreateFamily(): Promise<string | null> {
     });
 
     if (byId.rows.length > 0) {
+      if (isAdminEmail(email)) {
+        await db.execute({
+          sql: "UPDATE families SET premium_until = ?, subscription_plan = ? WHERE id = ?",
+          args: ["2099-12-31T23:59:59Z", "admin", String(byId.rows[0].id)],
+        });
+      }
       return String(byId.rows[0].id);
     }
 
@@ -39,9 +54,11 @@ export async function getOrCreateFamily(): Promise<string | null> {
       }
     }
 
+    const premiumUntil = isAdminEmail(email) ? "2099-12-31T23:59:59Z" : null;
+    const plan = isAdminEmail(email) ? "admin" : null;
     await db.execute({
-      sql: "INSERT INTO families (id, google_id, email, name, avatar) VALUES (?, ?, ?, ?, ?)",
-      args: [userId, userId, email, name, image],
+      sql: "INSERT INTO families (id, google_id, email, name, avatar, premium_until, subscription_plan) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      args: [userId, userId, email, name, image, premiumUntil, plan],
     });
 
     return userId;

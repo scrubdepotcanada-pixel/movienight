@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/auth";
+import { isAdminEmail } from "@/lib/session";
 import db, { initDB } from "@/lib/db";
 
 export async function GET(req: NextRequest) {
   const secret = req.nextUrl.searchParams.get("key");
-  if (secret !== process.env.ADMIN_SECRET) {
+  const session = await auth();
+  const isAdmin = isAdminEmail(session?.user?.email);
+
+  if (!isAdmin && secret !== process.env.ADMIN_SECRET) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -20,6 +25,7 @@ export async function GET(req: NextRequest) {
     totalWatchlist,
     totalSwipeSessions,
     recentSignups,
+    userDetails,
   ] = await Promise.all([
     db.execute("SELECT COUNT(*) as count FROM families WHERE google_id IS NOT NULL"),
     db.execute("SELECT COUNT(*) as count FROM families WHERE google_id IS NULL"),
@@ -31,6 +37,16 @@ export async function GET(req: NextRequest) {
     db.execute("SELECT COUNT(*) as count FROM watchlist"),
     db.execute("SELECT COUNT(*) as count FROM swipe_sessions"),
     db.execute("SELECT id, email, name, created_at FROM families WHERE google_id IS NOT NULL ORDER BY created_at DESC LIMIT 20"),
+    db.execute(`
+      SELECT f.id, f.email, f.name, f.created_at, f.premium_until, f.subscription_plan,
+        (SELECT COUNT(*) FROM members WHERE family_id = f.id) as member_count,
+        (SELECT COUNT(*) FROM liked_movies lm JOIN members m ON lm.member_id = m.id WHERE m.family_id = f.id) as liked_count,
+        (SELECT COUNT(*) FROM disliked_movies dm JOIN members m ON dm.member_id = m.id WHERE m.family_id = f.id) as disliked_count
+      FROM families f
+      WHERE f.google_id IS NOT NULL
+      ORDER BY f.created_at DESC
+      LIMIT 50
+    `),
   ]);
 
   return NextResponse.json({
@@ -51,6 +67,16 @@ export async function GET(req: NextRequest) {
       email: r.email,
       name: r.name,
       signedUp: r.created_at,
+    })),
+    userDetails: userDetails.rows.map(r => ({
+      email: r.email,
+      name: r.name,
+      signedUp: r.created_at,
+      isPremium: r.premium_until ? new Date(String(r.premium_until)) > new Date() : false,
+      plan: r.subscription_plan,
+      members: Number(r.member_count),
+      liked: Number(r.liked_count),
+      disliked: Number(r.disliked_count),
     })),
   });
 }
