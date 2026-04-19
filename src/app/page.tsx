@@ -805,7 +805,7 @@ export default function Home() {
                       setActiveCategories([]);
                       setStep("select-member");
                     }}
-                    className="text-purple-400 hover:text-purple-300 text-xs underline"
+                    className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-lg"
                   >
                     {isGuest ? "Restart" : "Switch"}
                   </button>
@@ -823,7 +823,7 @@ export default function Home() {
                   {session?.user?.image && (
                     <img src={session.user.image} alt="" className="w-6 h-6 rounded-full" />
                   )}
-                  <button onClick={() => signOut()} className="text-xs text-gray-400 hover:text-white underline">
+                  <button onClick={() => signOut()} className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-lg">
                     Sign out
                   </button>
                 </>
