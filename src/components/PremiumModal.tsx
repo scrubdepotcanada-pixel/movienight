@@ -9,7 +9,7 @@ interface PremiumModalProps {
 
 const FEATURES = [
   { icon: "👨‍👩‍👧‍👦", text: "Unlimited family members" },
-  { icon: "🌍", text: "App in your language" },
+  { icon: "🌍", text: "Multi-language recommendations" },
   { icon: "🎚️", text: "Advanced filters (decade, runtime, rating)" },
   { icon: "📋", text: "Personal watchlist" },
   { icon: "📊", text: "Taste profile & stats" },
