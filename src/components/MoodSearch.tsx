@@ -58,38 +58,41 @@ export default function MoodSearch({ onSearch, loading }: MoodSearchProps) {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      {/* Custom input */}
-      <form onSubmit={handleSubmit} className="mb-5">
-        <div className="relative">
-          <input
-            type="text"
-            value={customMood}
-            onChange={(e) => setCustomMood(e.target.value)}
-            placeholder={`e.g. ${placeholder}`}
-            className="w-full px-5 py-3.5 bg-gray-800/80 backdrop-blur border border-gray-600 rounded-2xl text-white text-base placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all pr-24"
-            disabled={loading}
-          />
-          <button
-            type="submit"
-            disabled={loading || !customMood.trim()}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-xl font-medium transition-colors text-sm"
-          >
-            {loading ? "..." : "Go"}
-          </button>
-        </div>
-      </form>
+    <div className="w-full max-w-2xl mx-auto space-y-4">
+      {/* Describe it yourself */}
+      <div className="bg-gray-800/40 border border-gray-700/40 rounded-2xl p-4">
+        <p className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Describe what you want</p>
+        <form onSubmit={handleSubmit}>
+          <div className="relative">
+            <input
+              type="text"
+              value={customMood}
+              onChange={(e) => setCustomMood(e.target.value)}
+              placeholder={`e.g. ${placeholder}`}
+              className="w-full px-5 py-3.5 bg-gray-900/60 border border-gray-600/50 rounded-xl text-white text-base placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all pr-24"
+              disabled={loading}
+            />
+            <button
+              type="submit"
+              disabled={loading || !customMood.trim()}
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-xl font-medium transition-colors text-sm"
+            >
+              {loading ? "..." : "Go"}
+            </button>
+          </div>
+        </form>
+      </div>
 
       {/* Mood presets */}
-      <div className="mb-4">
-        <p className="text-center text-gray-500 text-xs uppercase tracking-wider mb-2">Mood</p>
+      <div className="bg-purple-950/30 border border-purple-800/30 rounded-2xl p-4">
+        <p className="text-center text-purple-400 text-xs uppercase tracking-wider mb-3">How are you feeling?</p>
         <div className="flex flex-wrap justify-center gap-2">
           {MOOD_PRESETS.map((preset) => (
             <button
               key={preset.label}
               onClick={() => onSearch(preset.mood)}
               disabled={loading}
-              className="flex items-center gap-1.5 bg-gray-800/60 hover:bg-purple-600/30 border border-gray-700/50 hover:border-purple-500/50 text-gray-300 hover:text-white px-3 py-2 rounded-full text-sm transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-purple-900/30 hover:bg-purple-600/40 border border-purple-700/40 hover:border-purple-500/60 text-gray-200 hover:text-white px-3 py-2 rounded-full text-sm transition-all disabled:opacity-50"
             >
               <span>{preset.emoji}</span>
               <span>{preset.label}</span>
@@ -99,15 +102,15 @@ export default function MoodSearch({ onSearch, loading }: MoodSearchProps) {
       </div>
 
       {/* Theme presets */}
-      <div>
-        <p className="text-center text-gray-500 text-xs uppercase tracking-wider mb-2">Theme</p>
+      <div className="bg-pink-950/20 border border-pink-800/25 rounded-2xl p-4">
+        <p className="text-center text-pink-400 text-xs uppercase tracking-wider mb-3">Pick a theme</p>
         <div className="flex flex-wrap justify-center gap-2">
           {THEME_PRESETS.map((preset) => (
             <button
               key={preset.label}
               onClick={() => onSearch(preset.mood)}
               disabled={loading}
-              className="flex items-center gap-1.5 bg-gray-800/60 hover:bg-pink-600/20 border border-gray-700/50 hover:border-pink-500/50 text-gray-300 hover:text-white px-3 py-2 rounded-full text-sm transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 bg-pink-900/20 hover:bg-pink-600/30 border border-pink-700/30 hover:border-pink-500/50 text-gray-200 hover:text-white px-3 py-2 rounded-full text-sm transition-all disabled:opacity-50"
             >
               <span>{preset.emoji}</span>
               <span>{preset.label}</span>
