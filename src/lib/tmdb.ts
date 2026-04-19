@@ -150,6 +150,127 @@ export function providerLogoUrl(path: string): string {
   return `${TMDB_IMAGE_BASE}/w92${path}`;
 }
 
+// ── Credits & Person ────────────────────────────────────────────
+
+export interface CastMember {
+  id: number;
+  name: string;
+  character: string;
+  profile_path: string | null;
+  order: number;
+}
+
+export interface CrewMember {
+  id: number;
+  name: string;
+  job: string;
+  department: string;
+  profile_path: string | null;
+}
+
+export interface MovieCredits {
+  cast: CastMember[];
+  crew: CrewMember[];
+  director: CrewMember | null;
+}
+
+export async function getMovieCredits(movieId: number): Promise<MovieCredits> {
+  const res = await fetch(`${TMDB_BASE}/movie/${movieId}/credits`, { headers: headers() });
+  const data = await res.json();
+  const cast = (data.cast || []).slice(0, 10).map((c: Record<string, unknown>) => ({
+    id: Number(c.id),
+    name: String(c.name),
+    character: String(c.character || ""),
+    profile_path: c.profile_path ? String(c.profile_path) : null,
+    order: Number(c.order || 0),
+  }));
+  const crew = (data.crew || []).map((c: Record<string, unknown>) => ({
+    id: Number(c.id),
+    name: String(c.name),
+    job: String(c.job || ""),
+    department: String(c.department || ""),
+    profile_path: c.profile_path ? String(c.profile_path) : null,
+  }));
+  const director = crew.find((c: CrewMember) => c.job === "Director") || null;
+  return { cast, crew, director };
+}
+
+export async function getPersonMovies(personId: number, locale?: string): Promise<Movie[]> {
+  const res = await fetch(
+    `${TMDB_BASE}/person/${personId}/movie_credits?language=${tmdbLanguage(locale)}`,
+    { headers: headers() }
+  );
+  const data = await res.json();
+  const allMovies = [...(data.cast || []), ...(data.crew || []).filter((c: Record<string, unknown>) => c.job === "Director")];
+  const seen = new Set<number>();
+  const unique: Movie[] = [];
+  for (const m of allMovies) {
+    if (seen.has(Number(m.id)) || !m.poster_path) continue;
+    seen.add(Number(m.id));
+    unique.push({
+      id: Number(m.id),
+      title: String(m.title || ""),
+      poster_path: m.poster_path ? String(m.poster_path) : null,
+      vote_average: Number(m.vote_average || 0),
+      overview: String(m.overview || ""),
+      release_date: String(m.release_date || ""),
+    });
+  }
+  return unique
+    .filter(m => m.vote_average > 0)
+    .sort((a, b) => b.vote_average - a.vote_average)
+    .slice(0, 20);
+}
+
+// ── Discover (Advanced Filters) ─────────────────────────────────
+
+export interface DiscoverFilters {
+  minRating?: number;
+  decade?: string;
+  maxRuntime?: number;
+  genre?: number;
+  sortBy?: string;
+}
+
+const GENRE_IDS: Record<string, number> = {
+  action: 28, comedy: 35, drama: 18, horror: 27, "sci-fi": 878,
+  romance: 10749, thriller: 53, animation: 16, documentary: 99,
+  fantasy: 14, mystery: 9648, adventure: 12,
+};
+
+export function getGenreId(name: string): number | undefined {
+  return GENRE_IDS[name.toLowerCase()];
+}
+
+export async function discoverMovies(filters: DiscoverFilters, locale?: string): Promise<Movie[]> {
+  const params = new URLSearchParams({
+    include_adult: "false",
+    language: tmdbLanguage(locale),
+    sort_by: filters.sortBy || "vote_average.desc",
+    "vote_count.gte": "100",
+    page: "1",
+  });
+  if (filters.minRating) params.set("vote_average.gte", String(filters.minRating));
+  if (filters.maxRuntime) params.set("with_runtime.lte", String(filters.maxRuntime));
+  if (filters.genre) params.set("with_genres", String(filters.genre));
+  if (filters.decade) {
+    const startYear = parseInt(filters.decade);
+    params.set("primary_release_date.gte", `${startYear}-01-01`);
+    params.set("primary_release_date.lte", `${startYear + 9}-12-31`);
+  }
+
+  const res = await fetch(`${TMDB_BASE}/discover/movie?${params}`, { headers: headers() });
+  const data = await res.json();
+  return (data.results || []).slice(0, 20).map((m: Record<string, unknown>) => ({
+    id: Number(m.id),
+    title: String(m.title || ""),
+    poster_path: m.poster_path ? String(m.poster_path) : null,
+    vote_average: Number(m.vote_average || 0),
+    overview: String(m.overview || ""),
+    release_date: String(m.release_date || ""),
+  }));
+}
+
 // ── TV Show Support ──────────────────────────────────────────────
 
 export interface TVShow {

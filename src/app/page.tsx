@@ -14,6 +14,8 @@ import SwipeResults from "@/components/SwipeResults";
 import PremiumModal from "@/components/PremiumModal";
 import TasteProfile from "@/components/TasteProfile";
 import Watchlist from "@/components/Watchlist";
+import AdvancedFilters from "@/components/AdvancedFilters";
+import PersonFilmography from "@/components/PersonFilmography";
 import { useLocale } from "@/lib/i18n";
 import LandingPage from "@/components/landing/LandingPage";
 
@@ -99,6 +101,8 @@ export default function Home() {
   const [premiumFeature, setPremiumFeature] = useState<string>("");
   const [showTasteProfile, setShowTasteProfile] = useState(false);
   const [showWatchlist, setShowWatchlist] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filmographyPerson, setFilmographyPerson] = useState<{ id: number; name: string; role: string } | null>(null);
 
   // Swipe state
   const [swipeSessionId, setSwipeSessionId] = useState<string | null>(null);
@@ -707,6 +711,63 @@ export default function Home() {
   const sidebarLabel = activeCategory === "general" ? "Your" : genreLabel;
   const showSidebar = categoryLiked.length > 0 || categoryDisliked.length > 0;
 
+  const handlePersonClick = (person: { id: number; name: string; role: string }) => {
+    if (!isPremium && !isGuest) {
+      openPremiumModal("More from this director or actor");
+      return;
+    }
+    if (isPremium) {
+      setFilmographyPerson(person);
+    }
+  };
+
+  const handleAddToWatchlist = async (movie: { id: number; title: string; poster_path: string | null; vote_average: number; certification?: string; overview?: string; release_date?: string }) => {
+    if (!isPremium && !isGuest) {
+      openPremiumModal("Personal watchlist");
+      return;
+    }
+    if (!isPremium || !selectedMember) return;
+    await fetch("/api/watchlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        memberId: selectedMember.id,
+        tmdbId: movie.id,
+        title: movie.title,
+        posterPath: movie.poster_path,
+        voteAverage: movie.vote_average,
+        certification: movie.certification,
+        overview: movie.overview,
+        releaseDate: movie.release_date,
+        contentType,
+      }),
+    });
+  };
+
+  const handleDiscoverApply = async (filters: { genre?: string; decade?: string; minRating?: number; maxRuntime?: number }) => {
+    setLoading(true);
+    setShowAdvancedFilters(false);
+    try {
+      const params = new URLSearchParams();
+      if (filters.genre) params.set("genre", filters.genre);
+      if (filters.decade) params.set("decade", filters.decade);
+      if (filters.minRating) params.set("minRating", String(filters.minRating));
+      if (filters.maxRuntime) params.set("maxRuntime", String(filters.maxRuntime));
+      const res = await fetch(`/api/movies/discover?${params}`);
+      if (res.status === 403) {
+        openPremiumModal("Advanced filters");
+        setLoading(false);
+        return;
+      }
+      const movies = await res.json();
+      setRecommendations(movies);
+      setStep("recommendations");
+    } catch {
+      setError("Failed to discover movies");
+    }
+    setLoading(false);
+  };
+
   // Shared recommendation grid used in multiple steps
   const renderRecommendationGrid = () => (
     <div className="max-w-6xl mx-auto">
@@ -752,6 +813,8 @@ export default function Home() {
             onDislike={() => handleDislike(movie)}
             dislikeLoading={dislikeLoadingId === movie.id}
             contentType={contentType}
+            onPersonClick={!isGuest ? handlePersonClick : undefined}
+            onAddToWatchlist={!isGuest && isPremium ? () => handleAddToWatchlist(movie) : undefined}
           />
         ));
         })()}
@@ -813,20 +876,24 @@ export default function Home() {
                       </span>
                     );
                   })()}
-                  <button
-                    onClick={() => isPremium ? setShowWatchlist(true) : openPremiumModal("Personal watchlist")}
-                    className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-lg"
-                    title="Watchlist"
-                  >
-                    {isPremium ? "📋" : "📋✨"}
-                  </button>
-                  <button
-                    onClick={() => isPremium ? setShowTasteProfile(true) : openPremiumModal("Taste profile & stats")}
-                    className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-lg"
-                    title="Taste Profile"
-                  >
-                    {isPremium ? "📊" : "📊✨"}
-                  </button>
+                  {!isGuest && (
+                    <>
+                      <button
+                        onClick={() => isPremium ? setShowWatchlist(true) : openPremiumModal("Personal watchlist")}
+                        className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-lg"
+                        title="Watchlist"
+                      >
+                        {isPremium ? "📋" : "📋✨"}
+                      </button>
+                      <button
+                        onClick={() => isPremium ? setShowTasteProfile(true) : openPremiumModal("Taste profile & stats")}
+                        className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-lg"
+                        title="Taste Profile"
+                      >
+                        {isPremium ? "📊" : "📊✨"}
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={async () => {
                       if (isGuest) {
@@ -848,12 +915,12 @@ export default function Home() {
                   </button>
                 </>
               )}
-              {!isPremium && (
+              {!isGuest && !isPremium && (
                 <button
                   onClick={() => openPremiumModal("")}
                   className="text-[10px] bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-2 py-1 rounded-lg font-bold"
                 >
-                  Premium
+                  Upgrade
                 </button>
               )}
               {isGuest ? (
@@ -1007,6 +1074,20 @@ export default function Home() {
               <h3 className="text-center text-gray-400 text-sm mb-4">Or pick a genre</h3>
               <GenreSelector onSelect={handleSelectCategory} loading={loading} />
             </div>
+
+            {/* Advanced Filters — premium */}
+            {!isGuest && (
+              <div className="mt-6 text-center">
+                <button
+                  onClick={() => isPremium ? setShowAdvancedFilters(true) : openPremiumModal("Advanced filters")}
+                  className="inline-flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors"
+                >
+                  <span>🎚️</span>
+                  <span>Advanced Filters</span>
+                  {!isPremium && <span className="text-[9px] bg-gradient-to-r from-purple-600 to-pink-600 text-white px-1.5 py-0.5 rounded-full font-bold">PRO</span>}
+                </button>
+              </div>
+            )}
 
             {/* Search by title — secondary */}
             <div className="mt-8 max-w-xl mx-auto">
@@ -1302,6 +1383,17 @@ export default function Home() {
       )}
       {showWatchlist && selectedMember && (
         <Watchlist memberId={selectedMember.id} memberName={selectedMember.name} onClose={() => setShowWatchlist(false)} />
+      )}
+      {showAdvancedFilters && (
+        <AdvancedFilters onApply={handleDiscoverApply} loading={loading} onClose={() => setShowAdvancedFilters(false)} />
+      )}
+      {filmographyPerson && (
+        <PersonFilmography
+          personId={filmographyPerson.id}
+          personName={filmographyPerson.name}
+          role={filmographyPerson.role}
+          onClose={() => setFilmographyPerson(null)}
+        />
       )}
     </main>
   );

@@ -9,6 +9,12 @@ interface WatchProvider {
   logo_path: string;
 }
 
+interface CreditPerson {
+  id: number;
+  name: string;
+  role: string;
+}
+
 interface MovieCardProps {
   movie: {
     id: number;
@@ -31,6 +37,8 @@ interface MovieCardProps {
   passLoading?: boolean;
   onClick?: () => void;
   contentType?: "movie" | "show";
+  onPersonClick?: (person: CreditPerson) => void;
+  onAddToWatchlist?: () => void;
 }
 
 const PROVIDER_SEARCH_NAMES: Record<number, string> = {
@@ -77,12 +85,13 @@ export default function MovieCard({
   movie, selected, onDislike, onLike, onPass,
   showDislike, showLike, showPass,
   dislikeLoading, likeLoading, passLoading, onClick,
-  contentType = "movie",
+  contentType = "movie", onPersonClick, onAddToWatchlist,
 }: MovieCardProps) {
   const [flipped, setFlipped] = useState(false);
   const [showProviders, setShowProviders] = useState(false);
   const [providers, setProviders] = useState<WatchProvider[]>([]);
   const [loadingProviders, setLoadingProviders] = useState(false);
+  const [credits, setCredits] = useState<{ director?: string; directorId?: number; cast: { id: number; name: string }[] } | null>(null);
 
   const posterSrc = movie.poster_path
     ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`
@@ -100,6 +109,18 @@ export default function MovieCard({
     if (!showActions) {
       onClick?.();
       return;
+    }
+    if (!flipped && !credits && contentType === "movie") {
+      fetch(`/api/movies/credits?movieId=${movie.id}`)
+        .then(r => r.json())
+        .then(d => {
+          setCredits({
+            director: d.director?.name,
+            directorId: d.director?.id,
+            cast: (d.cast || []).slice(0, 3).map((c: { id: number; name: string }) => ({ id: c.id, name: c.name })),
+          });
+        })
+        .catch(() => {});
     }
     setFlipped(!flipped);
   };
@@ -198,15 +219,49 @@ export default function MovieCard({
               <p className="text-gray-300 text-xs leading-relaxed">
                 {movie.overview || "No description available."}
               </p>
+              {credits && onPersonClick && (
+                <div className="mt-2 pt-2 border-t border-gray-700/50">
+                  {credits.director && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); onPersonClick({ id: credits.directorId!, name: credits.director!, role: "Director" }); }}
+                      className="text-purple-400 hover:text-purple-300 text-[11px] block mb-0.5"
+                    >
+                      Dir: {credits.director}
+                    </button>
+                  )}
+                  {credits.cast.length > 0 && (
+                    <div className="flex flex-wrap gap-x-1.5">
+                      {credits.cast.map(c => (
+                        <button
+                          key={c.id}
+                          onClick={(e) => { e.stopPropagation(); onPersonClick({ id: c.id, name: c.name, role: "Actor" }); }}
+                          className="text-pink-400 hover:text-pink-300 text-[11px]"
+                        >
+                          {c.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
-            <div className="px-3 pb-1">
+            <div className="px-3 pb-1 flex gap-1.5">
               <button
                 onClick={(e) => { e.stopPropagation(); handleWatchNow(); }}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
               >
                 {loadingProviders ? <Spinner /> : <>▶ Watch Now</>}
               </button>
+              {onAddToWatchlist && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); onAddToWatchlist(); }}
+                  className="bg-gray-700 hover:bg-gray-600 text-white px-2.5 py-2 rounded-lg text-xs transition-colors"
+                  title="Add to watchlist"
+                >
+                  📋+
+                </button>
+              )}
             </div>
 
             {showActions && (
