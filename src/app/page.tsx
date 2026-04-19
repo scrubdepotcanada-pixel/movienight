@@ -66,6 +66,7 @@ export default function Home() {
 
   // Search state
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
+  const [searchTab, setSearchTab] = useState<"search" | "mood" | "category">("search");
   const [selectedSearchId, setSelectedSearchId] = useState<number | null>(null);
 
   // Recommendations state
@@ -809,60 +810,22 @@ export default function Home() {
         {/* STEP: Search */}
         {step === "search" && selectedMember && (
           <div className="pt-6">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2">
+            <div className="text-center mb-6">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-2">
                 Hey {selectedMember.name}! {selectedMember.avatar}
               </h2>
-              <p className="text-gray-400">
-                {contentType === "show"
-                  ? "Search a TV show you love and tap it to get started"
-                  : "Search a movie you love and tap it to get started"}
-              </p>
             </div>
 
-            <div className="flex justify-center mb-6">
+            {/* Movies / Shows toggle */}
+            <div className="flex justify-center mb-5">
               <ContentTypeToggle value={contentType} onChange={(v) => { setContentType(v); setSearchResults([]); setSelectedSearchId(null); }} />
             </div>
 
-            <SearchBar onSearch={handleSearch} loading={loading} />
-
-            {searchResults.length > 0 && (
-              <div className="mt-6">
-                <h3 className="text-lg font-medium text-gray-300 mb-4">
-                  {selectedSearchId
-                    ? "Tap again to deselect, or confirm below:"
-                    : contentType === "show" ? "Tap the show you love:" : "Tap the movie you love:"}
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {searchResults.map((movie) => (
-                    <MovieCard
-                      key={movie.id}
-                      movie={movie}
-                      selected={selectedSearchId === movie.id}
-                      onClick={() => handleSelectSearchMovie(movie)}
-                      contentType={contentType}
-                    />
-                  ))}
-                </div>
-                {selectedSearchId && (
-                  <div className="mt-6 text-center">
-                    <button
-                      onClick={handleConfirmPick}
-                      disabled={loading}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-3 rounded-xl text-lg font-semibold transition-all hover:scale-105"
-                    >
-                      {contentType === "show" ? "Find Shows Like This" : "Find Movies Like This"} →
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* Continue where you left off */}
             {activeCategories.length > 0 && (
-              <div className="mt-10 max-w-3xl mx-auto">
-                <h3 className="text-center text-gray-400 text-sm mb-4">Continue where you left off</h3>
-                <div className="flex flex-wrap justify-center gap-3">
+              <div className="mb-6 max-w-3xl mx-auto">
+                <h3 className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Continue where you left off</h3>
+                <div className="flex flex-wrap justify-center gap-2">
                   {activeCategories.map(({ category, count }) => {
                     const genre = GENRES.find((g) => g.id === category);
                     if (!genre) return null;
@@ -871,11 +834,11 @@ export default function Home() {
                         key={category}
                         onClick={() => handleSelectCategory(category)}
                         disabled={loading}
-                        className="flex items-center gap-2 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 hover:border-purple-500 text-white px-5 py-3 rounded-xl transition-all hover:scale-105 disabled:opacity-50"
+                        className="flex items-center gap-1.5 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 hover:border-purple-500 text-white px-3 py-2 rounded-lg transition-all text-sm disabled:opacity-50"
                       >
-                        <span className="text-xl">{genre.icon}</span>
-                        <span className="font-medium">{genre.label}</span>
-                        <span className="text-purple-300 text-xs bg-purple-500/30 px-2 py-0.5 rounded-full">{count} picks</span>
+                        <span>{genre.icon}</span>
+                        <span>{genre.label}</span>
+                        <span className="text-purple-300 text-[10px] bg-purple-500/30 px-1.5 py-0.5 rounded-full">{count}</span>
                       </button>
                     );
                   })}
@@ -883,13 +846,75 @@ export default function Home() {
               </div>
             )}
 
-            <div className="mt-10">
-              <MoodSearch onSearch={handleMoodSearch} loading={loading} />
+            {/* How do you want to find content? */}
+            <div className="flex justify-center gap-1 mb-6 max-w-md mx-auto bg-gray-800/60 rounded-xl p-1">
+              {[
+                { id: "search" as const, icon: "🔍", label: "By Title" },
+                { id: "mood" as const, icon: "✨", label: "By Mood" },
+                { id: "category" as const, icon: "📂", label: "By Category" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setSearchTab(tab.id)}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-medium transition-all
+                    ${searchTab === tab.id
+                      ? "bg-purple-600 text-white shadow"
+                      : "text-gray-400 hover:text-white"}`}
+                >
+                  <span>{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </button>
+              ))}
             </div>
 
-            <div className="mt-10">
+            {/* TAB: Search by title */}
+            {searchTab === "search" && (
+              <div>
+                <SearchBar onSearch={handleSearch} loading={loading} />
+
+                {searchResults.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-medium text-gray-300 mb-4">
+                      {selectedSearchId
+                        ? "Tap again to deselect, or confirm below:"
+                        : contentType === "show" ? "Tap the show you love:" : "Tap the movie you love:"}
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      {searchResults.map((movie) => (
+                        <MovieCard
+                          key={movie.id}
+                          movie={movie}
+                          selected={selectedSearchId === movie.id}
+                          onClick={() => handleSelectSearchMovie(movie)}
+                          contentType={contentType}
+                        />
+                      ))}
+                    </div>
+                    {selectedSearchId && (
+                      <div className="mt-6 text-center">
+                        <button
+                          onClick={handleConfirmPick}
+                          disabled={loading}
+                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-3 rounded-xl text-lg font-semibold transition-all hover:scale-105"
+                        >
+                          {contentType === "show" ? "Find Shows Like This" : "Find Movies Like This"} →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB: By mood */}
+            {searchTab === "mood" && (
+              <MoodSearch onSearch={handleMoodSearch} loading={loading} />
+            )}
+
+            {/* TAB: By category */}
+            {searchTab === "category" && (
               <GenreSelector onSelect={handleSelectCategory} loading={loading} />
-            </div>
+            )}
 
             {loading && (
               <div className="mt-8">
