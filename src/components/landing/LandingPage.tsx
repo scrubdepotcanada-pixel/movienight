@@ -46,7 +46,7 @@ export default function LandingPage({ onSignIn, onGuest }: LandingPageProps) {
         <ProductPreviewSection />
         <BenefitsSection />
         <HowItWorksSection />
-        <FinalCTASection onSignIn={onSignIn} />
+        <FinalCTASection onSignIn={onSignIn} onGuest={onGuest} />
       </main>
 
       {/* Footer */}
