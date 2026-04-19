@@ -1163,12 +1163,46 @@ function GuestSetup({ onDone }: { existingMember: Member | null; onDone: (name: 
 
 function MovieLoadingScreen() {
   return (
-    <div className="text-center py-16">
-      <div className="text-5xl mb-6 animate-bounce">🍿</div>
-      <h3 className="text-2xl font-bold text-white mb-3">Loading your movie night suggestions...</h3>
-      <p className="text-gray-400 text-sm">Like, dislike, or pass to teach us what you enjoy</p>
-      <div className="mt-8">
-        <div className="w-12 h-12 mx-auto rounded-full border-4 border-gray-700 border-t-purple-500 animate-spin" />
+    <div className="text-center py-10 max-w-md mx-auto">
+      <div className="text-6xl mb-6 animate-bounce">🍿</div>
+      <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">Finding your perfect picks...</h3>
+      <p className="text-gray-300 text-base mb-8">This takes a few seconds — our AI is matching your taste</p>
+
+      <div className="w-14 h-14 mx-auto rounded-full border-4 border-gray-700 border-t-purple-500 animate-spin mb-10" />
+
+      {/* How it works — teach while they wait */}
+      <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-5 text-left">
+        <p className="text-purple-400 text-xs font-bold uppercase tracking-wider mb-4 text-center">How it works</p>
+        <div className="space-y-4">
+          <div className="flex gap-3 items-start">
+            <span className="text-2xl flex-shrink-0">👆</span>
+            <div>
+              <p className="text-white font-semibold text-sm">Tap any poster</p>
+              <p className="text-gray-400 text-xs">Read what the movie is about and find where to stream it</p>
+            </div>
+          </div>
+          <div className="flex gap-3 items-start">
+            <span className="text-2xl flex-shrink-0">👍</span>
+            <div>
+              <p className="text-green-400 font-semibold text-sm">Tap &quot;Liked&quot;</p>
+              <p className="text-gray-400 text-xs">We&apos;ll find more movies like the ones you love</p>
+            </div>
+          </div>
+          <div className="flex gap-3 items-start">
+            <span className="text-2xl flex-shrink-0">👎</span>
+            <div>
+              <p className="text-red-400 font-semibold text-sm">Tap &quot;Nope&quot;</p>
+              <p className="text-gray-400 text-xs">We&apos;ll avoid suggesting anything like it</p>
+            </div>
+          </div>
+          <div className="flex gap-3 items-start">
+            <span className="text-2xl flex-shrink-0">⏭</span>
+            <div>
+              <p className="text-gray-300 font-semibold text-sm">Tap &quot;Pass&quot;</p>
+              <p className="text-gray-400 text-xs">Skip it — no effect on your recommendations</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
