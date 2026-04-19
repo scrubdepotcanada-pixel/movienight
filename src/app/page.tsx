@@ -1172,34 +1172,34 @@ function MovieLoadingScreen() {
 
       {/* How it works — teach while they wait */}
       <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-5 text-left">
-        <p className="text-purple-400 text-xs font-bold uppercase tracking-wider mb-4 text-center">How it works</p>
+        <p className="text-purple-400 text-sm font-bold uppercase tracking-wider mb-4 text-center">Teach us what you like</p>
         <div className="space-y-4">
           <div className="flex gap-3 items-start">
             <span className="text-2xl flex-shrink-0">👆</span>
             <div>
               <p className="text-white font-semibold text-sm">Tap any poster</p>
-              <p className="text-gray-400 text-xs">Read what the movie is about and find where to stream it</p>
+              <p className="text-gray-400 text-xs">Read what it&apos;s about and find where to watch</p>
             </div>
           </div>
           <div className="flex gap-3 items-start">
             <span className="text-2xl flex-shrink-0">👍</span>
             <div>
-              <p className="text-green-400 font-semibold text-sm">Tap &quot;Liked&quot;</p>
-              <p className="text-gray-400 text-xs">We&apos;ll find more movies like the ones you love</p>
+              <p className="text-green-400 font-semibold text-sm">Loved it? Tap &quot;Liked&quot;</p>
+              <p className="text-gray-400 text-xs">We&apos;ll learn your taste and suggest more like it</p>
             </div>
           </div>
           <div className="flex gap-3 items-start">
             <span className="text-2xl flex-shrink-0">👎</span>
             <div>
-              <p className="text-red-400 font-semibold text-sm">Tap &quot;Nope&quot;</p>
-              <p className="text-gray-400 text-xs">We&apos;ll avoid suggesting anything like it</p>
+              <p className="text-red-400 font-semibold text-sm">Not for you? Tap &quot;Nope&quot;</p>
+              <p className="text-gray-400 text-xs">We&apos;ll stop recommending movies like it</p>
             </div>
           </div>
           <div className="flex gap-3 items-start">
             <span className="text-2xl flex-shrink-0">⏭</span>
             <div>
-              <p className="text-gray-300 font-semibold text-sm">Tap &quot;Pass&quot;</p>
-              <p className="text-gray-400 text-xs">Skip it — no effect on your recommendations</p>
+              <p className="text-gray-300 font-semibold text-sm">Haven&apos;t seen it? Tap &quot;Pass&quot;</p>
+              <p className="text-gray-400 text-xs">Skip it — we won&apos;t judge</p>
             </div>
           </div>
         </div>
