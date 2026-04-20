@@ -10,6 +10,7 @@ interface PremiumModalProps {
 const FEATURES = [
   { icon: "👨‍👩‍👧‍👦", text: "Unlimited family members" },
   { icon: "🌍", text: "Multi-language recommendations" },
+  { icon: "📺", text: "Filter by streaming platform (Netflix, Disney+...)" },
   { icon: "🎚️", text: "Advanced filters (decade, runtime, rating)" },
   { icon: "📋", text: "Personal watchlist" },
   { icon: "📊", text: "Taste profile & stats" },

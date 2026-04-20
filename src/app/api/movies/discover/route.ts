@@ -17,12 +17,16 @@ export async function GET(req: NextRequest) {
   const decade = req.nextUrl.searchParams.get("decade") || undefined;
   const minRating = req.nextUrl.searchParams.get("minRating");
   const maxRuntime = req.nextUrl.searchParams.get("maxRuntime");
+  const providerId = req.nextUrl.searchParams.get("providerId");
+  const watchRegion = req.nextUrl.searchParams.get("region") || "US";
 
   const movies = await discoverMovies({
     genre: genreName ? getGenreId(genreName) : undefined,
     decade,
     minRating: minRating ? Number(minRating) : undefined,
     maxRuntime: maxRuntime ? Number(maxRuntime) : undefined,
+    providerId: providerId ? Number(providerId) : undefined,
+    watchRegion,
   }, locale);
 
   const enriched = await enrichWithCertifications(movies.slice(0, 12), locale);

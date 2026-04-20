@@ -230,6 +230,8 @@ export interface DiscoverFilters {
   maxRuntime?: number;
   genre?: number;
   sortBy?: string;
+  providerId?: number;
+  watchRegion?: string;
 }
 
 const GENRE_IDS: Record<string, number> = {
@@ -253,6 +255,10 @@ export async function discoverMovies(filters: DiscoverFilters, locale?: string):
   if (filters.minRating) params.set("vote_average.gte", String(filters.minRating));
   if (filters.maxRuntime) params.set("with_runtime.lte", String(filters.maxRuntime));
   if (filters.genre) params.set("with_genres", String(filters.genre));
+  if (filters.providerId) {
+    params.set("with_watch_providers", String(filters.providerId));
+    params.set("watch_region", filters.watchRegion || "US");
+  }
   if (filters.decade) {
     const startYear = parseInt(filters.decade);
     params.set("primary_release_date.gte", `${startYear}-01-01`);

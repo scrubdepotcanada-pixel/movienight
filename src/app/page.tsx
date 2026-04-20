@@ -745,7 +745,7 @@ export default function Home() {
     });
   };
 
-  const handleDiscoverApply = async (filters: { genre?: string; decade?: string; minRating?: number; maxRuntime?: number }) => {
+  const handleDiscoverApply = async (filters: { genre?: string; decade?: string; minRating?: number; maxRuntime?: number; providerId?: number; region?: string }) => {
     setLoading(true);
     setShowAdvancedFilters(false);
     try {
@@ -754,6 +754,8 @@ export default function Home() {
       if (filters.decade) params.set("decade", filters.decade);
       if (filters.minRating) params.set("minRating", String(filters.minRating));
       if (filters.maxRuntime) params.set("maxRuntime", String(filters.maxRuntime));
+      if (filters.providerId) params.set("providerId", String(filters.providerId));
+      if (filters.region) params.set("region", filters.region);
       const res = await fetch(`/api/movies/discover?${params}`);
       if (res.status === 403) {
         openPremiumModal("Advanced filters");
