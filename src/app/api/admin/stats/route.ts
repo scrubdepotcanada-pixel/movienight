@@ -43,7 +43,19 @@ export async function GET(req: NextRequest) {
       SELECT f.id, f.email, f.name, f.created_at, f.premium_until, f.subscription_plan,
         (SELECT COUNT(*) FROM members WHERE family_id = f.id) as member_count,
         (SELECT COUNT(*) FROM liked_movies lm JOIN members m ON lm.member_id = m.id WHERE m.family_id = f.id) as liked_count,
-        (SELECT COUNT(*) FROM disliked_movies dm JOIN members m ON dm.member_id = m.id WHERE m.family_id = f.id) as disliked_count
+        (SELECT COUNT(*) FROM disliked_movies dm JOIN members m ON dm.member_id = m.id WHERE m.family_id = f.id) as disliked_count,
+        (SELECT COUNT(*) FROM watchlist wl JOIN members m ON wl.member_id = m.id WHERE m.family_id = f.id) as watchlist_count,
+        (SELECT COUNT(*) FROM recommendations r JOIN members m ON r.member_id = m.id WHERE m.family_id = f.id) as recs_count,
+        (SELECT COUNT(*) FROM swipe_sessions ss WHERE ss.family_id = f.id) as swipe_count,
+        (SELECT MAX(ts) FROM (
+          SELECT MAX(lm.created_at) as ts FROM liked_movies lm JOIN members m ON lm.member_id = m.id WHERE m.family_id = f.id
+          UNION ALL
+          SELECT MAX(dm.created_at) as ts FROM disliked_movies dm JOIN members m ON dm.member_id = m.id WHERE m.family_id = f.id
+          UNION ALL
+          SELECT MAX(wl.added_at) as ts FROM watchlist wl JOIN members m ON wl.member_id = m.id WHERE m.family_id = f.id
+          UNION ALL
+          SELECT MAX(r.created_at) as ts FROM recommendations r JOIN members m ON r.member_id = m.id WHERE m.family_id = f.id
+        )) as last_active
       FROM families f
       WHERE f.google_id IS NOT NULL
       ORDER BY f.created_at DESC
@@ -130,6 +142,10 @@ export async function GET(req: NextRequest) {
       members: Number(r.member_count),
       liked: Number(r.liked_count),
       disliked: Number(r.disliked_count),
+      watchlist: Number(r.watchlist_count || 0),
+      recs: Number(r.recs_count || 0),
+      swipes: Number(r.swipe_count || 0),
+      lastActive: r.last_active ? String(r.last_active) : null,
     })),
   });
 }
