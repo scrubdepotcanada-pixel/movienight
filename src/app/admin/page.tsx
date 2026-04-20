@@ -90,6 +90,19 @@ export default function AdminPage() {
       .catch(() => setLoading(false));
   }, [status]);
 
+  const grantPremium = (email: string, action: "grant" | "revoke", months?: number) => {
+    fetch("/api/admin/grant-premium", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, action, months }),
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) loadAll();
+        else alert(d.error || "Something went wrong");
+      });
+  };
+
   const loadAll = () => {
     setLoading(true);
     Promise.all([
@@ -263,65 +276,97 @@ export default function AdminPage() {
 
         {/* USERS TAB */}
         {tab === "users" && stats && (
-          <div className="bg-gray-900 border border-gray-700/50 rounded-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-              <h2 className="text-lg font-bold">Users ({stats.userDetails.length})</h2>
-              <button
-                onClick={() => {
-                  fetch("/api/admin/cleanup", { method: "POST" })
-                    .then(r => r.json())
-                    .then(d => {
-                      if (d.removed > 0) {
-                        alert(`Removed ${d.removed} duplicate account(s)`);
-                        loadAll();
-                      } else {
-                        alert("No duplicates found");
-                      }
-                    });
-                }}
-                className="text-gray-400 hover:text-white text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors"
-              >
-                Clean duplicates
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
-                    <th className="text-left px-6 py-3">User</th>
-                    <th className="text-left px-4 py-3">Signed Up</th>
-                    <th className="text-center px-4 py-3">Members</th>
-                    <th className="text-center px-4 py-3">Liked</th>
-                    <th className="text-center px-4 py-3">Disliked</th>
-                    <th className="text-center px-4 py-3">Plan</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {stats.userDetails.map((user, i) => (
-                    <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                      <td className="px-6 py-3">
-                        <p className="text-white font-medium">{user.name || "—"}</p>
-                        <p className="text-gray-500 text-xs">{user.email || "—"}</p>
-                      </td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">
-                        {user.signedUp ? new Date(user.signedUp).toLocaleDateString() : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-center text-gray-300">{user.members}</td>
-                      <td className="px-4 py-3 text-center text-green-400">{user.liked}</td>
-                      <td className="px-4 py-3 text-center text-red-400">{user.disliked}</td>
-                      <td className="px-4 py-3 text-center">
-                        {user.isPremium ? (
-                          <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold px-2 py-1 rounded-full">
-                            {user.plan === "admin" ? "ADMIN" : "PRO"}
-                          </span>
-                        ) : (
-                          <span className="text-gray-600 text-xs">Free</span>
-                        )}
-                      </td>
+          <div className="space-y-4">
+            <div className="bg-gray-900 border border-gray-700/50 rounded-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
+                <h2 className="text-lg font-bold">Users ({stats.userDetails.length})</h2>
+                <button
+                  onClick={() => {
+                    fetch("/api/admin/cleanup", { method: "POST" })
+                      .then(r => r.json())
+                      .then(d => {
+                        if (d.removed > 0) { alert(`Removed ${d.removed} duplicate account(s)`); loadAll(); }
+                        else alert("No duplicates found");
+                      });
+                  }}
+                  className="text-gray-400 hover:text-white text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  Clean duplicates
+                </button>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
+                      <th className="text-left px-6 py-3">User</th>
+                      <th className="text-left px-4 py-3">Signed Up</th>
+                      <th className="text-center px-4 py-3">Members</th>
+                      <th className="text-center px-4 py-3">Plan</th>
+                      <th className="text-center px-4 py-3">Access</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {stats.userDetails.map((user, i) => (
+                      <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                        <td className="px-6 py-3">
+                          <p className="text-white font-medium">{user.name || "—"}</p>
+                          <p className="text-gray-500 text-xs">{user.email || "—"}</p>
+                        </td>
+                        <td className="px-4 py-3 text-gray-400 text-xs">
+                          {user.signedUp ? new Date(user.signedUp).toLocaleDateString() : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-center text-gray-300">{user.members}</td>
+                        <td className="px-4 py-3 text-center">
+                          {user.isPremium ? (
+                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+                              user.plan === "admin" ? "bg-yellow-600/30 text-yellow-300 border border-yellow-600/40" :
+                              user.plan === "gifted" ? "bg-green-600/30 text-green-300 border border-green-600/40" :
+                              "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                            }`}>
+                              {user.plan === "admin" ? "ADMIN" : user.plan === "gifted" ? "GIFTED" : "PRO"}
+                            </span>
+                          ) : (
+                            <span className="text-gray-600 text-xs">Free</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          {user.plan === "admin" ? (
+                            <span className="text-gray-600 text-xs">—</span>
+                          ) : user.isPremium ? (
+                            <button
+                              onClick={() => grantPremium(user.email, "revoke")}
+                              className="text-[10px] text-red-400 hover:text-red-300 border border-red-800/40 hover:border-red-600/60 px-2 py-1 rounded-lg transition-colors"
+                            >
+                              Revoke
+                            </button>
+                          ) : (
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() => grantPremium(user.email, "grant", 1)}
+                                className="text-[10px] text-purple-300 hover:text-white border border-purple-800/40 hover:border-purple-500/60 px-2 py-1 rounded-lg transition-colors"
+                              >
+                                1mo
+                              </button>
+                              <button
+                                onClick={() => grantPremium(user.email, "grant", 12)}
+                                className="text-[10px] text-purple-300 hover:text-white border border-purple-800/40 hover:border-purple-500/60 px-2 py-1 rounded-lg transition-colors"
+                              >
+                                1yr
+                              </button>
+                              <button
+                                onClick={() => grantPremium(user.email, "grant", 999)}
+                                className="text-[10px] bg-purple-600/20 text-purple-300 hover:bg-purple-600/40 hover:text-white border border-purple-600/40 px-2 py-1 rounded-lg transition-colors"
+                              >
+                                ∞
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
