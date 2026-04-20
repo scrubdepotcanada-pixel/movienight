@@ -1088,6 +1088,7 @@ export default function Home() {
           <div className="pt-6">
             {/* Greeting */}
             <div className="text-center mb-6">
+              <img src="/popcorn--surprised.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
               <h2 className="text-2xl sm:text-3xl font-bold mb-1">
                 Hey {selectedMember.name}! {selectedMember.avatar}
               </h2>
@@ -1197,6 +1198,7 @@ export default function Home() {
         {step === "recommendations" && selectedMember && (
           <div className="pt-6">
             <div className="text-center mb-6">
+              <img src="/popcorn-peace.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
               <h2 className="text-2xl sm:text-3xl font-bold mb-4">
                 <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Here&apos;s what you should watch</span>
               </h2>
@@ -1258,9 +1260,9 @@ export default function Home() {
         {step === "category-recs" && selectedMember && (
           <div className="pt-6">
             <div className="text-center mb-8">
-              <div className="text-4xl mb-3">{genreIcon}</div>
+              <img src="/popcorn-clapperboard.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
               <h2 className="text-3xl sm:text-4xl font-bold mb-3">
-                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">{genreLabel} We Recommend</span>
+                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">{genreIcon} {genreLabel} We Recommend</span>
               </h2>
               <p className="text-gray-300">Tap a poster to read about it. Like or dislike to get better picks.</p>
             </div>
@@ -1297,6 +1299,7 @@ export default function Home() {
         {step === "returning" && selectedMember && (
           <div className="pt-6">
             <div className="text-center mb-8">
+              <img src="/popcorn-drink.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
               <h2 className="text-3xl font-bold mb-2">
                 Welcome back, {selectedMember.name}! {selectedMember.avatar}
               </h2>
@@ -1337,6 +1340,7 @@ export default function Home() {
         {step === "category-returning" && selectedMember && (
           <div className="pt-6">
             <div className="text-center mb-8">
+              <img src="/popcorn-drink.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
               <h2 className="text-3xl font-bold mb-2">
                 {genreIcon} Your {genreLabel} List
               </h2>
@@ -1377,6 +1381,7 @@ export default function Home() {
         {step === "all-members" && (
           <div className="pt-6">
             <div className="text-center mb-8">
+              <img src="/popcorn-peace.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
               <h2 className="text-3xl font-bold mb-2">Family Movie Board</h2>
               <p className="text-gray-400">See what everyone is watching</p>
             </div>
