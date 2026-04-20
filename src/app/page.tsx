@@ -341,6 +341,13 @@ export default function Home() {
     if (!movie) return;
     setSearchResults([]);
     setSelectedSearchId(null);
+
+    // If filters are active, apply them (filters take precedence over movie pick)
+    if (Object.keys(activeFilters).length > 0) {
+      await handleDiscoverApply(activeFilters);
+      return;
+    }
+
     setStep("recommendations");
     setLoading(true);
     setActiveCategory("general");
@@ -361,6 +368,13 @@ export default function Home() {
   const handleMoodSearch = async (mood: string) => {
     setSearchResults([]);
     setSelectedSearchId(null);
+
+    // If filters are active, keep them applied
+    if (Object.keys(activeFilters).length > 0) {
+      await handleDiscoverApply(activeFilters);
+      return;
+    }
+
     setStep("recommendations");
     setLoading(true);
     setActiveCategory("general");
