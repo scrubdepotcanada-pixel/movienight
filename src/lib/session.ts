@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
 import db, { initDB } from "./db";
 
-const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "oreekoblentz@gmail.com")
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "oreekoblentz@gmail.com,scrubdepotcanada@gmail.com")
   .split(",")
   .map((e) => e.trim().toLowerCase());
 
