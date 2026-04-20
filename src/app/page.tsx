@@ -1049,7 +1049,7 @@ export default function Home() {
                     <div className="absolute top-20 left-1/3 w-[300px] h-[300px] bg-pink-600/8 rounded-full blur-3xl" />
                   </div>
                   <div className="relative">
-                    <img src="/popcorn-clapperboard.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
+                    <img src="/popcorn-clapperboard.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
                     <h2 className="text-4xl sm:text-5xl font-bold mb-4">
                       <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Who&apos;s watching</span> tonight?
                     </h2>
@@ -1095,7 +1095,7 @@ export default function Home() {
           <div className="pt-6">
             {/* Greeting */}
             <div className="text-center mb-6">
-              <img src="/popcorn--surprised.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
+              <img src="/popcorn--surprised.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
               <h2 className="text-2xl sm:text-3xl font-bold mb-1">
                 Hey {selectedMember.name}! {selectedMember.avatar}
               </h2>
@@ -1107,29 +1107,24 @@ export default function Home() {
               <ContentTypeToggle value={contentType} onChange={(v) => { setContentType(v); setSearchResults([]); setSelectedSearchId(null); }} />
             </div>
 
-            {/* Your previous picks */}
-            {recommendations.length > 0 && (
+            {/* Pick up where you left off */}
+            {(recommendations.length > 0 || activeCategories.length > 0) && (
               <div className="mb-8 max-w-3xl mx-auto">
-                <button
-                  onClick={() => setStep("returning")}
-                  className="w-full flex items-center justify-center gap-3 bg-gray-800/50 hover:bg-gray-800/80 border border-gray-700/50 hover:border-purple-500/40 rounded-2xl px-5 py-4 transition-all"
-                >
-                  <img src="/popcorn-drink.png" alt="" className="w-10 h-10 object-contain" />
-                  <div className="text-left">
-                    <p className="text-white font-semibold text-sm">Your History</p>
-                    <p className="text-gray-500 text-xs">{recommendations.length} movies from last session</p>
-                  </div>
-                  <span className="text-gray-500 ml-auto">&rarr;</span>
-                </button>
-              </div>
-            )}
-
-            {/* Continue where you left off */}
-            {activeCategories.length > 0 && (
-              <div className="mb-8 max-w-3xl mx-auto">
-                <h3 className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Continue where you left off</h3>
+                <h3 className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Pick up where you left off</h3>
                 <div className="flex flex-wrap justify-center gap-2">
+                  {recommendations.length > 0 && (
+                    <button
+                      onClick={() => setStep("returning")}
+                      disabled={loading}
+                      className="flex items-center gap-1.5 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 hover:border-purple-500 text-white px-4 py-2.5 rounded-xl transition-all text-sm disabled:opacity-50"
+                    >
+                      <span>🎬</span>
+                      <span>General</span>
+                      <span className="text-purple-300 text-[10px] bg-purple-500/30 px-1.5 py-0.5 rounded-full">{recommendations.length}</span>
+                    </button>
+                  )}
                   {activeCategories.map(({ category, count }) => {
+                    if (category === "general") return null;
                     const genre = GENRES.find((g) => g.id === category);
                     if (!genre) return null;
                     return (
@@ -1137,7 +1132,7 @@ export default function Home() {
                         key={category}
                         onClick={() => handleSelectCategory(category)}
                         disabled={loading}
-                        className="flex items-center gap-1.5 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 hover:border-purple-500 text-white px-3 py-2 rounded-lg transition-all text-sm disabled:opacity-50"
+                        className="flex items-center gap-1.5 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 hover:border-purple-500 text-white px-4 py-2.5 rounded-xl transition-all text-sm disabled:opacity-50"
                       >
                         <span>{genre.icon}</span>
                         <span>{genre.label}</span>
@@ -1222,7 +1217,7 @@ export default function Home() {
         {step === "recommendations" && selectedMember && (
           <div className="pt-6">
             <div className="text-center mb-6">
-              <img src="/popcorn-peace.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
+              <img src="/popcorn-peace.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
               <h2 className="text-2xl sm:text-3xl font-bold mb-4">
                 <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Here&apos;s what you should watch</span>
               </h2>
@@ -1284,7 +1279,7 @@ export default function Home() {
         {step === "category-recs" && selectedMember && (
           <div className="pt-6">
             <div className="text-center mb-8">
-              <img src="/popcorn-clapperboard.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
+              <img src="/popcorn-clapperboard.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
               <h2 className="text-3xl sm:text-4xl font-bold mb-3">
                 <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">{genreIcon} {genreLabel} We Recommend</span>
               </h2>
@@ -1323,7 +1318,7 @@ export default function Home() {
         {step === "returning" && selectedMember && (
           <div className="pt-6">
             <div className="text-center mb-8">
-              <img src="/popcorn-drink.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
+              <img src="/popcorn-drink.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
               <h2 className="text-3xl font-bold mb-2">
                 Welcome back, {selectedMember.name}! {selectedMember.avatar}
               </h2>
@@ -1364,7 +1359,7 @@ export default function Home() {
         {step === "category-returning" && selectedMember && (
           <div className="pt-6">
             <div className="text-center mb-8">
-              <img src="/popcorn-drink.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
+              <img src="/popcorn-drink.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
               <h2 className="text-3xl font-bold mb-2">
                 {genreIcon} Your {genreLabel} List
               </h2>
@@ -1405,7 +1400,7 @@ export default function Home() {
         {step === "all-members" && (
           <div className="pt-6">
             <div className="text-center mb-8">
-              <img src="/popcorn-peace.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
+              <img src="/popcorn-peace.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
               <h2 className="text-3xl font-bold mb-2">Family Movie Board</h2>
               <p className="text-gray-400">See what everyone is watching</p>
             </div>
@@ -1455,7 +1450,7 @@ export default function Home() {
           <div className="pt-4">
             {loading || !swipeSessionId || swipeCandidates.length === 0 ? (
               <div className="text-center py-16 max-w-md mx-auto">
-                <img src="/popcorn-clapperboard.png" alt="" className="w-32 h-32 mx-auto mb-6 animate-bounce object-contain" />
+                <img src="/popcorn-clapperboard.png" alt="" className="w-40 h-40 mx-auto mb-6 animate-bounce object-contain" />
                 <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
                   Setting up family swipe...
                 </h3>
@@ -1560,7 +1555,7 @@ function GuestSetup({ onDone }: { existingMember: Member | null; onDone: (name: 
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-3xl" />
       </div>
       <div className="relative max-w-sm mx-auto">
-        <img src="/popcorn--surprised.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
+        <img src="/popcorn--surprised.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
         <h2 className="text-3xl sm:text-4xl font-bold mb-2">
           <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">What can you watch?</span>
         </h2>
