@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 const steps = [
   {
     number: 1,
@@ -20,7 +22,7 @@ const steps = [
     title: "Get the one movie",
     description:
       "Our AI merges everyone\u2019s taste, finds the overlap, and serves up picks the whole family will love. Tap to stream.",
-    visual: "🎬 ✅",
+    visual: "peace",
   },
 ];
 
@@ -55,7 +57,13 @@ export default function HowItWorksSection() {
               <p className="text-gray-400 text-sm leading-relaxed mb-3">
                 {step.description}
               </p>
-              <div className="text-2xl tracking-wider">{step.visual}</div>
+              {step.visual === "peace" ? (
+                <div className="flex justify-center">
+                  <Image src="/popcorn-peace.png" alt="Everyone agrees" width={64} height={64} className="w-16 h-16 object-contain" />
+                </div>
+              ) : (
+                <div className="text-2xl tracking-wider">{step.visual}</div>
+              )}
             </div>
           ))}
         </div>

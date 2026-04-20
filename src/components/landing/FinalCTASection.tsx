@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 interface FinalCTASectionProps {
   onSignIn: () => void;
   onGuest: () => void;
@@ -15,7 +17,9 @@ export default function FinalCTASection({ onSignIn, onGuest }: FinalCTASectionPr
         </div>
 
         <div className="relative">
-          <div className="text-5xl mb-6">🍿</div>
+          <div className="mx-auto mb-6 w-24 h-24">
+            <Image src="/popcorn-ticket.png" alt="Your ticket is ready" width={96} height={96} className="w-full h-full object-contain drop-shadow-2xl" />
+          </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
             Tonight&apos;s movie is{" "}
             <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">

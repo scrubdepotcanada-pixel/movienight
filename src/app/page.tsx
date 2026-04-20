@@ -1565,7 +1565,10 @@ function GuestSetup({ onDone }: { existingMember: Member | null; onDone: (name: 
 function MovieLoadingScreen() {
   return (
     <div className="text-center py-10 max-w-md mx-auto">
-      <div className="text-6xl mb-6 animate-bounce">🍿</div>
+      <div className="mx-auto mb-6 w-24 h-24 animate-bounce">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/popcorn-drink.png" alt="Finding your picks..." className="w-full h-full object-contain drop-shadow-2xl" />
+      </div>
       <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">Finding your perfect picks...</h3>
       <p className="text-gray-300 text-base mb-8">This takes a few seconds — our AI is matching your taste</p>
 
