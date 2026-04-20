@@ -91,10 +91,34 @@ function DropdownItem({ label, selected, onClick, icon }: {
   );
 }
 
+const COUNTRY_FLAGS: Record<string, string> = {
+  US: "🇺🇸", CA: "🇨🇦", GB: "🇬🇧", AU: "🇦🇺", FR: "🇫🇷", DE: "🇩🇪",
+  IN: "🇮🇳", BR: "🇧🇷", MX: "🇲🇽", JP: "🇯🇵", KR: "🇰🇷", IL: "🇮🇱",
+  ES: "🇪🇸", IT: "🇮🇹", NL: "🇳🇱", SE: "🇸🇪", NO: "🇳🇴", DK: "🇩🇰",
+};
+
 export default function InlineFilters({ filters, onChange, onClear }: InlineFiltersProps) {
+  const [detectedCountry, setDetectedCountry] = useState<string>("US");
+
+  useEffect(() => {
+    fetch("/api/geo")
+      .then(r => r.json())
+      .then(d => {
+        if (d.country) {
+          setDetectedCountry(d.country);
+          if (!filters.region) {
+            onChange({ ...filters, region: d.country });
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const update = (patch: Partial<InlineFiltersProps["filters"]>) => {
     onChange({ ...filters, ...patch });
   };
+
+  const currentRegion = filters.region || detectedCountry;
 
   const hasAny = !!(filters.providerId || filters.genre || filters.decade || filters.minRating || filters.maxRuntime);
 
@@ -103,7 +127,7 @@ export default function InlineFilters({ filters, onChange, onClear }: InlineFilt
       <div className="bg-gray-800/30 border border-gray-700/30 rounded-2xl px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
           {/* Platform */}
-          <FilterDropdown label="📺" value={filters.providerName || "Any"} active={!!filters.providerId}>
+          <FilterDropdown label="📺" value={filters.providerName ? `${filters.providerName} ${COUNTRY_FLAGS[currentRegion] || currentRegion}` : "Any"} active={!!filters.providerId}>
             <DropdownItem label="Any platform" selected={!filters.providerId} onClick={() => update({ providerId: undefined, providerName: undefined })} />
             {PLATFORMS.map(p => (
               <DropdownItem
@@ -111,7 +135,7 @@ export default function InlineFilters({ filters, onChange, onClear }: InlineFilt
                 label={p.name}
                 icon={p.logo}
                 selected={filters.providerId === p.id}
-                onClick={() => update({ providerId: p.id, providerName: p.name })}
+                onClick={() => update({ providerId: p.id, providerName: p.name, region: currentRegion })}
               />
             ))}
           </FilterDropdown>

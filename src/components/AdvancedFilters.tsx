@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface AdvancedFiltersProps {
   onApply: (filters: {
@@ -63,6 +63,13 @@ export default function AdvancedFilters({ onApply, loading, onClose }: AdvancedF
   const [maxRuntime, setMaxRuntime] = useState(0);
   const [providerId, setProviderId] = useState<number | null>(null);
   const [region, setRegion] = useState("US");
+
+  useEffect(() => {
+    fetch("/api/geo")
+      .then(r => r.json())
+      .then(d => { if (d.country) setRegion(d.country); })
+      .catch(() => {});
+  }, []);
 
   const handleApply = () => {
     const platform = PLATFORMS.find(p => p.id === providerId);

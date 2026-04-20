@@ -18,7 +18,10 @@ export async function GET(req: NextRequest) {
   const minRating = req.nextUrl.searchParams.get("minRating");
   const maxRuntime = req.nextUrl.searchParams.get("maxRuntime");
   const providerId = req.nextUrl.searchParams.get("providerId");
-  const watchRegion = req.nextUrl.searchParams.get("region") || "US";
+  const watchRegion = req.nextUrl.searchParams.get("region") ||
+    req.headers.get("x-vercel-ip-country") ||
+    req.headers.get("cf-ipcountry") ||
+    "US";
 
   const movies = await discoverMovies({
     genre: genreName ? getGenreId(genreName) : undefined,
