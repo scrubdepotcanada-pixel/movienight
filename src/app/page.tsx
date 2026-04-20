@@ -1058,13 +1058,17 @@ export default function Home() {
                     <div className="absolute top-20 left-1/3 w-[300px] h-[300px] bg-pink-600/8 rounded-full blur-3xl" />
                   </div>
                   <div className="relative">
-                    <img src="/popcorn-clapperboard.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
-                    <h2 className="text-4xl sm:text-5xl font-bold mb-4">
-                      <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Who&apos;s watching</span> tonight?
-                    </h2>
-                    <p className="text-gray-400 text-lg max-w-md mx-auto">
-                      Pick your profile for personalized picks — or add a family member
-                    </p>
+                    <div className="flex items-center justify-center gap-4 mb-4">
+                      <img src="/popcorn-clapperboard.png" alt="" className="w-20 h-20 sm:w-28 sm:h-28 object-contain flex-shrink-0" />
+                      <div className="text-left">
+                        <h2 className="text-4xl sm:text-5xl font-bold mb-2">
+                          <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Who&apos;s watching</span> tonight?
+                        </h2>
+                        <p className="text-gray-400 text-lg">
+                          Pick your profile for personalized picks — or add a family member
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <MemberSelector
@@ -1217,11 +1221,13 @@ export default function Home() {
         {/* STEP: Recommendations (general) */}
         {step === "recommendations" && selectedMember && (
           <div className="pt-2">
-            <div className="text-center mb-6">
-              <img src="/popcorn-peace.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
-              <h2 className="text-2xl sm:text-3xl font-bold mb-4">
-                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Here&apos;s what you should watch</span>
-              </h2>
+            <div className="mb-4">
+              <div className="flex items-center justify-center gap-4 mb-4">
+                <img src="/popcorn-peace.png" alt="" className="w-16 h-16 sm:w-20 sm:h-20 object-contain flex-shrink-0" />
+                <h2 className="text-2xl sm:text-3xl font-bold">
+                  <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Here&apos;s what you should watch</span>
+                </h2>
+              </div>
 
               {/* How to use — big and obvious */}
               <div className="max-w-lg mx-auto bg-gray-800/50 border border-gray-700/50 rounded-2xl p-4 mb-2">
@@ -1279,12 +1285,16 @@ export default function Home() {
         {/* STEP: Category Recommendations */}
         {step === "category-recs" && selectedMember && (
           <div className="pt-2">
-            <div className="text-center mb-8">
-              <img src="/popcorn-clapperboard.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
-              <h2 className="text-3xl sm:text-4xl font-bold mb-3">
-                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">{genreIcon} {genreLabel} We Recommend</span>
-              </h2>
-              <p className="text-gray-300">Tap a poster to read about it. Like or dislike to get better picks.</p>
+            <div className="mb-6">
+              <div className="flex items-center justify-center gap-4 mb-2">
+                <img src="/popcorn-clapperboard.png" alt="" className="w-16 h-16 sm:w-20 sm:h-20 object-contain flex-shrink-0" />
+                <div>
+                  <h2 className="text-3xl sm:text-4xl font-bold">
+                    <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">{genreIcon} {genreLabel} We Recommend</span>
+                  </h2>
+                  <p className="text-gray-300 mt-1">Tap a poster to read about it. Like or dislike to get better picks.</p>
+                </div>
+              </div>
             </div>
 
             {loading ? (
@@ -1318,14 +1328,18 @@ export default function Home() {
         {/* STEP: Returning User (general) */}
         {step === "returning" && selectedMember && (
           <div className="pt-2">
-            <div className="text-center mb-8">
-              <img src="/popcorn-drink.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
-              <h2 className="text-3xl font-bold mb-2">
-                Welcome back, {selectedMember.name}! {selectedMember.avatar}
-              </h2>
-              <p className="text-gray-400">
-                Tap a poster to learn more, then like or dislike
-              </p>
+            <div className="mb-6">
+              <div className="flex items-center justify-center gap-4 mb-2">
+                <img src="/popcorn-drink.png" alt="" className="w-16 h-16 sm:w-20 sm:h-20 object-contain flex-shrink-0" />
+                <div>
+                  <h2 className="text-3xl font-bold mb-1">
+                    Welcome back, {selectedMember.name}! {selectedMember.avatar}
+                  </h2>
+                  <p className="text-gray-400">
+                    Tap a poster to learn more, then like or dislike
+                  </p>
+                </div>
+              </div>
             </div>
 
             {loading ? (
@@ -1359,14 +1373,16 @@ export default function Home() {
         {/* STEP: Category Returning */}
         {step === "category-returning" && selectedMember && (
           <div className="pt-2">
-            <div className="text-center mb-8">
-              <img src="/popcorn-drink.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
-              <h2 className="text-3xl font-bold mb-2">
-                {genreIcon} Your {genreLabel} List
-              </h2>
-              <p className="text-gray-400">
-                Tap a poster to learn more, then like or dislike
-              </p>
+            <div className="mb-6">
+              <div className="flex items-center justify-center gap-4 mb-2">
+                <img src="/popcorn-drink.png" alt="" className="w-16 h-16 sm:w-20 sm:h-20 object-contain flex-shrink-0" />
+                <div>
+                  <h2 className="text-3xl font-bold mb-1">
+                    {genreIcon} Your {genreLabel} List
+                  </h2>
+                  <p className="text-gray-400">Tap a poster to learn more, then like or dislike</p>
+                </div>
+              </div>
             </div>
 
             {loading ? (
@@ -1400,10 +1416,14 @@ export default function Home() {
         {/* STEP: All Members View */}
         {step === "all-members" && (
           <div className="pt-2">
-            <div className="text-center mb-8">
-              <img src="/popcorn-peace.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
-              <h2 className="text-3xl font-bold mb-2">Family Movie Board</h2>
-              <p className="text-gray-400">See what everyone is watching</p>
+            <div className="mb-6">
+              <div className="flex items-center justify-center gap-4">
+                <img src="/popcorn-peace.png" alt="" className="w-16 h-16 sm:w-20 sm:h-20 object-contain flex-shrink-0" />
+                <div>
+                  <h2 className="text-3xl font-bold mb-1">Family Movie Board</h2>
+                  <p className="text-gray-400">See what everyone is watching</p>
+                </div>
+              </div>
             </div>
 
             {loading ? (
@@ -1451,10 +1471,12 @@ export default function Home() {
           <div className="pt-4">
             {loading || !swipeSessionId || swipeCandidates.length === 0 ? (
               <div className="text-center py-16 max-w-md mx-auto">
-                <img src="/popcorn-clapperboard.png" alt="" className="w-40 h-40 mx-auto mb-6 animate-bounce object-contain" />
-                <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
-                  Setting up family swipe...
-                </h3>
+                <div className="flex items-center justify-center gap-4 mb-4">
+                  <img src="/popcorn-clapperboard.png" alt="" className="w-16 h-16 sm:w-20 sm:h-20 animate-bounce object-contain flex-shrink-0" />
+                  <h3 className="text-2xl sm:text-3xl font-bold text-white">
+                    Setting up family swipe...
+                  </h3>
+                </div>
                 <p className="text-gray-300 text-base mb-8">
                   Our AI is picking movies for the whole family
                 </p>
@@ -1556,11 +1578,15 @@ function GuestSetup({ onDone }: { existingMember: Member | null; onDone: (name: 
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-3xl" />
       </div>
       <div className="relative max-w-sm mx-auto">
-        <img src="/popcorn--surprised.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
-        <h2 className="text-3xl sm:text-4xl font-bold mb-2">
-          <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">What can you watch?</span>
-        </h2>
-        <p className="text-gray-400 mb-8">Pick your content rating and let&apos;s go</p>
+        <div className="flex items-center justify-center gap-4 mb-6">
+          <img src="/popcorn--surprised.png" alt="" className="w-16 h-16 sm:w-20 sm:h-20 object-contain flex-shrink-0" />
+          <div>
+            <h2 className="text-3xl sm:text-4xl font-bold mb-1">
+              <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">What can you watch?</span>
+            </h2>
+            <p className="text-gray-400">Pick your content rating and let&apos;s go</p>
+          </div>
+        </div>
 
         <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-6">
           <div className="grid grid-cols-5 gap-2 mb-3">
