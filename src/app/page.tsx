@@ -948,7 +948,7 @@ export default function Home() {
                       </span>
                     );
                   })()}
-                  {!isGuest && isPremium && (
+                  {!isGuest && isPremium && selectedMember && (
                     <PremiumMenu
                       isAdmin={isAdmin}
                       onWatchlist={() => setShowWatchlist(true)}
@@ -976,6 +976,14 @@ export default function Home() {
                     {isGuest ? "Restart" : "Switch"}
                   </button>
                 </>
+              )}
+              {!isGuest && isPremium && !selectedMember && (
+                <PremiumMenu
+                  isAdmin={isAdmin}
+                  onWatchlist={() => setShowWatchlist(true)}
+                  onTasteProfile={() => setShowTasteProfile(true)}
+                  onAdvancedFilters={() => setShowAdvancedFilters(true)}
+                />
               )}
               {!isGuest && !isPremium && (
                 <button
