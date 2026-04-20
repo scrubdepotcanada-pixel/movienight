@@ -1030,7 +1030,7 @@ export default function Home() {
 
         {/* STEP: Select Member */}
         {step === "select-member" && (
-          <div className="pt-8 sm:pt-16">
+          <div className="pt-2">
             {isGuest ? (
               <GuestSetup
                 existingMember={null}
@@ -1216,7 +1216,7 @@ export default function Home() {
 
         {/* STEP: Recommendations (general) */}
         {step === "recommendations" && selectedMember && (
-          <div className="pt-6">
+          <div className="pt-2">
             <div className="text-center mb-6">
               <img src="/popcorn-peace.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
               <h2 className="text-2xl sm:text-3xl font-bold mb-4">
@@ -1278,7 +1278,7 @@ export default function Home() {
 
         {/* STEP: Category Recommendations */}
         {step === "category-recs" && selectedMember && (
-          <div className="pt-6">
+          <div className="pt-2">
             <div className="text-center mb-8">
               <img src="/popcorn-clapperboard.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
               <h2 className="text-3xl sm:text-4xl font-bold mb-3">
@@ -1317,7 +1317,7 @@ export default function Home() {
 
         {/* STEP: Returning User (general) */}
         {step === "returning" && selectedMember && (
-          <div className="pt-6">
+          <div className="pt-2">
             <div className="text-center mb-8">
               <img src="/popcorn-drink.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
               <h2 className="text-3xl font-bold mb-2">
@@ -1358,7 +1358,7 @@ export default function Home() {
 
         {/* STEP: Category Returning */}
         {step === "category-returning" && selectedMember && (
-          <div className="pt-6">
+          <div className="pt-2">
             <div className="text-center mb-8">
               <img src="/popcorn-drink.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
               <h2 className="text-3xl font-bold mb-2">
@@ -1399,7 +1399,7 @@ export default function Home() {
 
         {/* STEP: All Members View */}
         {step === "all-members" && (
-          <div className="pt-6">
+          <div className="pt-2">
             <div className="text-center mb-8">
               <img src="/popcorn-peace.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
               <h2 className="text-3xl font-bold mb-2">Family Movie Board</h2>
