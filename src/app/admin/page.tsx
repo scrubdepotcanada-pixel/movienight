@@ -264,8 +264,25 @@ export default function AdminPage() {
         {/* USERS TAB */}
         {tab === "users" && stats && (
           <div className="bg-gray-900 border border-gray-700/50 rounded-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-800">
+            <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
               <h2 className="text-lg font-bold">Users ({stats.userDetails.length})</h2>
+              <button
+                onClick={() => {
+                  fetch("/api/admin/cleanup", { method: "POST" })
+                    .then(r => r.json())
+                    .then(d => {
+                      if (d.removed > 0) {
+                        alert(`Removed ${d.removed} duplicate account(s)`);
+                        loadAll();
+                      } else {
+                        alert("No duplicates found");
+                      }
+                    });
+                }}
+                className="text-gray-400 hover:text-white text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors"
+              >
+                Clean duplicates
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
