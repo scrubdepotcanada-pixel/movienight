@@ -12,6 +12,7 @@ import MoodSearch from "@/components/MoodSearch";
 import SwipeFlow from "@/components/SwipeFlow";
 import SwipeResults from "@/components/SwipeResults";
 import PremiumModal from "@/components/PremiumModal";
+import PremiumMenu from "@/components/PremiumMenu";
 import TasteProfile from "@/components/TasteProfile";
 import Watchlist from "@/components/Watchlist";
 import AdvancedFilters from "@/components/AdvancedFilters";
@@ -879,23 +880,13 @@ export default function Home() {
                       </span>
                     );
                   })()}
-                  {!isGuest && (
-                    <>
-                      <button
-                        onClick={() => isPremium ? setShowWatchlist(true) : openPremiumModal("Personal watchlist")}
-                        className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-lg"
-                        title="Watchlist"
-                      >
-                        {isPremium ? "📋" : "📋✨"}
-                      </button>
-                      <button
-                        onClick={() => isPremium ? setShowTasteProfile(true) : openPremiumModal("Taste profile & stats")}
-                        className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-lg"
-                        title="Taste Profile"
-                      >
-                        {isPremium ? "📊" : "📊✨"}
-                      </button>
-                    </>
+                  {!isGuest && isPremium && (
+                    <PremiumMenu
+                      isAdmin={isAdmin}
+                      onWatchlist={() => setShowWatchlist(true)}
+                      onTasteProfile={() => setShowTasteProfile(true)}
+                      onAdvancedFilters={() => setShowAdvancedFilters(true)}
+                    />
                   )}
                   <button
                     onClick={async () => {
