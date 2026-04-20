@@ -7,13 +7,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing memberId" }, { status: 400 });
   }
 
+  // Count activity (likes + dislikes) per category — persists even after swiping through all recs
   const rows = await db.execute({
     sql: `SELECT category, COUNT(*) as count
-          FROM recommendations
-          WHERE member_id = ? AND is_active = 1 AND category != 'general'
+          FROM (
+            SELECT category FROM liked_movies WHERE member_id = ? AND category != 'general'
+            UNION ALL
+            SELECT category FROM disliked_movies WHERE member_id = ? AND category != 'general'
+          )
           GROUP BY category
-          ORDER BY MAX(created_at) DESC`,
-    args: [memberId],
+          ORDER BY count DESC`,
+    args: [memberId, memberId],
   });
 
   return NextResponse.json(rows.rows);
