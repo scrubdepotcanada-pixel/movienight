@@ -1208,6 +1208,8 @@ export default function Home() {
                     filters={activeFilters}
                     onChange={(f) => handleDiscoverApply(f)}
                     onClear={() => { setActiveFilters({}); handleStartFresh(); }}
+                    isPremium={isPremium}
+                    onUpgrade={() => openPremiumModal("Actor / Director filter")}
                   />
                 )}
 
@@ -1246,6 +1248,8 @@ export default function Home() {
                     filters={activeFilters}
                     onChange={(f) => handleDiscoverApply(f)}
                     onClear={() => { setActiveFilters({}); handleStartFresh(); }}
+                    isPremium={isPremium}
+                    onUpgrade={() => openPremiumModal("Actor / Director filter")}
                   />
                 )}
                 {renderRecommendationGrid()}
@@ -1284,6 +1288,8 @@ export default function Home() {
                     filters={activeFilters}
                     onChange={(f) => handleDiscoverApply(f)}
                     onClear={() => { setActiveFilters({}); handleStartFresh(); }}
+                    isPremium={isPremium}
+                    onUpgrade={() => openPremiumModal("Actor / Director filter")}
                   />
                 )}
                 {renderRecommendationGrid()}
@@ -1322,6 +1328,8 @@ export default function Home() {
                     filters={activeFilters}
                     onChange={(f) => handleDiscoverApply(f)}
                     onClear={() => { setActiveFilters({}); handleStartFresh(); }}
+                    isPremium={isPremium}
+                    onUpgrade={() => openPremiumModal("Actor / Director filter")}
                   />
                 )}
                 {renderRecommendationGrid()}

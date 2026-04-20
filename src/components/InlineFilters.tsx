@@ -10,6 +10,8 @@ interface InlineFiltersProps {
   };
   onChange: (filters: InlineFiltersProps["filters"]) => void;
   onClear: () => void;
+  isPremium?: boolean;
+  onUpgrade?: () => void;
 }
 
 const PLATFORMS = [
@@ -197,7 +199,7 @@ function PersonSearch({ value, onSelect, onClear }: {
   );
 }
 
-export default function InlineFilters({ filters, onChange, onClear }: InlineFiltersProps) {
+export default function InlineFilters({ filters, onChange, onClear, isPremium = true, onUpgrade }: InlineFiltersProps) {
   const [detectedCountry, setDetectedCountry] = useState<string>("US");
 
   useEffect(() => {
@@ -292,12 +294,24 @@ export default function InlineFilters({ filters, onChange, onClear }: InlineFilt
             <DropdownItem label="< 2.5 hrs" selected={filters.maxRuntime === 150} onClick={() => update({ maxRuntime: 150 })} />
           </FilterDropdown>
 
-          {/* Actor / Director */}
-          <PersonSearch
-            value={filters.personName}
-            onSelect={p => update({ personId: p.id, personName: p.name })}
-            onClear={() => update({ personId: undefined, personName: undefined })}
-          />
+          {/* Actor / Director — premium only */}
+          {isPremium ? (
+            <PersonSearch
+              value={filters.personName}
+              onSelect={p => update({ personId: p.id, personName: p.name })}
+              onClear={() => update({ personId: undefined, personName: undefined })}
+            />
+          ) : (
+            <button
+              onClick={onUpgrade}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all"
+              title="Upgrade to Premium"
+            >
+              <span>🎬</span>
+              <span>Actor / Director</span>
+              <span className="text-yellow-600 text-xs">⭐</span>
+            </button>
+          )}
 
           {/* Clear all */}
           {hasAny && (
