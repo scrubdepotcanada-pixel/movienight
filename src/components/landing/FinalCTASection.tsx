@@ -17,8 +17,8 @@ export default function FinalCTASection({ onSignIn, onGuest }: FinalCTASectionPr
         </div>
 
         <div className="relative">
-          <div className="mx-auto mb-6 w-24 h-24">
-            <Image src="/popcorn-ticket.png" alt="Your ticket is ready" width={96} height={96} className="w-full h-full object-contain drop-shadow-2xl" />
+          <div className="mx-auto mb-6 w-32 h-32">
+            <Image src="/popcorn-ticket.png" alt="Your ticket is ready" width={128} height={128} className="w-full h-full object-contain drop-shadow-2xl" />
           </div>
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4">
             Tonight&apos;s movie is{" "}

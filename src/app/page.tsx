@@ -655,6 +655,14 @@ export default function Home() {
     setCategoryDisliked([]);
     setContentType("movie");
     setStep("search");
+    if (selectedMember) {
+      fetch(`/api/session/categories?memberId=${selectedMember.id}`)
+        .then(r => r.json())
+        .then(cats => {
+          setActiveCategories(Array.isArray(cats) ? cats.map((c: Record<string, unknown>) => ({ category: String(c.category), count: Number(c.count) })) : []);
+        })
+        .catch(() => setActiveCategories([]));
+    }
   };
 
   const handleStartSwipe = async () => {
@@ -1041,7 +1049,7 @@ export default function Home() {
                     <div className="absolute top-20 left-1/3 w-[300px] h-[300px] bg-pink-600/8 rounded-full blur-3xl" />
                   </div>
                   <div className="relative">
-                    <img src="/popcorn-clapperboard.png" alt="" className="w-24 h-24 mx-auto mb-4 object-contain" />
+                    <img src="/popcorn-clapperboard.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
                     <h2 className="text-4xl sm:text-5xl font-bold mb-4">
                       <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Who&apos;s watching</span> tonight?
                     </h2>
@@ -1087,7 +1095,7 @@ export default function Home() {
           <div className="pt-6">
             {/* Greeting */}
             <div className="text-center mb-6">
-              <img src="/popcorn--surprised.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
+              <img src="/popcorn--surprised.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
               <h2 className="text-2xl sm:text-3xl font-bold mb-1">
                 Hey {selectedMember.name}! {selectedMember.avatar}
               </h2>
@@ -1214,7 +1222,7 @@ export default function Home() {
         {step === "recommendations" && selectedMember && (
           <div className="pt-6">
             <div className="text-center mb-6">
-              <img src="/popcorn-peace.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
+              <img src="/popcorn-peace.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
               <h2 className="text-2xl sm:text-3xl font-bold mb-4">
                 <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Here&apos;s what you should watch</span>
               </h2>
@@ -1276,7 +1284,7 @@ export default function Home() {
         {step === "category-recs" && selectedMember && (
           <div className="pt-6">
             <div className="text-center mb-8">
-              <img src="/popcorn-clapperboard.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
+              <img src="/popcorn-clapperboard.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
               <h2 className="text-3xl sm:text-4xl font-bold mb-3">
                 <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">{genreIcon} {genreLabel} We Recommend</span>
               </h2>
@@ -1315,7 +1323,7 @@ export default function Home() {
         {step === "returning" && selectedMember && (
           <div className="pt-6">
             <div className="text-center mb-8">
-              <img src="/popcorn-drink.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
+              <img src="/popcorn-drink.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
               <h2 className="text-3xl font-bold mb-2">
                 Welcome back, {selectedMember.name}! {selectedMember.avatar}
               </h2>
@@ -1356,7 +1364,7 @@ export default function Home() {
         {step === "category-returning" && selectedMember && (
           <div className="pt-6">
             <div className="text-center mb-8">
-              <img src="/popcorn-drink.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
+              <img src="/popcorn-drink.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
               <h2 className="text-3xl font-bold mb-2">
                 {genreIcon} Your {genreLabel} List
               </h2>
@@ -1397,7 +1405,7 @@ export default function Home() {
         {step === "all-members" && (
           <div className="pt-6">
             <div className="text-center mb-8">
-              <img src="/popcorn-peace.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
+              <img src="/popcorn-peace.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
               <h2 className="text-3xl font-bold mb-2">Family Movie Board</h2>
               <p className="text-gray-400">See what everyone is watching</p>
             </div>
@@ -1447,7 +1455,7 @@ export default function Home() {
           <div className="pt-4">
             {loading || !swipeSessionId || swipeCandidates.length === 0 ? (
               <div className="text-center py-16 max-w-md mx-auto">
-                <img src="/popcorn-clapperboard.png" alt="" className="w-24 h-24 mx-auto mb-6 animate-bounce object-contain" />
+                <img src="/popcorn-clapperboard.png" alt="" className="w-32 h-32 mx-auto mb-6 animate-bounce object-contain" />
                 <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
                   Setting up family swipe...
                 </h3>
@@ -1552,7 +1560,7 @@ function GuestSetup({ onDone }: { existingMember: Member | null; onDone: (name: 
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-3xl" />
       </div>
       <div className="relative max-w-sm mx-auto">
-        <img src="/popcorn--surprised.png" alt="" className="w-24 h-24 mx-auto mb-4 object-contain" />
+        <img src="/popcorn--surprised.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
         <h2 className="text-3xl sm:text-4xl font-bold mb-2">
           <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">What can you watch?</span>
         </h2>

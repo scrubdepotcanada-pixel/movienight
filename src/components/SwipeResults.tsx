@@ -282,7 +282,7 @@ export default function SwipeResults({
           {/* Confetti headline */}
           <div className="text-center mb-8">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/popcorn-peace.png" alt="" className="w-24 h-24 mx-auto mb-3 object-contain" />
+            <img src="/popcorn-peace.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
             <h2 className="text-3xl sm:text-4xl font-bold mb-2">
               <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
                 Everyone agrees!
@@ -343,7 +343,7 @@ export default function SwipeResults({
           {/* No perfect matches */}
           <div className="text-center mb-8">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/popcorn--sad-film.png" alt="" className="w-24 h-24 mx-auto mb-3 object-contain" />
+            <img src="/popcorn--sad-film.png" alt="" className="w-32 h-32 mx-auto mb-4 object-contain" />
             <h2 className="text-3xl sm:text-4xl font-bold mb-2">
               <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
                 Almost! Here&apos;s what came closest
