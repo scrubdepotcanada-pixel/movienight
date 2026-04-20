@@ -39,6 +39,7 @@ interface MovieCardProps {
   contentType?: "movie" | "show";
   onPersonClick?: (person: CreditPerson) => void;
   onAddToWatchlist?: () => void;
+  isOnWatchlist?: boolean;
 }
 
 const PROVIDER_SEARCH_NAMES: Record<number, string> = {
@@ -85,7 +86,7 @@ export default function MovieCard({
   movie, selected, onDislike, onLike, onPass,
   showDislike, showLike, showPass,
   dislikeLoading, likeLoading, passLoading, onClick,
-  contentType = "movie", onPersonClick, onAddToWatchlist,
+  contentType = "movie", onPersonClick, onAddToWatchlist, isOnWatchlist,
 }: MovieCardProps) {
   const [flipped, setFlipped] = useState(false);
   const [showProviders, setShowProviders] = useState(false);
@@ -256,10 +257,10 @@ export default function MovieCard({
               {onAddToWatchlist && (
                 <button
                   onClick={(e) => { e.stopPropagation(); onAddToWatchlist(); }}
-                  className="bg-gray-700 hover:bg-gray-600 text-white px-2.5 py-2 rounded-lg text-xs transition-colors"
-                  title="Add to watchlist"
+                  className={`px-2.5 py-2 rounded-lg text-xs transition-colors ${isOnWatchlist ? "bg-purple-600 hover:bg-purple-700 text-white" : "bg-gray-700 hover:bg-gray-600 text-white"}`}
+                  title={isOnWatchlist ? "On your watchlist" : "Add to watchlist"}
                 >
-                  📋+
+                  {isOnWatchlist ? "📋✓" : "📋+"}
                 </button>
               )}
             </div>

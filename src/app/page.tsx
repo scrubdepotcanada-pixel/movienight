@@ -112,6 +112,8 @@ export default function Home() {
     personId?: number; personName?: string;
   }>({});
 
+  const [watchlistIds, setWatchlistIds] = useState<Set<number>>(new Set());
+
   // Swipe state
   const [swipeSessionId, setSwipeSessionId] = useState<string | null>(null);
   const [swipeCandidates, setSwipeCandidates] = useState<Movie[]>([]);
@@ -218,6 +220,17 @@ export default function Home() {
     setLoading(false);
   }, [loadCategoryHistory, topUpRecommendations]);
 
+  const loadWatchlistIds = async (memberId: number) => {
+    if (!isPremium) return;
+    try {
+      const res = await fetch(`/api/watchlist?memberId=${memberId}`);
+      const rows = await res.json();
+      if (Array.isArray(rows)) {
+        setWatchlistIds(new Set(rows.map((r: { tmdb_id: number }) => Number(r.tmdb_id))));
+      }
+    } catch { /* silent */ }
+  };
+
   const handleSelectMember = (member: Member) => {
     setSelectedMember(member);
     setViewingAll(false);
@@ -228,6 +241,7 @@ export default function Home() {
     setCategoryDisliked([]);
     setContentType("movie");
     loadMemberSession(member);
+    loadWatchlistIds(member.id);
   };
 
   // Auto-select guest's single member — disabled, always show setup
@@ -756,7 +770,7 @@ export default function Home() {
       return;
     }
     if (!isPremium || !selectedMember) return;
-    await fetch("/api/watchlist", {
+    const res = await fetch("/api/watchlist", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -771,6 +785,9 @@ export default function Home() {
         contentType,
       }),
     });
+    if (res.ok) {
+      setWatchlistIds(prev => new Set([...prev, movie.id]));
+    }
   };
 
   const handleDiscoverApply = async (filters: { genre?: string; decade?: string; minRating?: number; maxRuntime?: number; providerId?: number; providerName?: string; region?: string; personId?: number; personName?: string }) => {
@@ -856,6 +873,7 @@ export default function Home() {
             contentType={contentType}
             onPersonClick={!isGuest ? handlePersonClick : undefined}
             onAddToWatchlist={!isGuest && isPremium ? () => handleAddToWatchlist(movie) : undefined}
+            isOnWatchlist={watchlistIds.has(movie.id)}
           />
         ));
         })()}
