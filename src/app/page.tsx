@@ -201,18 +201,17 @@ export default function Home() {
         await loadCategoryHistory(member.id, "general");
         const filled = await topUpRecommendations(recs, member.id, "general");
         setRecommendations(filled);
-        setStep("returning");
-      } else {
-        // Fetch active categories for "continue where you left off"
-        try {
-          const catRes = await fetch(`/api/session/categories?memberId=${member.id}`);
-          const cats = await catRes.json();
-          setActiveCategories(Array.isArray(cats) ? cats.map((c: Record<string, unknown>) => ({ category: String(c.category), count: Number(c.count) })) : []);
-        } catch {
-          setActiveCategories([]);
-        }
-        setStep("search");
       }
+
+      // Always go to search — user can see history via "continue where you left off"
+      try {
+        const catRes = await fetch(`/api/session/categories?memberId=${member.id}`);
+        const cats = await catRes.json();
+        setActiveCategories(Array.isArray(cats) ? cats.map((c: Record<string, unknown>) => ({ category: String(c.category), count: Number(c.count) })) : []);
+      } catch {
+        setActiveCategories([]);
+      }
+      setStep("search");
     } catch (err) {
       console.error(err);
       setStep("search");
