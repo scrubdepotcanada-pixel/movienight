@@ -41,6 +41,17 @@ interface Stats {
     swipes: number;
     lastActive: string | null;
   }[];
+  guestDetails: {
+    id: string;
+    memberNames: string | null;
+    members: number;
+    liked: number;
+    disliked: number;
+    recs: number;
+    categories: string[];
+    createdAt: string | null;
+    lastActive: string | null;
+  }[];
 }
 
 interface Analytics {
@@ -421,6 +432,81 @@ export default function AdminPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            {/* Guest Sessions */}
+            <div className="bg-gray-900 border border-gray-700/50 rounded-2xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-800">
+                <h2 className="text-lg font-bold">Guest Sessions ({stats.guestDetails.length})</h2>
+                <p className="text-gray-500 text-xs mt-1">Anonymous visitors who used the app without signing in</p>
+              </div>
+              {stats.guestDetails.filter(g => g.liked + g.disliked + g.recs > 0).length === 0 ? (
+                <div className="px-6 py-8 text-center">
+                  <p className="text-gray-500 text-sm">No active guest sessions yet</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
+                        <th className="text-left px-6 py-3">Guest</th>
+                        <th className="text-left px-3 py-3">Searched</th>
+                        <th className="text-center px-2 py-3">Activity</th>
+                        <th className="text-left px-3 py-3">Last Active</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.guestDetails
+                        .filter(g => g.liked + g.disliked + g.recs > 0)
+                        .map((guest, i) => (
+                        <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                          <td className="px-6 py-3">
+                            <p className="text-white font-medium">{guest.memberNames || "Anonymous"}</p>
+                            <p className="text-gray-600 text-[10px] font-mono">ID: {guest.id.slice(0, 12)}...</p>
+                            {guest.members > 0 && (
+                              <p className="text-gray-500 text-xs mt-0.5">{guest.members} member{guest.members !== 1 ? "s" : ""}</p>
+                            )}
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="flex flex-wrap gap-1 max-w-[200px]">
+                              {guest.categories.length > 0 ? guest.categories.map(cat => (
+                                <span key={cat} className="inline-block bg-purple-900/40 text-purple-300 text-[10px] px-2 py-0.5 rounded-full">
+                                  {cat}
+                                </span>
+                              )) : (
+                                <span className="text-gray-600 text-xs">—</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-2 py-3">
+                            <div className="flex flex-col gap-1 items-center">
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center gap-1 bg-green-900/40 text-green-300 text-xs font-semibold px-2 py-0.5 rounded-md">
+                                  👍 <span>{guest.liked}</span>
+                                </span>
+                                <span className="inline-flex items-center gap-1 bg-red-900/40 text-red-300 text-xs font-semibold px-2 py-0.5 rounded-md">
+                                  👎 <span>{guest.disliked}</span>
+                                </span>
+                              </div>
+                              <span className="text-gray-400 text-xs">🎬 {guest.recs} recs</span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 text-xs">
+                            {guest.lastActive ? (
+                              <div>
+                                <p className="text-gray-300">{new Date(guest.lastActive).toLocaleDateString()}</p>
+                                <p className="text-gray-600 text-[10px]">{timeAgo(guest.lastActive)}</p>
+                              </div>
+                            ) : (
+                              <span className="text-gray-600">Never</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         )}

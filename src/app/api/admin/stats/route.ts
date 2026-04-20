@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
     totalSwipeSessions,
     recentSignups,
     userDetails,
+    guestDetails,
     payingSubscribers,
     paymentHistory,
   ] = await Promise.all([
@@ -62,6 +63,25 @@ export async function GET(req: NextRequest) {
       LIMIT 50
     `),
     db.execute(`
+      SELECT f.id, f.created_at,
+        (SELECT GROUP_CONCAT(m2.name, ', ') FROM members m2 WHERE m2.family_id = f.id) as member_names,
+        (SELECT COUNT(*) FROM members WHERE family_id = f.id) as member_count,
+        (SELECT COUNT(*) FROM liked_movies lm JOIN members m ON lm.member_id = m.id WHERE m.family_id = f.id) as liked_count,
+        (SELECT COUNT(*) FROM disliked_movies dm JOIN members m ON dm.member_id = m.id WHERE m.family_id = f.id) as disliked_count,
+        (SELECT COUNT(*) FROM recommendations r JOIN members m ON r.member_id = m.id WHERE m.family_id = f.id) as recs_count,
+        (SELECT MAX(ts) FROM (
+          SELECT MAX(lm.created_at) as ts FROM liked_movies lm JOIN members m ON lm.member_id = m.id WHERE m.family_id = f.id
+          UNION ALL
+          SELECT MAX(dm.created_at) as ts FROM disliked_movies dm JOIN members m ON dm.member_id = m.id WHERE m.family_id = f.id
+          UNION ALL
+          SELECT MAX(r.created_at) as ts FROM recommendations r JOIN members m ON r.member_id = m.id WHERE m.family_id = f.id
+        )) as last_active
+      FROM families f
+      WHERE f.google_id IS NULL
+      ORDER BY last_active DESC NULLS LAST
+      LIMIT 50
+    `),
+    db.execute(`
       SELECT f.id, f.email, f.name, f.subscription_plan, f.premium_until
       FROM families f
       WHERE f.subscription_plan IN ('monthly', 'yearly')
@@ -77,6 +97,30 @@ export async function GET(req: NextRequest) {
       LIMIT 100
     `),
   ]);
+
+  // Fetch categories for each guest family
+  const guestFamilyIds = guestDetails.rows.map(r => String(r.id));
+  let guestCategoryMap: Record<string, string[]> = {};
+  if (guestFamilyIds.length > 0) {
+    const guestCats = await db.execute({
+      sql: `SELECT m.family_id, lm.category
+            FROM liked_movies lm
+            JOIN members m ON lm.member_id = m.id
+            WHERE m.family_id IN (${guestFamilyIds.map(() => '?').join(',')})
+            UNION
+            SELECT m.family_id, dm.category
+            FROM disliked_movies dm
+            JOIN members m ON dm.member_id = m.id
+            WHERE m.family_id IN (${guestFamilyIds.map(() => '?').join(',')})`,
+      args: [...guestFamilyIds, ...guestFamilyIds],
+    });
+    for (const row of guestCats.rows) {
+      const fid = String(row.family_id);
+      const cat = String(row.category);
+      if (!guestCategoryMap[fid]) guestCategoryMap[fid] = [];
+      if (!guestCategoryMap[fid].includes(cat)) guestCategoryMap[fid].push(cat);
+    }
+  }
 
   // Revenue calculations from active paying subscribers
   const monthlyCount = payingSubscribers.rows.filter(r => r.subscription_plan === "monthly").length;
@@ -145,6 +189,17 @@ export async function GET(req: NextRequest) {
       watchlist: Number(r.watchlist_count || 0),
       recs: Number(r.recs_count || 0),
       swipes: Number(r.swipe_count || 0),
+      lastActive: r.last_active ? String(r.last_active) : null,
+    })),
+    guestDetails: guestDetails.rows.map(r => ({
+      id: String(r.id),
+      memberNames: r.member_names ? String(r.member_names) : null,
+      members: Number(r.member_count),
+      liked: Number(r.liked_count),
+      disliked: Number(r.disliked_count),
+      recs: Number(r.recs_count || 0),
+      categories: guestCategoryMap[String(r.id)] || [],
+      createdAt: r.created_at ? String(r.created_at) : null,
       lastActive: r.last_active ? String(r.last_active) : null,
     })),
   });
