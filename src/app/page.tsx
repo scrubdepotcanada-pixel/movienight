@@ -859,12 +859,13 @@ export default function Home() {
               </h1>
             </button>
             <div className="flex items-center gap-2">
-              {isCategoryStep && (
+              {selectedMember && (
                 <button
                   onClick={handleStartFresh}
-                  className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-2 py-1 rounded-lg"
+                  className="flex items-center gap-1.5 text-sm font-semibold bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-3 py-1.5 rounded-xl shadow-md shadow-purple-900/30 transition-all hover:scale-105 active:scale-100"
                 >
-                  Change
+                  <span>🎬</span>
+                  <span className="hidden sm:inline">New Movie</span>
                 </button>
               )}
               {selectedMember && (
