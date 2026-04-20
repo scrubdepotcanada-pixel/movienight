@@ -332,17 +332,31 @@ export default function AdminPage() {
                         </td>
                         <td className="px-2 py-3 text-center text-gray-300">{user.members}</td>
                         <td className="px-2 py-3">
-                          <div className="flex flex-col items-center gap-1">
-                            <div className="flex items-center gap-1.5 text-[11px]">
-                              <span className="text-green-400" title="Liked">👍{user.liked}</span>
-                              <span className="text-red-400" title="Disliked">👎{user.disliked}</span>
-                              {user.watchlist > 0 && <span className="text-purple-400" title="Watchlist">📋{user.watchlist}</span>}
+                          <div className="flex flex-col gap-1.5 min-w-[120px]">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1 bg-green-900/40 text-green-300 text-xs font-semibold px-2 py-0.5 rounded-md">
+                                👍 <span>{user.liked}</span>
+                              </span>
+                              <span className="inline-flex items-center gap-1 bg-red-900/40 text-red-300 text-xs font-semibold px-2 py-0.5 rounded-md">
+                                👎 <span>{user.disliked}</span>
+                              </span>
+                              {user.watchlist > 0 && (
+                                <span className="inline-flex items-center gap-1 bg-purple-900/40 text-purple-300 text-xs font-semibold px-2 py-0.5 rounded-md">
+                                  📋 <span>{user.watchlist}</span>
+                                </span>
+                              )}
                             </div>
-                            <div className="flex items-center gap-1.5 text-[11px]">
-                              <span className="text-gray-500" title="Recommendations served">🎬{user.recs}</span>
-                              {user.swipes > 0 && <span className="text-orange-400" title="Swipe sessions">🔀{user.swipes}</span>}
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1 text-gray-400 text-xs" title="Recommendations served">
+                                🎬 <span>{user.recs}</span> recs
+                              </span>
+                              {user.swipes > 0 && (
+                                <span className="inline-flex items-center gap-1 text-orange-400 text-xs" title="Swipe sessions">
+                                  🔀 <span>{user.swipes}</span>
+                                </span>
+                              )}
                             </div>
-                            <span className={`text-[9px] font-bold uppercase tracking-wider ${engagementColor}`}>{engagement}</span>
+                            <span className={`text-[10px] font-bold uppercase tracking-wider ${engagementColor}`}>{engagement}</span>
                           </div>
                         </td>
                         <td className="px-3 py-3 text-xs">
