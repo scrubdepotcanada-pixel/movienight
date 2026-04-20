@@ -281,9 +281,8 @@ export default function SwipeResults({
         <>
           {/* Confetti headline */}
           <div className="text-center mb-8">
-            <div className="text-5xl mb-3">
-              &#x1F389; &#x1F37F; &#x1F38A;
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/popcorn-peace.png" alt="" className="w-24 h-24 mx-auto mb-3 object-contain" />
             <h2 className="text-3xl sm:text-4xl font-bold mb-2">
               <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
                 Everyone agrees!
@@ -343,9 +342,8 @@ export default function SwipeResults({
         <>
           {/* No perfect matches */}
           <div className="text-center mb-8">
-            <div className="text-5xl mb-3">
-              &#x1F914; &#x1F3AC;
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/popcorn--sad-film.png" alt="" className="w-24 h-24 mx-auto mb-3 object-contain" />
             <h2 className="text-3xl sm:text-4xl font-bold mb-2">
               <span className="bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
                 Almost! Here&apos;s what came closest

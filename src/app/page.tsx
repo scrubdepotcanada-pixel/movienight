@@ -1004,7 +1004,10 @@ export default function Home() {
         {/* Error banner */}
         {error && (
           <div className="mb-6 bg-red-900/50 border border-red-700 rounded-xl p-4 flex items-center justify-between">
-            <p className="text-red-200 text-sm">{error}</p>
+            <div className="flex items-center gap-3">
+              <img src="/popcorn--sad-film.png" alt="" className="w-10 h-10 object-contain flex-shrink-0" />
+              <p className="text-red-200 text-sm">{error}</p>
+            </div>
             <button onClick={() => setError(null)} className="text-red-400 hover:text-red-300 ml-4 text-lg">&times;</button>
           </div>
         )}
@@ -1039,7 +1042,7 @@ export default function Home() {
                     <div className="absolute top-20 left-1/3 w-[300px] h-[300px] bg-pink-600/8 rounded-full blur-3xl" />
                   </div>
                   <div className="relative">
-                    <div className="text-5xl mb-4">🎬</div>
+                    <img src="/popcorn-clapperboard.png" alt="" className="w-24 h-24 mx-auto mb-4 object-contain" />
                     <h2 className="text-4xl sm:text-5xl font-bold mb-4">
                       <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Who&apos;s watching</span> tonight?
                     </h2>
@@ -1395,9 +1398,12 @@ export default function Home() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-gray-500 italic">
-                        No recommendations yet — {member.name} needs to search for a movie first!
-                      </p>
+                      <div className="flex items-center gap-3 py-4">
+                        <img src="/popcorn--confused.png" alt="" className="w-12 h-12 object-contain opacity-60" />
+                        <p className="text-gray-500 italic">
+                          No recommendations yet — {member.name} needs to search for a movie first!
+                        </p>
+                      </div>
                     )}
                   </div>
                 ))}
@@ -1420,7 +1426,7 @@ export default function Home() {
           <div className="pt-4">
             {loading || !swipeSessionId || swipeCandidates.length === 0 ? (
               <div className="text-center py-16 max-w-md mx-auto">
-                <div className="text-6xl mb-6 animate-bounce">&#x1F3AC;</div>
+                <img src="/popcorn-clapperboard.png" alt="" className="w-24 h-24 mx-auto mb-6 animate-bounce object-contain" />
                 <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3">
                   Setting up family swipe...
                 </h3>
@@ -1525,7 +1531,7 @@ function GuestSetup({ onDone }: { existingMember: Member | null; onDone: (name: 
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-3xl" />
       </div>
       <div className="relative max-w-sm mx-auto">
-        <div className="text-5xl mb-4">🎬</div>
+        <img src="/popcorn--surprised.png" alt="" className="w-24 h-24 mx-auto mb-4 object-contain" />
         <h2 className="text-3xl sm:text-4xl font-bold mb-2">
           <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">What can you watch?</span>
         </h2>

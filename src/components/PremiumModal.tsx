@@ -31,6 +31,8 @@ export default function PremiumModal({ onClose, feature }: PremiumModalProps) {
 
         {/* Header */}
         <div className="text-center mb-6">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/popcorn--king.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
           <div className="inline-flex items-center gap-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">
             Premium
           </div>
