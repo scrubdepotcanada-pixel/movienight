@@ -1099,6 +1099,23 @@ export default function Home() {
               <ContentTypeToggle value={contentType} onChange={(v) => { setContentType(v); setSearchResults([]); setSelectedSearchId(null); }} />
             </div>
 
+            {/* Your previous picks */}
+            {recommendations.length > 0 && (
+              <div className="mb-8 max-w-3xl mx-auto">
+                <button
+                  onClick={() => setStep("returning")}
+                  className="w-full flex items-center justify-center gap-3 bg-gray-800/50 hover:bg-gray-800/80 border border-gray-700/50 hover:border-purple-500/40 rounded-2xl px-5 py-4 transition-all"
+                >
+                  <img src="/popcorn-drink.png" alt="" className="w-10 h-10 object-contain" />
+                  <div className="text-left">
+                    <p className="text-white font-semibold text-sm">Your History</p>
+                    <p className="text-gray-500 text-xs">{recommendations.length} movies from last session</p>
+                  </div>
+                  <span className="text-gray-500 ml-auto">&rarr;</span>
+                </button>
+              </div>
+            )}
+
             {/* Continue where you left off */}
             {activeCategories.length > 0 && (
               <div className="mb-8 max-w-3xl mx-auto">
