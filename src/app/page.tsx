@@ -358,7 +358,7 @@ export default function Home() {
     setSelectedSearchId(null);
 
     // If filters are active, apply them (filters take precedence over movie pick)
-    if (Object.keys(activeFilters).length > 0) {
+    if (hasMeaningfulFilters(activeFilters)) {
       await handleDiscoverApply(activeFilters);
       return;
     }
@@ -385,7 +385,7 @@ export default function Home() {
     setSelectedSearchId(null);
 
     // If filters are active, keep them applied
-    if (Object.keys(activeFilters).length > 0) {
+    if (hasMeaningfulFilters(activeFilters)) {
       await handleDiscoverApply(activeFilters);
       return;
     }
@@ -418,7 +418,7 @@ export default function Home() {
     setActiveCategory(genreId);
 
     // If premium filters are active, use discover API with genre override
-    if (Object.keys(activeFilters).length > 0) {
+    if (hasMeaningfulFilters(activeFilters)) {
       await handleDiscoverApply({ ...activeFilters, genre: genreId });
       return;
     }
@@ -640,6 +640,11 @@ export default function Home() {
       console.error(err);
     }
     setDislikeLoadingId(null);
+  };
+
+  const hasMeaningfulFilters = (f: typeof activeFilters) => {
+    const { region, ...rest } = f;
+    return Object.values(rest).some(v => v !== undefined);
   };
 
   const handleStartFresh = () => {

@@ -205,14 +205,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
   useEffect(() => {
     fetch("/api/geo")
       .then(r => r.json())
-      .then(d => {
-        if (d.country) {
-          setDetectedCountry(d.country);
-          if (!filters.region) {
-            onChange({ ...filters, region: d.country });
-          }
-        }
-      })
+      .then(d => { if (d.country) setDetectedCountry(d.country); })
       .catch(() => {});
   }, []);
 
