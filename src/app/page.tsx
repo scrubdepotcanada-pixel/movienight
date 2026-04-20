@@ -1108,21 +1108,10 @@ export default function Home() {
             </div>
 
             {/* Pick up where you left off */}
-            {(recommendations.length > 0 || activeCategories.length > 0) && (
+            {activeCategories.filter(({ category }) => category !== "general" && GENRES.find(g => g.id === category)).length > 0 && (
               <div className="mb-8 max-w-3xl mx-auto">
                 <h3 className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Pick up where you left off</h3>
                 <div className="flex flex-wrap justify-center gap-2">
-                  {recommendations.length > 0 && (
-                    <button
-                      onClick={() => setStep("returning")}
-                      disabled={loading}
-                      className="flex items-center gap-1.5 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 hover:border-purple-500 text-white px-4 py-2.5 rounded-xl transition-all text-sm disabled:opacity-50"
-                    >
-                      <span>🎬</span>
-                      <span>General</span>
-                      <span className="text-purple-300 text-[10px] bg-purple-500/30 px-1.5 py-0.5 rounded-full">{recommendations.length}</span>
-                    </button>
-                  )}
                   {activeCategories.map(({ category, count }) => {
                     if (category === "general") return null;
                     const genre = GENRES.find((g) => g.id === category);
