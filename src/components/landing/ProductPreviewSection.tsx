@@ -1,44 +1,44 @@
 "use client";
 
 const mockProfiles = [
-  { name: "Mom", avatar: "👩", color: "from-purple-500 to-pink-500" },
-  { name: "Dad", avatar: "👨", color: "from-blue-500 to-cyan-500" },
-  { name: "Sam", avatar: "🧒", color: "from-green-500 to-emerald-500" },
-  { name: "Lily", avatar: "👧", color: "from-yellow-500 to-orange-500" },
+  { name: "Mom", avatar: "👩" },
+  { name: "Dad", avatar: "👨" },
+  { name: "Sam", avatar: "🧒" },
+  { name: "Lily", avatar: "👧" },
 ];
 
 const mockGenres = ["Action", "Comedy", "Animated", "Sci-Fi", "Family"];
 
 const mockMovies = [
   {
-    title: "The Grand Adventure",
-    rating: "8.4",
-    certification: "PG",
-    gradient: "from-indigo-800 to-purple-900",
-  },
-  {
-    title: "Starlight Express",
-    rating: "7.9",
-    certification: "PG",
-    gradient: "from-pink-800 to-rose-900",
-  },
-  {
-    title: "Laugh Factory",
-    rating: "8.1",
-    certification: "PG",
-    gradient: "from-amber-800 to-orange-900",
-  },
-  {
-    title: "Ocean Explorers",
-    rating: "8.7",
-    certification: "G",
-    gradient: "from-teal-800 to-cyan-900",
-  },
-  {
-    title: "Secret Kingdom",
+    title: "Inside Out 2",
     rating: "7.6",
     certification: "PG",
-    gradient: "from-emerald-800 to-green-900",
+    poster: "https://image.tmdb.org/t/p/w342/vpnVM9B6NMmQpWeZvzLbDELYX49.jpg",
+  },
+  {
+    title: "The Incredibles",
+    rating: "7.7",
+    certification: "PG",
+    poster: "https://image.tmdb.org/t/p/w342/2LqaLgk1W6ky3EtqYOXPA7nJLnZ.jpg",
+  },
+  {
+    title: "Spider-Man: Into the Spider-Verse",
+    rating: "8.4",
+    certification: "PG",
+    poster: "https://image.tmdb.org/t/p/w342/iiZZdoQBEYBv6id8su7ImL0oCbD.jpg",
+  },
+  {
+    title: "Coco",
+    rating: "8.2",
+    certification: "PG",
+    poster: "https://image.tmdb.org/t/p/w342/gGEsBPAijhVUFoiNpgZXqRVWJt2.jpg",
+  },
+  {
+    title: "Moana",
+    rating: "7.6",
+    certification: "PG",
+    poster: "https://image.tmdb.org/t/p/w342/4jfSSeVhFhXcQJh8jJHdqr8yamL.jpg",
   },
 ];
 
@@ -82,7 +82,7 @@ export default function ProductPreviewSection() {
               {mockProfiles.map((profile) => (
                 <div
                   key={profile.name}
-                  className="flex items-center gap-2 bg-gray-900/60 border border-gray-700/40 rounded-xl px-4 py-2.5 hover:border-purple-500/50 transition-colors"
+                  className="flex items-center gap-2 bg-gray-900/60 border border-gray-700/40 rounded-xl px-4 py-2.5"
                 >
                   <span className="text-xl">{profile.avatar}</span>
                   <span className="text-sm font-medium text-gray-300">
@@ -100,7 +100,7 @@ export default function ProductPreviewSection() {
               {mockGenres.map((genre, i) => (
                 <span
                   key={genre}
-                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium ${
                     i === 0
                       ? "bg-purple-600/30 text-purple-300 border border-purple-500/40"
                       : "bg-gray-900/60 text-gray-400 border border-gray-700/40"
@@ -112,7 +112,7 @@ export default function ProductPreviewSection() {
             </div>
           </div>
 
-          {/* Movie recommendation cards */}
+          {/* Movie recommendation cards with real posters */}
           <div>
             <p className="text-sm text-gray-500 mb-3">
               Your picks are ready
@@ -120,19 +120,14 @@ export default function ProductPreviewSection() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
               {mockMovies.map((movie) => (
                 <div key={movie.title} className="group">
-                  {/* Poster placeholder */}
-                  <div
-                    className={`aspect-[2/3] rounded-xl bg-gradient-to-br ${movie.gradient} mb-2 flex items-end p-3 relative overflow-hidden`}
-                  >
-                    {/* Film grain texture effect */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                    <div className="relative w-full">
-                      <p className="text-xs font-semibold text-white leading-tight">
-                        {movie.title}
-                      </p>
-                    </div>
+                  <div className="aspect-[2/3] rounded-xl mb-2 relative overflow-hidden bg-gray-700">
+                    <img
+                      src={movie.poster}
+                      alt={movie.title}
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
                   </div>
-                  {/* Meta info */}
                   <div className="flex items-center justify-between px-1">
                     <span className="text-xs text-yellow-400">
                       ★ {movie.rating}
