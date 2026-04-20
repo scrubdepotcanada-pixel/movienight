@@ -43,6 +43,7 @@ interface Stats {
   }[];
   guestDetails: {
     id: string;
+    ip: string | null;
     memberNames: string | null;
     members: number;
     liked: number;
@@ -461,10 +462,12 @@ export default function AdminPage() {
                         .map((guest, i) => (
                         <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
                           <td className="px-6 py-3">
-                            <p className="text-white font-medium">{guest.memberNames || "Anonymous"}</p>
-                            <p className="text-gray-600 text-[10px] font-mono">ID: {guest.id.slice(0, 12)}...</p>
-                            {guest.members > 0 && (
-                              <p className="text-gray-500 text-xs mt-0.5">{guest.members} member{guest.members !== 1 ? "s" : ""}</p>
+                            <p className="text-white font-medium font-mono text-xs">{guest.ip || "Unknown IP"}</p>
+                            {guest.memberNames && (
+                              <p className="text-gray-500 text-xs mt-0.5">👤 {guest.memberNames}</p>
+                            )}
+                            {guest.createdAt && (
+                              <p className="text-gray-600 text-[10px] mt-0.5">{new Date(guest.createdAt).toLocaleDateString()} {new Date(guest.createdAt).toLocaleTimeString()}</p>
                             )}
                           </td>
                           <td className="px-3 py-3">

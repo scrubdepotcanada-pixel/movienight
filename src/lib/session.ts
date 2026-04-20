@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { v4 as uuidv4 } from "uuid";
 import db, { initDB } from "./db";
 
@@ -79,9 +79,11 @@ export async function getOrCreateFamily(): Promise<string | null> {
 
   // Create new guest family
   const newGuestId = `guest_${uuidv4()}`;
+  const hdrs = await headers();
+  const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() || hdrs.get("cf-connecting-ip") || null;
   await db.execute({
-    sql: "INSERT INTO families (id, name) VALUES (?, ?)",
-    args: [newGuestId, "Guest"],
+    sql: "INSERT INTO families (id, name, ip_address) VALUES (?, ?, ?)",
+    args: [newGuestId, "Guest", ip],
   });
 
   // Session cookie — expires when browser closes (no maxAge)

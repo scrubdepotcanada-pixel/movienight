@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
       LIMIT 50
     `),
     db.execute(`
-      SELECT f.id, f.created_at,
+      SELECT f.id, f.created_at, f.ip_address,
         (SELECT GROUP_CONCAT(m2.name, ', ') FROM members m2 WHERE m2.family_id = f.id) as member_names,
         (SELECT COUNT(*) FROM members WHERE family_id = f.id) as member_count,
         (SELECT COUNT(*) FROM liked_movies lm JOIN members m ON lm.member_id = m.id WHERE m.family_id = f.id) as liked_count,
@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
         )) as last_active
       FROM families f
       WHERE f.google_id IS NULL
-      ORDER BY last_active DESC NULLS LAST
+      ORDER BY f.created_at DESC
       LIMIT 50
     `),
     db.execute(`
@@ -193,6 +193,7 @@ export async function GET(req: NextRequest) {
     })),
     guestDetails: guestDetails.rows.map(r => ({
       id: String(r.id),
+      ip: r.ip_address ? String(r.ip_address) : null,
       memberNames: r.member_names ? String(r.member_names) : null,
       members: Number(r.member_count),
       liked: Number(r.liked_count),
