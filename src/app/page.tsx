@@ -1101,14 +1101,16 @@ export default function Home() {
 
         {/* STEP: Search */}
         {step === "search" && selectedMember && (
-          <div className="pt-6">
+          <div className="pt-2">
             {/* Greeting */}
-            <div className="text-center mb-6">
-              <img src="/popcorn--surprised.png" alt="" className="w-40 h-40 mx-auto mb-4 object-contain" />
-              <h2 className="text-2xl sm:text-3xl font-bold mb-1">
-                Hey {selectedMember.name}! {selectedMember.avatar}
-              </h2>
-              <p className="text-gray-300 text-lg">What are you looking for?</p>
+            <div className="flex items-center justify-center gap-4 mb-4">
+              <img src="/popcorn--surprised.png" alt="" className="w-24 h-24 object-contain flex-shrink-0" />
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-bold mb-1">
+                  Hey {selectedMember.name}! {selectedMember.avatar}
+                </h2>
+                <p className="text-gray-300 text-lg">What are you looking for?</p>
+              </div>
             </div>
 
             {/* Movies / Shows toggle */}
