@@ -84,6 +84,22 @@ export default function PremiumMenu({ onWatchlist, onTasteProfile, onAdvancedFil
               </div>
             </button>
           ))}
+          {isAdmin && (
+            <>
+              <div className="border-t border-gray-800" />
+              <a
+                href="/admin"
+                onClick={() => setOpen(false)}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-800/60 transition-colors text-left"
+              >
+                <span className="text-xl flex-shrink-0">🛠️</span>
+                <div>
+                  <p className="text-yellow-300 text-sm font-medium">Admin Dashboard</p>
+                  <p className="text-gray-500 text-xs">Users, stats, revenue</p>
+                </div>
+              </a>
+            </>
+          )}
         </div>
       )}
     </div>
