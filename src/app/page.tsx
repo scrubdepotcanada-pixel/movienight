@@ -401,6 +401,13 @@ export default function Home() {
   // Category selection
   const handleSelectCategory = async (genreId: string) => {
     setActiveCategory(genreId);
+
+    // If premium filters are active, use discover API with genre override
+    if (Object.keys(activeFilters).length > 0) {
+      await handleDiscoverApply({ ...activeFilters, genre: genreId });
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setCategoryLiked([]);
