@@ -6,6 +6,7 @@ interface InlineFiltersProps {
   filters: {
     genre?: string; decade?: string; minRating?: number; maxRuntime?: number;
     providerId?: number; providerName?: string; region?: string;
+    personId?: number; personName?: string;
   };
   onChange: (filters: InlineFiltersProps["filters"]) => void;
   onClear: () => void;
@@ -33,6 +34,19 @@ const RATINGS = [
   { label: "7+", value: 7 },
   { label: "8+", value: 8 },
 ];
+
+const COUNTRY_FLAGS: Record<string, string> = {
+  US: "🇺🇸", CA: "🇨🇦", GB: "🇬🇧", AU: "🇦🇺", FR: "🇫🇷", DE: "🇩🇪",
+  IN: "🇮🇳", BR: "🇧🇷", MX: "🇲🇽", JP: "🇯🇵", KR: "🇰🇷", IL: "🇮🇱",
+  ES: "🇪🇸", IT: "🇮🇹", NL: "🇳🇱", SE: "🇸🇪", NO: "🇳🇴", DK: "🇩🇰",
+};
+
+const COUNTRY_NAMES: Record<string, string> = {
+  US: "United States", CA: "Canada", GB: "United Kingdom", AU: "Australia",
+  FR: "France", DE: "Germany", IN: "India", BR: "Brazil", MX: "Mexico",
+  JP: "Japan", KR: "South Korea", IL: "Israel", ES: "Spain", IT: "Italy",
+  NL: "Netherlands", SE: "Sweden", NO: "Norway", DK: "Denmark",
+};
 
 function FilterDropdown({ label, value, children, active }: {
   label: string; value: string; children: React.ReactNode; active: boolean;
@@ -91,11 +105,97 @@ function DropdownItem({ label, selected, onClick, icon }: {
   );
 }
 
-const COUNTRY_FLAGS: Record<string, string> = {
-  US: "🇺🇸", CA: "🇨🇦", GB: "🇬🇧", AU: "🇦🇺", FR: "🇫🇷", DE: "🇩🇪",
-  IN: "🇮🇳", BR: "🇧🇷", MX: "🇲🇽", JP: "🇯🇵", KR: "🇰🇷", IL: "🇮🇱",
-  ES: "🇪🇸", IT: "🇮🇹", NL: "🇳🇱", SE: "🇸🇪", NO: "🇳🇴", DK: "🇩🇰",
-};
+interface PersonResult {
+  id: number;
+  name: string;
+  known_for_department: string;
+  profile_path: string | null;
+}
+
+function PersonSearch({ value, onSelect, onClear }: {
+  value?: string;
+  onSelect: (person: PersonResult) => void;
+  onClear: () => void;
+}) {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<PersonResult[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const search = (q: string) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (q.trim().length < 2) { setResults([]); setOpen(false); return; }
+    timerRef.current = setTimeout(async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(`/api/people/search?q=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        setResults(data);
+        setOpen(data.length > 0);
+      } catch {
+        setResults([]);
+      }
+      setLoading(false);
+    }, 300);
+  };
+
+  if (value) {
+    return (
+      <div className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-purple-600/30 border border-purple-500/50 text-purple-200 whitespace-nowrap">
+        <span className="text-gray-500">🎬</span>
+        <span className="text-white font-semibold">{value}</span>
+        <button
+          onClick={onClear}
+          className="ml-1 text-purple-300 hover:text-white"
+          aria-label="Clear person filter"
+        >
+          ×
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <div className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium transition-all bg-gray-800/60 border border-gray-700/50 ${open ? "border-gray-600" : ""}`}>
+        <span className="text-gray-500">🎬</span>
+        <input
+          type="text"
+          value={query}
+          onChange={e => { setQuery(e.target.value); search(e.target.value); }}
+          placeholder="Actor / Director"
+          className="bg-transparent outline-none text-gray-300 placeholder-gray-600 w-28 text-xs"
+        />
+        {loading && <span className="text-gray-600 text-xs">...</span>}
+      </div>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 bg-gray-900 border border-gray-700/60 rounded-xl shadow-2xl z-[200] min-w-[180px]">
+          {results.map(p => (
+            <button
+              key={p.id}
+              onClick={() => { onSelect(p); setQuery(""); setOpen(false); }}
+              className="w-full text-left px-3 py-2 text-xs text-gray-300 hover:bg-gray-800 transition-colors flex items-center gap-2"
+            >
+              <span className="text-gray-500">{p.known_for_department === "Directing" ? "🎬" : "🎭"}</span>
+              <span>{p.name}</span>
+              <span className="text-gray-600 text-xs ml-auto">{p.known_for_department}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function InlineFilters({ filters, onChange, onClear }: InlineFiltersProps) {
   const [detectedCountry, setDetectedCountry] = useState<string>("US");
@@ -120,14 +220,20 @@ export default function InlineFilters({ filters, onChange, onClear }: InlineFilt
 
   const currentRegion = filters.region || detectedCountry;
 
-  const hasAny = !!(filters.providerId || filters.genre || filters.decade || filters.minRating || filters.maxRuntime);
+  const hasAny = !!(filters.providerId || filters.genre || filters.decade || filters.minRating || filters.maxRuntime || filters.personId);
 
   return (
     <div className="max-w-6xl mx-auto px-4 mb-4">
       <div className="bg-gray-800/30 border border-gray-700/30 rounded-2xl px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
+          {/* Country chip — always visible */}
+          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs bg-gray-800/60 border border-gray-700/30 text-gray-500 whitespace-nowrap" title={COUNTRY_NAMES[currentRegion] || currentRegion}>
+            <span>{COUNTRY_FLAGS[currentRegion] || "🌍"}</span>
+            <span>{currentRegion}</span>
+          </div>
+
           {/* Platform */}
-          <FilterDropdown label="📺" value={filters.providerName ? `${filters.providerName} ${COUNTRY_FLAGS[currentRegion] || currentRegion}` : "Any"} active={!!filters.providerId}>
+          <FilterDropdown label="📺 " value={filters.providerName || "Any"} active={!!filters.providerId}>
             <DropdownItem label="Any platform" selected={!filters.providerId} onClick={() => update({ providerId: undefined, providerName: undefined })} />
             {PLATFORMS.map(p => (
               <DropdownItem
@@ -141,7 +247,7 @@ export default function InlineFilters({ filters, onChange, onClear }: InlineFilt
           </FilterDropdown>
 
           {/* Genre */}
-          <FilterDropdown label="🎭" value={filters.genre ? filters.genre.charAt(0).toUpperCase() + filters.genre.slice(1) : "Any"} active={!!filters.genre}>
+          <FilterDropdown label="🎭 " value={filters.genre ? filters.genre.charAt(0).toUpperCase() + filters.genre.slice(1) : "Any"} active={!!filters.genre}>
             <DropdownItem label="Any genre" selected={!filters.genre} onClick={() => update({ genre: undefined })} />
             {GENRES.map(g => (
               <DropdownItem
@@ -154,7 +260,7 @@ export default function InlineFilters({ filters, onChange, onClear }: InlineFilt
           </FilterDropdown>
 
           {/* Decade */}
-          <FilterDropdown label="📅" value={filters.decade ? `${filters.decade}s` : "Any"} active={!!filters.decade}>
+          <FilterDropdown label="📅 " value={filters.decade ? `${filters.decade}s` : "Any"} active={!!filters.decade}>
             <DropdownItem label="Any decade" selected={!filters.decade} onClick={() => update({ decade: undefined })} />
             {DECADES.map(d => (
               <DropdownItem
@@ -167,7 +273,7 @@ export default function InlineFilters({ filters, onChange, onClear }: InlineFilt
           </FilterDropdown>
 
           {/* Rating */}
-          <FilterDropdown label="⭐" value={filters.minRating ? `${filters.minRating}+` : "Any"} active={!!filters.minRating}>
+          <FilterDropdown label="⭐ " value={filters.minRating ? `${filters.minRating}+` : "Any"} active={!!filters.minRating}>
             {RATINGS.map(r => (
               <DropdownItem
                 key={r.value}
@@ -179,14 +285,21 @@ export default function InlineFilters({ filters, onChange, onClear }: InlineFilt
           </FilterDropdown>
 
           {/* Runtime */}
-          <FilterDropdown label="⏱" value={filters.maxRuntime ? `<${filters.maxRuntime}m` : "Any"} active={!!filters.maxRuntime}>
+          <FilterDropdown label="⏱ " value={filters.maxRuntime ? `<${filters.maxRuntime}m` : "Any"} active={!!filters.maxRuntime}>
             <DropdownItem label="Any length" selected={!filters.maxRuntime} onClick={() => update({ maxRuntime: undefined })} />
             <DropdownItem label="< 90 min" selected={filters.maxRuntime === 90} onClick={() => update({ maxRuntime: 90 })} />
             <DropdownItem label="< 2 hrs" selected={filters.maxRuntime === 120} onClick={() => update({ maxRuntime: 120 })} />
             <DropdownItem label="< 2.5 hrs" selected={filters.maxRuntime === 150} onClick={() => update({ maxRuntime: 150 })} />
           </FilterDropdown>
 
-          {/* Apply */}
+          {/* Actor / Director */}
+          <PersonSearch
+            value={filters.personName}
+            onSelect={p => update({ personId: p.id, personName: p.name })}
+            onClear={() => update({ personId: undefined, personName: undefined })}
+          />
+
+          {/* Clear all */}
           {hasAny && (
             <button
               onClick={onClear}

@@ -232,6 +232,7 @@ export interface DiscoverFilters {
   sortBy?: string;
   providerId?: number;
   watchRegion?: string;
+  personId?: number;
 }
 
 const GENRE_IDS: Record<string, number> = {
@@ -259,6 +260,7 @@ export async function discoverMovies(filters: DiscoverFilters, locale?: string):
     params.set("with_watch_providers", String(filters.providerId));
     params.set("watch_region", filters.watchRegion || "US");
   }
+  if (filters.personId) params.set("with_people", String(filters.personId));
   if (filters.decade) {
     const startYear = parseInt(filters.decade);
     params.set("primary_release_date.gte", `${startYear}-01-01`);

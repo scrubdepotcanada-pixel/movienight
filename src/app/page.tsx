@@ -109,6 +109,7 @@ export default function Home() {
   const [activeFilters, setActiveFilters] = useState<{
     genre?: string; decade?: string; minRating?: number; maxRuntime?: number;
     providerId?: number; providerName?: string; region?: string;
+    personId?: number; personName?: string;
   }>({});
 
   // Swipe state
@@ -772,7 +773,7 @@ export default function Home() {
     });
   };
 
-  const handleDiscoverApply = async (filters: { genre?: string; decade?: string; minRating?: number; maxRuntime?: number; providerId?: number; providerName?: string; region?: string }) => {
+  const handleDiscoverApply = async (filters: { genre?: string; decade?: string; minRating?: number; maxRuntime?: number; providerId?: number; providerName?: string; region?: string; personId?: number; personName?: string }) => {
     setLoading(true);
     setShowAdvancedFilters(false);
     try {
@@ -783,6 +784,7 @@ export default function Home() {
       if (filters.maxRuntime) params.set("maxRuntime", String(filters.maxRuntime));
       if (filters.providerId) params.set("providerId", String(filters.providerId));
       if (filters.region) params.set("region", filters.region);
+      if (filters.personId) params.set("personId", String(filters.personId));
       const res = await fetch(`/api/movies/discover?${params}`);
       if (res.status === 403) {
         openPremiumModal("Advanced filters");
@@ -803,6 +805,7 @@ export default function Home() {
     const updated = { ...activeFilters };
     delete updated[key];
     if (key === "providerId") { delete updated.providerName; delete updated.region; }
+    if (key === "personId") { delete updated.personName; }
     handleDiscoverApply(updated);
   };
 
