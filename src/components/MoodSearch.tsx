@@ -37,7 +37,7 @@ const PLACEHOLDER_EXAMPLES = [
 ];
 
 interface MoodSearchProps {
-  onSearch: (mood: string) => void;
+  onSearch: (mood: string, category: string) => void;
   loading?: boolean;
 }
 
@@ -52,8 +52,9 @@ export default function MoodSearch({ onSearch, loading }: MoodSearchProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (customMood.trim()) {
-      onSearch(customMood.trim());
+    const text = customMood.trim();
+    if (text) {
+      onSearch(text, text.slice(0, 30));
     }
   };
 
@@ -90,7 +91,7 @@ export default function MoodSearch({ onSearch, loading }: MoodSearchProps) {
           {MOOD_PRESETS.map((preset) => (
             <button
               key={preset.label}
-              onClick={() => onSearch(preset.mood)}
+              onClick={() => onSearch(preset.mood, preset.label)}
               disabled={loading}
               className="flex items-center gap-1.5 bg-purple-900/30 hover:bg-purple-600/40 border border-purple-700/40 hover:border-purple-500/60 text-gray-200 hover:text-white px-3 py-2 rounded-full text-sm transition-all disabled:opacity-50"
             >
@@ -108,7 +109,7 @@ export default function MoodSearch({ onSearch, loading }: MoodSearchProps) {
           {THEME_PRESETS.map((preset) => (
             <button
               key={preset.label}
-              onClick={() => onSearch(preset.mood)}
+              onClick={() => onSearch(preset.mood, preset.label)}
               disabled={loading}
               className="flex items-center gap-1.5 bg-pink-900/20 hover:bg-pink-600/30 border border-pink-700/30 hover:border-pink-500/50 text-gray-200 hover:text-white px-3 py-2 rounded-full text-sm transition-all disabled:opacity-50"
             >

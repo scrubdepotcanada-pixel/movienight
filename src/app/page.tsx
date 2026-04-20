@@ -362,24 +362,25 @@ export default function Home() {
       return;
     }
 
+    const searchCategory = `Like ${movie.title}`;
     setStep("recommendations");
     setLoading(true);
-    setActiveCategory("general");
+    setActiveCategory(searchCategory);
     try {
       const res = await fetch(
-        `/api/movies/recommendations?likedMovie1=${encodeURIComponent(movie.title)}&likedMovie2=&memberId=${selectedMember!.id}&category=general`
+        `/api/movies/recommendations?likedMovie1=${encodeURIComponent(movie.title)}&likedMovie2=&memberId=${selectedMember!.id}&category=${encodeURIComponent(searchCategory)}`
       );
       const data = await res.json();
       setRecommendations(data.movies || []);
       setWatchedSelection(new Set());
-      await loadCategoryHistory(selectedMember!.id, "general");
+      await loadCategoryHistory(selectedMember!.id, searchCategory);
     } catch (err) {
       console.error(err);
     }
     setLoading(false);
   };
 
-  const handleMoodSearch = async (mood: string) => {
+  const handleMoodSearch = async (mood: string, category: string) => {
     setSearchResults([]);
     setSelectedSearchId(null);
 
@@ -391,7 +392,7 @@ export default function Home() {
 
     setStep("recommendations");
     setLoading(true);
-    setActiveCategory("general");
+    setActiveCategory(category);
     try {
       const res = await fetch("/api/movies/mood", {
         method: "POST",
@@ -399,7 +400,7 @@ export default function Home() {
         body: JSON.stringify({
           memberId: selectedMember!.id,
           mood,
-          category: "general",
+          category,
           contentType,
         }),
       });
@@ -1116,14 +1117,15 @@ export default function Home() {
             </div>
 
             {/* Pick up where you left off */}
-            {activeCategories.filter(({ category }) => category !== "general" && GENRES.find(g => g.id === category)).length > 0 && (
+            {activeCategories.filter(({ category }) => category !== "general").length > 0 && (
               <div className="mb-8 max-w-3xl mx-auto">
                 <h3 className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Pick up where you left off</h3>
                 <div className="flex flex-wrap justify-center gap-2">
                   {activeCategories.map(({ category, count }) => {
                     if (category === "general") return null;
                     const genre = GENRES.find((g) => g.id === category);
-                    if (!genre) return null;
+                    const icon = genre?.icon ?? "🎬";
+                    const label = genre?.label ?? category;
                     return (
                       <button
                         key={category}
@@ -1131,8 +1133,8 @@ export default function Home() {
                         disabled={loading}
                         className="flex items-center gap-1.5 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 hover:border-purple-500 text-white px-4 py-2.5 rounded-xl transition-all text-sm disabled:opacity-50"
                       >
-                        <span>{genre.icon}</span>
-                        <span>{genre.label}</span>
+                        <span>{icon}</span>
+                        <span>{label}</span>
                         <span className="text-purple-300 text-[10px] bg-purple-500/30 px-1.5 py-0.5 rounded-full">{count}</span>
                       </button>
                     );
