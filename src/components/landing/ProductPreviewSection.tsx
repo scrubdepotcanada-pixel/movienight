@@ -11,16 +11,16 @@ const mockGenres = ["Action", "Comedy", "Animated", "Sci-Fi", "Family"];
 
 const mockMovies = [
   {
-    title: "Inside Out 2",
-    rating: "7.6",
-    certification: "PG",
-    poster: "https://image.tmdb.org/t/p/w342/vpnVM9B6NMmQpWeZvzLbDELYX49.jpg",
+    title: "Guardians of the Galaxy",
+    rating: "8.0",
+    certification: "PG-13",
+    poster: "https://image.tmdb.org/t/p/w342/r7vmZjiyZw9rpJMQJp0Oz7VnM1g.jpg",
   },
   {
-    title: "The Incredibles",
-    rating: "7.7",
+    title: "Up",
+    rating: "8.0",
     certification: "PG",
-    poster: "https://image.tmdb.org/t/p/w342/2LqaLgk1W6ky3EtqYOXPA7nJLnZ.jpg",
+    poster: "https://image.tmdb.org/t/p/w342/vpbaStTMt8qqXaEgnOR2EE4DNJg.jpg",
   },
   {
     title: "Spider-Man: Into the Spider-Verse",
@@ -35,10 +35,10 @@ const mockMovies = [
     poster: "https://image.tmdb.org/t/p/w342/gGEsBPAijhVUFoiNpgZXqRVWJt2.jpg",
   },
   {
-    title: "Moana",
+    title: "The Super Mario Bros. Movie",
     rating: "7.6",
     certification: "PG",
-    poster: "https://image.tmdb.org/t/p/w342/4jfSSeVhFhXcQJh8jJHdqr8yamL.jpg",
+    poster: "https://image.tmdb.org/t/p/w342/qNBAXBIQlnOThrVvA6mA2B5ggV6.jpg",
   },
 ];
 
@@ -120,12 +120,13 @@ export default function ProductPreviewSection() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
               {mockMovies.map((movie) => (
                 <div key={movie.title} className="group">
-                  <div className="aspect-[2/3] rounded-xl mb-2 relative overflow-hidden bg-gray-700">
+                  <div className="aspect-[2/3] rounded-xl mb-2 relative overflow-hidden bg-gradient-to-br from-purple-900 to-gray-800">
                     <img
                       src={movie.poster}
                       alt={movie.title}
                       className="w-full h-full object-cover"
                       loading="lazy"
+                      onError={(e) => { e.currentTarget.style.display = "none"; }}
                     />
                   </div>
                   <div className="flex items-center justify-between px-1">
