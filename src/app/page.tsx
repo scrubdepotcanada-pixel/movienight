@@ -105,6 +105,10 @@ export default function Home() {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filmographyPerson, setFilmographyPerson] = useState<{ id: number; name: string; role: string } | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<{
+    genre?: string; decade?: string; minRating?: number; maxRuntime?: number;
+    providerId?: number; providerName?: string; region?: string;
+  }>({});
 
   // Swipe state
   const [swipeSessionId, setSwipeSessionId] = useState<string | null>(null);
@@ -746,7 +750,7 @@ export default function Home() {
     });
   };
 
-  const handleDiscoverApply = async (filters: { genre?: string; decade?: string; minRating?: number; maxRuntime?: number; providerId?: number; region?: string }) => {
+  const handleDiscoverApply = async (filters: { genre?: string; decade?: string; minRating?: number; maxRuntime?: number; providerId?: number; providerName?: string; region?: string }) => {
     setLoading(true);
     setShowAdvancedFilters(false);
     try {
@@ -764,12 +768,20 @@ export default function Home() {
         return;
       }
       const movies = await res.json();
+      setActiveFilters(filters);
       setRecommendations(movies);
       setStep("recommendations");
     } catch {
       setError("Failed to discover movies");
     }
     setLoading(false);
+  };
+
+  const clearFilter = (key: keyof typeof activeFilters) => {
+    const updated = { ...activeFilters };
+    delete updated[key];
+    if (key === "providerId") { delete updated.providerName; delete updated.region; }
+    handleDiscoverApply(updated);
   };
 
   // Shared recommendation grid used in multiple steps
@@ -1133,6 +1145,46 @@ export default function Home() {
         {/* STEP: Recommendations (general) */}
         {step === "recommendations" && selectedMember && (
           <div className="pt-6">
+            {/* Active filter chips */}
+            {isPremium && Object.keys(activeFilters).length > 0 && (() => {
+              const chips: { label: string; key: keyof typeof activeFilters }[] = [];
+              if (activeFilters.providerName) chips.push({ label: `📺 ${activeFilters.providerName}`, key: "providerId" });
+              if (activeFilters.genre) chips.push({ label: `🎭 ${activeFilters.genre.charAt(0).toUpperCase() + activeFilters.genre.slice(1)}`, key: "genre" });
+              if (activeFilters.decade) chips.push({ label: `📅 ${activeFilters.decade}s`, key: "decade" });
+              if (activeFilters.minRating) chips.push({ label: `⭐ ${activeFilters.minRating}+`, key: "minRating" });
+              if (activeFilters.maxRuntime) chips.push({ label: `⏱ <${activeFilters.maxRuntime}min`, key: "maxRuntime" });
+              if (chips.length === 0) return null;
+              return (
+                <div className="max-w-6xl mx-auto px-4 mb-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-gray-500 text-xs uppercase tracking-wider">Filters:</span>
+                    {chips.map(chip => (
+                      <button
+                        key={chip.key}
+                        onClick={() => clearFilter(chip.key)}
+                        className="flex items-center gap-1.5 bg-purple-900/40 border border-purple-600/40 text-purple-300 text-xs font-medium px-3 py-1.5 rounded-full hover:bg-red-900/40 hover:border-red-600/40 hover:text-red-300 transition-colors group"
+                      >
+                        {chip.label}
+                        <span className="text-purple-500 group-hover:text-red-400">×</span>
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setShowAdvancedFilters(true)}
+                      className="text-xs text-gray-400 hover:text-white border border-gray-700 hover:border-gray-500 px-3 py-1.5 rounded-full transition-colors"
+                    >
+                      Edit filters
+                    </button>
+                    <button
+                      onClick={() => { setActiveFilters({}); handleStartFresh(); }}
+                      className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className="text-center mb-6">
               <h2 className="text-2xl sm:text-3xl font-bold mb-4">
                 <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Here&apos;s what you should watch</span>
