@@ -72,6 +72,10 @@ export default function AdminPage() {
   const [tab, setTab] = useState<"overview" | "users" | "revenue" | "analytics">("overview");
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [tab]);
+
+  useEffect(() => {
     if (status !== "authenticated") return;
     fetch("/api/premium")
       .then(r => r.json())

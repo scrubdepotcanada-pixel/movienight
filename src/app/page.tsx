@@ -69,10 +69,10 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Scroll to top on step change
+  // Scroll to top on step change or entering the app
   useEffect(() => {
-    setTimeout(() => window.scrollTo({ top: 0, behavior: "instant" }), 50);
-  }, [step]);
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [step, guestMode, status]);
 
   // Search state
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
