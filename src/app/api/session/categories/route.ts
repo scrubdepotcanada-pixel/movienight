@@ -22,3 +22,19 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json(rows.rows);
 }
+
+export async function DELETE(req: NextRequest) {
+  const memberId = req.nextUrl.searchParams.get("memberId");
+  const category = req.nextUrl.searchParams.get("category");
+  if (!memberId || !category) {
+    return NextResponse.json({ error: "Missing memberId or category" }, { status: 400 });
+  }
+
+  await Promise.all([
+    db.execute({ sql: "DELETE FROM liked_movies WHERE member_id = ? AND category = ?", args: [memberId, category] }),
+    db.execute({ sql: "DELETE FROM disliked_movies WHERE member_id = ? AND category = ?", args: [memberId, category] }),
+    db.execute({ sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND category = ?", args: [memberId, category] }),
+  ]);
+
+  return NextResponse.json({ ok: true });
+}

@@ -1180,25 +1180,46 @@ export default function ClientPage() {
               <div className="mb-8 max-w-3xl mx-auto">
                 <h3 className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Pick up where you left off</h3>
                 <div className="flex flex-wrap justify-center gap-2">
-                  {activeCategories.map(({ category, count }) => {
-                    if (category === "general") return null;
+                  {activeCategories
+                    .filter(({ category }) => category !== "general")
+                    .slice(0, isPremium ? undefined : 3)
+                    .map(({ category, count }) => {
                     const genre = GENRES.find((g) => g.id === category);
                     const icon = genre?.icon ?? "🎬";
                     const label = genre?.label ?? category;
                     return (
-                      <button
-                        key={category}
-                        onClick={() => handleSelectCategory(category)}
-                        disabled={loading}
-                        className="flex items-center gap-1.5 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 hover:border-purple-500 text-white px-4 py-2.5 rounded-xl transition-all text-sm disabled:opacity-50"
-                      >
-                        <span>{icon}</span>
-                        <span>{label}</span>
-                        <span className="text-purple-300 text-[10px] bg-purple-500/30 px-1.5 py-0.5 rounded-full">{count}</span>
-                      </button>
+                      <div key={category} className="relative group">
+                        <button
+                          onClick={() => handleSelectCategory(category)}
+                          disabled={loading}
+                          className="flex items-center gap-1.5 bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 hover:border-purple-500 text-white px-4 py-2.5 rounded-xl transition-all text-sm disabled:opacity-50 pr-8"
+                        >
+                          <span>{icon}</span>
+                          <span>{label}</span>
+                          <span className="text-purple-300 text-[10px] bg-purple-500/30 px-1.5 py-0.5 rounded-full">{count}</span>
+                        </button>
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await fetch(`/api/session/categories?memberId=${selectedMember!.id}&category=${encodeURIComponent(category)}`, { method: "DELETE" });
+                            setActiveCategories(prev => prev.filter(c => c.category !== category));
+                          }}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-gray-700 hover:bg-red-600 text-gray-400 hover:text-white rounded-full flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Remove"
+                        >
+                          &times;
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
+                {!isPremium && activeCategories.filter(({ category }) => category !== "general").length > 3 && (
+                  <p className="text-center text-gray-600 text-xs mt-2">
+                    <button onClick={() => openPremiumModal("Unlimited history")} className="text-purple-400 hover:text-purple-300 transition-colors">
+                      Upgrade to see all {activeCategories.filter(({ category }) => category !== "general").length} categories →
+                    </button>
+                  </p>
+                )}
               </div>
             )}
 
