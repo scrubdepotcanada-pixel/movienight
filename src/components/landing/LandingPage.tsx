@@ -86,7 +86,7 @@ export default function LandingPage({ onSignIn, onGuest }: LandingPageProps) {
             <div>
               <p className="text-gray-400 text-xs uppercase tracking-wider font-semibold mb-3">Company</p>
               <nav className="flex flex-col gap-2">
-                <a href="/" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">About</a>
+                <a href="/blog" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">Blog</a>
                 <a href="/faq" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">FAQ</a>
                 <a href="mailto:support@nextmovie.app" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">Contact</a>
                 <a href="https://thewebguys.ca" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">The Web Guys</a>
