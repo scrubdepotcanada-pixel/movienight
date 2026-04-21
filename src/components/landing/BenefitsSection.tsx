@@ -3,44 +3,44 @@
 const benefits = [
   {
     pain: "\"Everyone wants something different\"",
-    solution: "No more arguing",
+    solution: "No more fights",
     description:
-      "Dad wants action. Mom wants drama. The kid wants animation. Our AI finds the overlap — one movie everyone actually wants to watch.",
+      "Dad wants action. Mom wants drama. Kids want cartoons. Our AI finds the one film they all say yes to.",
     icon: "🤝",
   },
   {
     pain: "\"We spent 30 minutes just deciding\"",
     solution: "30 seconds, done",
     description:
-      "Pick a mood or genre, tap go, and get your pick. The average family saves half an hour every movie night.",
+      "Pick a mood, tap go, get your pick. Most families save half an hour every movie night.",
     icon: "⚡",
   },
   {
-    pain: "\"My 8-year-old saw something inappropriate\"",
+    pain: "\"My kid saw something they shouldn't\"",
     solution: "Safe for every age",
     description:
-      "Set each person's rating limit — G for the little ones, PG-13 for teens, R for date night. No awkward moments, ever.",
+      "Set a rating cap for each person. G for little kids. PG-13 for teens. R for date night. No bad surprises.",
     icon: "🛡️",
   },
   {
-    pain: "\"It keeps suggesting stuff we've seen\"",
-    solution: "Gets smarter every time",
+    pain: "\"It keeps showing stuff we've seen\"",
+    solution: "Gets smarter each time",
     description:
-      "Like it, skip it, or mark it watched. Every tap teaches us your taste. The more you use it, the better the picks get.",
+      "Like it, skip it, or mark it watched. Each tap teaches the AI your taste. The more you use it, the better it gets.",
     icon: "🧠",
   },
   {
     pain: "\"I don't know what mood I'm in\"",
     solution: "Moods, themes & vibes",
     description:
-      "Feeling cozy? Want a plot twist? Just tap a feeling or describe what you want in plain words — we'll find it.",
+      "Feeling cozy? Want a plot twist? Just tap a mood or type what you want. We find the right match.",
     icon: "🎭",
   },
   {
     pain: "\"Where can I actually watch it?\"",
     solution: "Stream links built in",
     description:
-      "Every recommendation shows where to stream it — Netflix, Disney+, Prime, Crave, Apple TV+ and more. One tap to play.",
+      "Each pick shows where to watch it. Netflix, Disney+, Prime, Apple TV+, and more. One tap to play.",
     icon: "📺",
   },
 ];

@@ -7,21 +7,21 @@ const steps = [
     number: 1,
     title: "Add who\u2019s watching",
     description:
-      "Everyone on the couch gets their own profile with age-appropriate filters. G for the kids, R for date night.",
+      "Each person gets their own profile. Set age filters so kids see safe picks. Adults see it all.",
     visual: "👨 👩 👦 👧",
   },
   {
     number: 2,
-    title: "Set tonight\u2019s mood",
+    title: "Set the mood",
     description:
-      "Pick a genre, tap a mood, or just type what you\u2019re feeling. \u201CSomething funny but not dumb\u201D works too.",
+      "Pick a genre or type how you feel. Try \u201Cfunny but not dumb\u201D \u2014 it works.",
     visual: "😂 🧠 💕 😱",
   },
   {
     number: 3,
-    title: "Get the one movie",
+    title: "Get the pick",
     description:
-      "Our AI merges everyone\u2019s taste, finds the overlap, and serves up picks the whole family will love. Tap to stream.",
+      "Our AI blends your tastes and finds the best match. Tap to stream it right away.",
     visual: "peace",
   },
 ];

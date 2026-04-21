@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s | Next Movie",
   },
   description:
-    "AI-powered movie recommendations for families. Get personalized picks with age-safe filtering and taste learning — free, no signup required.",
+    "Free AI movie picker for families. Get smart picks for every age, see where to stream, and stop fighting over what to watch.",
   metadataBase: new URL("https://nextmovie.app"),
   keywords: [
     "movie recommendations",
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Next Movie — AI Movie Picks for the Whole Family",
     description:
-      "Stop scrolling, start watching. Get personalized movie recommendations for every family member — powered by AI, filtered by age. Free.",
+      "Stop scrolling, start watching. Smart movie picks for every family member — filtered by age, free to use.",
     url: "https://nextmovie.app",
     siteName: "Next Movie",
     locale: "en_US",
@@ -65,7 +65,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Next Movie — AI Movie Picks for the Whole Family",
     description:
-      "Stop scrolling, start watching. Personalized movie recommendations for every family member — free.",
+      "Stop scrolling, start watching. Smart movie picks for every family member — free.",
     images: ["/api/og"],
   },
   icons: {
@@ -123,7 +123,7 @@ gtag('config', 'G-322V3KQPHK');`,
               name: "Next Movie",
               url: "https://nextmovie.app",
               description:
-                "Free AI-powered movie recommendation app for families. Get personalized movie picks with age-safe filtering, genre browsing, and taste learning. Find your next movie in seconds.",
+                "Free AI movie picker for families. Get smart picks with age-safe filters and taste learning. Find your next movie in seconds.",
               applicationCategory: "EntertainmentApplication",
               operatingSystem: "Any",
               offers: {

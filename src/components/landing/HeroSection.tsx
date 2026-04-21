@@ -40,13 +40,13 @@ export default function HeroSection({ onSignIn, onGuest }: HeroSectionProps) {
 
         {/* Subheadline */}
         <p className="text-lg sm:text-xl text-gray-300 max-w-2xl mx-auto mb-3 leading-relaxed">
-          Everyone wants something different. Nobody can decide.
+          Everyone wants something different. Nobody can agree.
           <br className="hidden sm:block" />
-          <strong className="text-white">We pick the one movie your whole family agrees on.</strong>
+          <strong className="text-white">We find the one movie your whole family says yes to.</strong>
         </p>
 
         <p className="text-gray-500 text-sm mb-10 max-w-lg mx-auto">
-          Each person&apos;s taste + AI matching = the perfect pick in 30 seconds.
+          Tell us what you like. Our AI does the rest. Done in 30 seconds.
         </p>
 
         {/* Single strong CTA */}

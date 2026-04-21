@@ -27,7 +27,7 @@ export default function FinalCTASection({ onSignIn, onGuest }: FinalCTASectionPr
             </span>
           </h2>
           <p className="text-gray-400 text-lg mb-10 max-w-lg mx-auto">
-            No signup. No credit card. Just the perfect movie for your family in 30 seconds.
+            No signup. No credit card. Just the right movie for your family in 30 seconds.
           </p>
           <button
             onClick={onGuest}
