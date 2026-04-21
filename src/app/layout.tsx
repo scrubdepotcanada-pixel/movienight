@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     template: "%s | Next Movie",
   },
   description:
-    "Find your next movie in seconds. AI-powered movie recommendations with family profiles, age-safe filtering, and taste learning. Free movie picker for families — no more arguing about what to watch.",
+    "AI-powered movie recommendations for families. Get personalized picks with age-safe filtering and taste learning — free, no signup required.",
   metadataBase: new URL("https://nextmovie.app"),
   keywords: [
     "movie recommendations",
