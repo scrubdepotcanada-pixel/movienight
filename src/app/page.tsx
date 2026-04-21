@@ -367,9 +367,10 @@ export default function Home() {
     setLoading(true);
     setActiveCategory(searchCategory);
     try {
-      const res = await fetch(
-        `/api/movies/recommendations?likedMovie1=${encodeURIComponent(movie.title)}&likedMovie2=&memberId=${selectedMember!.id}&category=${encodeURIComponent(searchCategory)}`
-      );
+      const recUrl = contentType === "show"
+        ? `/api/shows/category?category=${encodeURIComponent(searchCategory)}&memberId=${selectedMember!.id}`
+        : `/api/movies/recommendations?likedMovie1=${encodeURIComponent(movie.title)}&likedMovie2=&memberId=${selectedMember!.id}&category=${encodeURIComponent(searchCategory)}`;
+      const res = await fetch(recUrl);
       const data = await res.json();
       setRecommendations(data.movies || []);
       setWatchedSelection(new Set());
