@@ -808,16 +808,24 @@ export default function ClientPage() {
   const handleDiscoverApply = async (filters: { genre?: string; decade?: string; minRating?: number; maxRuntime?: number; providerId?: number; providerName?: string; region?: string; personId?: number; personName?: string; language?: string; languageName?: string }) => {
     setLoading(true);
     setShowAdvancedFilters(false);
+
+    // Carry over current category as genre if no genre explicitly set
+    const isCatStep = step === "category-recs" || step === "category-returning";
+    const effectiveFilters = { ...filters };
+    if (!effectiveFilters.genre && isCatStep && activeCategory && activeCategory !== "general") {
+      effectiveFilters.genre = activeCategory;
+    }
+
     try {
       const params = new URLSearchParams();
-      if (filters.genre) params.set("genre", filters.genre);
-      if (filters.decade) params.set("decade", filters.decade);
-      if (filters.minRating) params.set("minRating", String(filters.minRating));
-      if (filters.maxRuntime) params.set("maxRuntime", String(filters.maxRuntime));
-      if (filters.providerId) params.set("providerId", String(filters.providerId));
-      if (filters.region) params.set("region", filters.region);
-      if (filters.personId) params.set("personId", String(filters.personId));
-      if (filters.language) params.set("language", filters.language);
+      if (effectiveFilters.genre) params.set("genre", effectiveFilters.genre);
+      if (effectiveFilters.decade) params.set("decade", effectiveFilters.decade);
+      if (effectiveFilters.minRating) params.set("minRating", String(effectiveFilters.minRating));
+      if (effectiveFilters.maxRuntime) params.set("maxRuntime", String(effectiveFilters.maxRuntime));
+      if (effectiveFilters.providerId) params.set("providerId", String(effectiveFilters.providerId));
+      if (effectiveFilters.region) params.set("region", effectiveFilters.region);
+      if (effectiveFilters.personId) params.set("personId", String(effectiveFilters.personId));
+      if (effectiveFilters.language) params.set("language", effectiveFilters.language);
       const res = await fetch(`/api/movies/discover?${params}`);
       if (res.status === 403) {
         openPremiumModal("Advanced filters");
@@ -825,9 +833,12 @@ export default function ClientPage() {
         return;
       }
       const movies = await res.json();
-      setActiveFilters(filters);
+      setActiveFilters(effectiveFilters);
       setRecommendations(movies);
-      setStep("recommendations");
+      // Stay on current step if already viewing results
+      if (step !== "recommendations" && step !== "category-recs" && step !== "category-returning" && step !== "returning") {
+        setStep("recommendations");
+      }
     } catch {
       setError("Failed to discover movies");
     }
