@@ -175,9 +175,13 @@ export default function FAQPage() {
               Next Movie
             </span>
           </Link>
+          <div className="flex items-center gap-4 text-gray-600 text-xs">
+            <Link href="/genres" className="hover:text-gray-400 transition-colors">Genres</Link>
+            <Link href="/premium" className="hover:text-gray-400 transition-colors">Premium</Link>
+            <a href="mailto:support@nextmovie.app" className="hover:text-gray-400 transition-colors">Contact</a>
+          </div>
           <p className="text-gray-600 text-xs">
-            &copy; {new Date().getFullYear()} nextmovie.app. All rights
-            reserved.
+            &copy; {new Date().getFullYear()} nextmovie.app
           </p>
           <a
             href="https://thewebguys.ca"
