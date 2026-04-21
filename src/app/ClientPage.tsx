@@ -1001,7 +1001,7 @@ export default function ClientPage() {
                   onAdvancedFilters={() => setShowAdvancedFilters(true)}
                 />
               )}
-              {!isGuest && !isPremium && (
+              {!isPremium && (
                 <button
                   onClick={() => openPremiumModal("")}
                   className="text-[10px] bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-2 py-1 rounded-lg font-bold"
