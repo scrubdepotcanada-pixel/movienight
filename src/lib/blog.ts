@@ -452,6 +452,124 @@ export const BLOG_POSTS: BlogPost[] = [
       },
     ],
   },
+  {
+    slug: "best-indian-movies-bollywood-and-beyond",
+    title: "Best Indian Movies: Bollywood, Tollywood, and Beyond",
+    description:
+      "India produces more films than any other country. From Bollywood blockbusters to Tamil thrillers and Malayalam masterpieces, here is where to start — and how to find hidden gems.",
+    date: "2026-04-18",
+    readTime: "7 min read",
+    image: "/popcorn--king.png",
+    imageAlt: "Popcorn mascot wearing a crown",
+    category: "World Cinema",
+    content: [
+      {
+        type: "paragraph",
+        text: "India makes over 1,500 films a year in more than 20 languages. Bollywood (Hindi) gets the most international attention, but Tamil, Telugu, Malayalam, Bengali, Kannada, and Marathi cinema each have their own massive industries producing world-class films. If you only watch Hollywood, you are missing some of the most creative filmmaking on the planet.",
+      },
+      {
+        type: "h2",
+        text: "Understanding Indian Film Industries",
+      },
+      {
+        type: "h3",
+        text: "Bollywood (Hindi)",
+      },
+      {
+        type: "paragraph",
+        text: "Based in Mumbai, Bollywood is the largest and most globally recognized Indian film industry. Known for musical numbers, epic love stories, and high-energy action. Modern Bollywood has expanded far beyond stereotypes — films like Dangal, Gully Boy, and Tumbbad show the range available.",
+      },
+      {
+        type: "h3",
+        text: "Tollywood (Telugu)",
+      },
+      {
+        type: "paragraph",
+        text: "The Telugu film industry has exploded in global awareness thanks to RRR and the Baahubali series. Telugu cinema excels at larger-than-life action and epic storytelling with jaw-dropping visuals and spectacular set pieces.",
+      },
+      {
+        type: "h3",
+        text: "Kollywood (Tamil)",
+      },
+      {
+        type: "paragraph",
+        text: "Tamil cinema from Chennai is known for sharp social commentary, powerful performances, and genre-bending stories. Directors like Vetrimaaran, Lokesh Kanagaraj, and Pa. Ranjith produce some of the most critically acclaimed work in all of Indian cinema.",
+      },
+      {
+        type: "h3",
+        text: "Malayalam Cinema",
+      },
+      {
+        type: "paragraph",
+        text: "Kerala's film industry is often called the art-house capital of India. Malayalam films tend toward realism, strong character work, and inventive storytelling. Recent hits like Drishyam, Jallikattu, and Minnal Murali have gained international streaming audiences.",
+      },
+      {
+        type: "h2",
+        text: "Where to Start with Indian Movies",
+      },
+      {
+        type: "h3",
+        text: "RRR (2022) — Telugu",
+      },
+      {
+        type: "paragraph",
+        text: "A fictional story about two real Indian revolutionaries. RRR became a global phenomenon for its completely unhinged action scenes, infectious musical numbers, and genuine emotional core. The Naatu Naatu dance sequence won an Oscar. Streaming on multiple platforms.",
+      },
+      {
+        type: "h3",
+        text: "Dangal (2016) — Hindi",
+      },
+      {
+        type: "paragraph",
+        text: "A father trains his daughters to become champion wrestlers in rural India. Based on a true story, Dangal is inspiring, beautifully shot, and one of the highest-grossing Indian films of all time. Family-friendly and genuinely moving.",
+      },
+      {
+        type: "h3",
+        text: "Drishyam (2013) — Malayalam",
+      },
+      {
+        type: "paragraph",
+        text: "A father must protect his family after an accidental death. One of the tightest thrillers in Indian cinema — the plot twists are legendary. It was so popular it was remade in Hindi, Telugu, and several other languages.",
+      },
+      {
+        type: "h3",
+        text: "Super Deluxe (2019) — Tamil",
+      },
+      {
+        type: "paragraph",
+        text: "Four intertwining stories about fate, morality, and identity. Darkly funny and deeply human, this Tamil-language film is unlike anything else you have seen. Bold, surprising, and brilliantly written.",
+      },
+      {
+        type: "h2",
+        text: "More Must-Watch Indian Films",
+      },
+      {
+        type: "ul",
+        items: [
+          "Baahubali: The Beginning (2015) — Telugu epic fantasy that rivals Lord of the Rings in scope",
+          "Tumbbad (2018) — Hindi horror set in colonial India, visually stunning and deeply creepy",
+          "Vikram (2022) — Tamil action thriller with an interconnected cinematic universe",
+          "Pariyerum Perumal (2018) — Tamil social drama about caste and ambition, powerful and eye-opening",
+          "Kantara (2022) — Kannada folk-horror action film rooted in Karnataka tradition",
+          "Court (2014) — Marathi courtroom drama, quietly devastating and critically adored",
+          "Pather Panchali (1955) — Bengali classic by Satyajit Ray, one of the greatest films ever made",
+          "Gully Boy (2019) — Hindi drama about Mumbai's underground rap scene, starring Ranveer Singh",
+        ],
+      },
+      {
+        type: "h2",
+        text: "How to Find Indian Movies in Your Language",
+      },
+      {
+        type: "paragraph",
+        text: "Mainstream streaming apps bury Indian-language content behind English titles. Next Movie Premium solves this with a language filter that covers Hindi, Tamil, Telugu, Malayalam, Bengali, Kannada, Marathi, and Punjabi. Select your language and the AI recommends films specifically in that language — personalized to your taste, not just what is trending.",
+      },
+      {
+        type: "paragraph",
+        text: "Whether you grew up on Bollywood and want to explore Tamil thrillers, or you are completely new to Indian cinema and want a guided entry point, an AI movie picker that understands Indian languages gives you a massive advantage over generic streaming catalogs.",
+      },
+    ],
+  },
 ];
 
 export function getPostBySlug(slug: string): BlogPost | undefined {
