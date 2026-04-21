@@ -1097,16 +1097,17 @@ export default function ClientPage() {
                   onViewAll={handleViewAll}
                 />
 
-                {/* Family Swipe button — only for signed-in users with 2+ members */}
+                {/* Family Swipe button — premium only, signed-in with 2+ members */}
                 {!isGuest && members.length >= 2 && (
                   <div className="mt-10 text-center">
                     <button
-                      onClick={handleStartSwipe}
+                      onClick={isPremium ? handleStartSwipe : () => openPremiumModal("Family Swipe")}
                       disabled={loading}
                       className="inline-flex items-center gap-3 bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 hover:from-purple-500 hover:via-pink-500 hover:to-orange-400 text-white px-8 py-4 rounded-2xl text-lg font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-purple-900/40 disabled:opacity-50"
                     >
                       <span className="text-2xl">&#x1F3AC;</span>
                       Find a movie everyone agrees on
+                      {!isPremium && <span className="text-yellow-300 text-sm">⭐</span>}
                     </button>
                     <p className="text-gray-500 text-sm mt-2">
                       Everyone swipes, we find the match

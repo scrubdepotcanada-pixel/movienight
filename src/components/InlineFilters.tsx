@@ -251,65 +251,95 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
             <span>{currentRegion}</span>
           </div>
 
-          {/* Platform */}
-          <FilterDropdown label="📺 " value={filters.providerName || "Any"} active={!!filters.providerId}>
-            <DropdownItem label="Any platform" selected={!filters.providerId} onClick={() => update({ providerId: undefined, providerName: undefined })} />
-            {PLATFORMS.map(p => (
-              <DropdownItem
-                key={p.id}
-                label={p.name}
-                icon={p.logo}
-                selected={filters.providerId === p.id}
-                onClick={() => update({ providerId: p.id, providerName: p.name, region: currentRegion })}
-              />
-            ))}
-          </FilterDropdown>
+          {/* Platform — premium only */}
+          {isPremium ? (
+            <FilterDropdown label="📺 " value={filters.providerName || "Any"} active={!!filters.providerId}>
+              <DropdownItem label="Any platform" selected={!filters.providerId} onClick={() => update({ providerId: undefined, providerName: undefined })} />
+              {PLATFORMS.map(p => (
+                <DropdownItem
+                  key={p.id}
+                  label={p.name}
+                  icon={p.logo}
+                  selected={filters.providerId === p.id}
+                  onClick={() => update({ providerId: p.id, providerName: p.name, region: currentRegion })}
+                />
+              ))}
+            </FilterDropdown>
+          ) : (
+            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all" title="Upgrade to Premium">
+              <span>📺</span><span>Platform</span><span className="text-yellow-600 text-xs">⭐</span>
+            </button>
+          )}
 
-          {/* Genre */}
-          <FilterDropdown label="🎭 " value={filters.genre ? filters.genre.charAt(0).toUpperCase() + filters.genre.slice(1) : "Any"} active={!!filters.genre}>
-            <DropdownItem label="Any genre" selected={!filters.genre} onClick={() => update({ genre: undefined })} />
-            {GENRES.map(g => (
-              <DropdownItem
-                key={g}
-                label={g}
-                selected={filters.genre === g.toLowerCase()}
-                onClick={() => update({ genre: g.toLowerCase() })}
-              />
-            ))}
-          </FilterDropdown>
+          {/* Genre — premium only */}
+          {isPremium ? (
+            <FilterDropdown label="🎭 " value={filters.genre ? filters.genre.charAt(0).toUpperCase() + filters.genre.slice(1) : "Any"} active={!!filters.genre}>
+              <DropdownItem label="Any genre" selected={!filters.genre} onClick={() => update({ genre: undefined })} />
+              {GENRES.map(g => (
+                <DropdownItem
+                  key={g}
+                  label={g}
+                  selected={filters.genre === g.toLowerCase()}
+                  onClick={() => update({ genre: g.toLowerCase() })}
+                />
+              ))}
+            </FilterDropdown>
+          ) : (
+            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all" title="Upgrade to Premium">
+              <span>🎭</span><span>Genre</span><span className="text-yellow-600 text-xs">⭐</span>
+            </button>
+          )}
 
-          {/* Decade */}
-          <FilterDropdown label="📅 " value={filters.decade ? `${filters.decade}s` : "Any"} active={!!filters.decade}>
-            <DropdownItem label="Any decade" selected={!filters.decade} onClick={() => update({ decade: undefined })} />
-            {DECADES.map(d => (
-              <DropdownItem
-                key={d}
-                label={`${d}s`}
-                selected={filters.decade === d}
-                onClick={() => update({ decade: d })}
-              />
-            ))}
-          </FilterDropdown>
+          {/* Decade — premium only */}
+          {isPremium ? (
+            <FilterDropdown label="📅 " value={filters.decade ? `${filters.decade}s` : "Any"} active={!!filters.decade}>
+              <DropdownItem label="Any decade" selected={!filters.decade} onClick={() => update({ decade: undefined })} />
+              {DECADES.map(d => (
+                <DropdownItem
+                  key={d}
+                  label={`${d}s`}
+                  selected={filters.decade === d}
+                  onClick={() => update({ decade: d })}
+                />
+              ))}
+            </FilterDropdown>
+          ) : (
+            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all" title="Upgrade to Premium">
+              <span>📅</span><span>Decade</span><span className="text-yellow-600 text-xs">⭐</span>
+            </button>
+          )}
 
-          {/* Rating */}
-          <FilterDropdown label="⭐ " value={filters.minRating ? `${filters.minRating}+` : "Any"} active={!!filters.minRating}>
-            {RATINGS.map(r => (
-              <DropdownItem
-                key={r.value}
-                label={r.label}
-                selected={(filters.minRating || 0) === r.value}
-                onClick={() => update({ minRating: r.value || undefined })}
-              />
-            ))}
-          </FilterDropdown>
+          {/* Rating — premium only */}
+          {isPremium ? (
+            <FilterDropdown label="⭐ " value={filters.minRating ? `${filters.minRating}+` : "Any"} active={!!filters.minRating}>
+              {RATINGS.map(r => (
+                <DropdownItem
+                  key={r.value}
+                  label={r.label}
+                  selected={(filters.minRating || 0) === r.value}
+                  onClick={() => update({ minRating: r.value || undefined })}
+                />
+              ))}
+            </FilterDropdown>
+          ) : (
+            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all" title="Upgrade to Premium">
+              <span>⭐</span><span>Rating</span><span className="text-yellow-600 text-xs">⭐</span>
+            </button>
+          )}
 
-          {/* Runtime */}
-          <FilterDropdown label="⏱ " value={filters.maxRuntime ? `<${filters.maxRuntime}m` : "Any"} active={!!filters.maxRuntime}>
-            <DropdownItem label="Any length" selected={!filters.maxRuntime} onClick={() => update({ maxRuntime: undefined })} />
-            <DropdownItem label="< 90 min" selected={filters.maxRuntime === 90} onClick={() => update({ maxRuntime: 90 })} />
-            <DropdownItem label="< 2 hrs" selected={filters.maxRuntime === 120} onClick={() => update({ maxRuntime: 120 })} />
-            <DropdownItem label="< 2.5 hrs" selected={filters.maxRuntime === 150} onClick={() => update({ maxRuntime: 150 })} />
-          </FilterDropdown>
+          {/* Runtime — premium only */}
+          {isPremium ? (
+            <FilterDropdown label="⏱ " value={filters.maxRuntime ? `<${filters.maxRuntime}m` : "Any"} active={!!filters.maxRuntime}>
+              <DropdownItem label="Any length" selected={!filters.maxRuntime} onClick={() => update({ maxRuntime: undefined })} />
+              <DropdownItem label="< 90 min" selected={filters.maxRuntime === 90} onClick={() => update({ maxRuntime: 90 })} />
+              <DropdownItem label="< 2 hrs" selected={filters.maxRuntime === 120} onClick={() => update({ maxRuntime: 120 })} />
+              <DropdownItem label="< 2.5 hrs" selected={filters.maxRuntime === 150} onClick={() => update({ maxRuntime: 150 })} />
+            </FilterDropdown>
+          ) : (
+            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all" title="Upgrade to Premium">
+              <span>⏱</span><span>Runtime</span><span className="text-yellow-600 text-xs">⭐</span>
+            </button>
+          )}
 
           {/* Language — premium only */}
           {isPremium ? (

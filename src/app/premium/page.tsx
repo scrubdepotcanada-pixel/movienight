@@ -72,13 +72,6 @@ const FEATURES = [
       "Everyone in the family swipes on movies. We find the one title you all agree on. No more arguments.",
     tag: "Family",
   },
-  {
-    icon: "🧠",
-    title: "Smarter AI Over Time",
-    description:
-      "The more you use it, the better it gets. Premium unlocks deeper taste learning across all your sessions.",
-    tag: "AI",
-  },
 ];
 
 export default function PremiumPage() {
