@@ -110,6 +110,7 @@ export default function ClientPage() {
     genre?: string; decade?: string; minRating?: number; maxRuntime?: number;
     providerId?: number; providerName?: string; region?: string;
     personId?: number; personName?: string;
+    language?: string; languageName?: string;
   }>({});
 
   const [watchlistIds, setWatchlistIds] = useState<Set<number>>(new Set());
@@ -804,7 +805,7 @@ export default function ClientPage() {
     }
   };
 
-  const handleDiscoverApply = async (filters: { genre?: string; decade?: string; minRating?: number; maxRuntime?: number; providerId?: number; providerName?: string; region?: string; personId?: number; personName?: string }) => {
+  const handleDiscoverApply = async (filters: { genre?: string; decade?: string; minRating?: number; maxRuntime?: number; providerId?: number; providerName?: string; region?: string; personId?: number; personName?: string; language?: string; languageName?: string }) => {
     setLoading(true);
     setShowAdvancedFilters(false);
     try {
@@ -816,6 +817,7 @@ export default function ClientPage() {
       if (filters.providerId) params.set("providerId", String(filters.providerId));
       if (filters.region) params.set("region", filters.region);
       if (filters.personId) params.set("personId", String(filters.personId));
+      if (filters.language) params.set("language", filters.language);
       const res = await fetch(`/api/movies/discover?${params}`);
       if (res.status === 403) {
         openPremiumModal("Advanced filters");
@@ -837,6 +839,7 @@ export default function ClientPage() {
     delete updated[key];
     if (key === "providerId") { delete updated.providerName; delete updated.region; }
     if (key === "personId") { delete updated.personName; }
+    if (key === "language") { delete updated.languageName; }
     handleDiscoverApply(updated);
   };
 

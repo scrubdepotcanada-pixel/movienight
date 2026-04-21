@@ -7,6 +7,7 @@ interface InlineFiltersProps {
     genre?: string; decade?: string; minRating?: number; maxRuntime?: number;
     providerId?: number; providerName?: string; region?: string;
     personId?: number; personName?: string;
+    language?: string; languageName?: string;
   };
   onChange: (filters: InlineFiltersProps["filters"]) => void;
   onClear: () => void;
@@ -27,6 +28,29 @@ const PLATFORMS = [
 const GENRES = [
   "Action", "Comedy", "Drama", "Horror", "Sci-Fi", "Romance",
   "Thriller", "Animation", "Documentary", "Fantasy", "Mystery", "Adventure",
+];
+
+const LANGUAGES = [
+  { code: "en", name: "English", flag: "🇬🇧" },
+  { code: "fr", name: "French", flag: "🇫🇷" },
+  { code: "es", name: "Spanish", flag: "🇪🇸" },
+  { code: "ko", name: "Korean", flag: "🇰🇷" },
+  { code: "ja", name: "Japanese", flag: "🇯🇵" },
+  { code: "hi", name: "Hindi", flag: "🇮🇳" },
+  { code: "de", name: "German", flag: "🇩🇪" },
+  { code: "it", name: "Italian", flag: "🇮🇹" },
+  { code: "pt", name: "Portuguese", flag: "🇧🇷" },
+  { code: "zh", name: "Chinese", flag: "🇨🇳" },
+  { code: "th", name: "Thai", flag: "🇹🇭" },
+  { code: "tr", name: "Turkish", flag: "🇹🇷" },
+  { code: "ar", name: "Arabic", flag: "🇸🇦" },
+  { code: "he", name: "Hebrew", flag: "🇮🇱" },
+  { code: "sv", name: "Swedish", flag: "🇸🇪" },
+  { code: "da", name: "Danish", flag: "🇩🇰" },
+  { code: "nl", name: "Dutch", flag: "🇳🇱" },
+  { code: "ru", name: "Russian", flag: "🇷🇺" },
+  { code: "pl", name: "Polish", flag: "🇵🇱" },
+  { code: "tl", name: "Filipino", flag: "🇵🇭" },
 ];
 
 const DECADES = ["2020", "2010", "2000", "1990", "1980", "1970"];
@@ -286,6 +310,26 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
             <DropdownItem label="< 2 hrs" selected={filters.maxRuntime === 120} onClick={() => update({ maxRuntime: 120 })} />
             <DropdownItem label="< 2.5 hrs" selected={filters.maxRuntime === 150} onClick={() => update({ maxRuntime: 150 })} />
           </FilterDropdown>
+
+          {/* Language — premium only */}
+          {isPremium ? (
+            <FilterDropdown label="🌍 " value={filters.languageName || "Any"} active={!!filters.language}>
+              <DropdownItem label="Any language" selected={!filters.language} onClick={() => update({ language: undefined, languageName: undefined })} />
+              {LANGUAGES.map(l => (
+                <DropdownItem key={l.code} label={`${l.flag} ${l.name}`} selected={filters.language === l.code} onClick={() => update({ language: l.code, languageName: l.name })} />
+              ))}
+            </FilterDropdown>
+          ) : (
+            <button
+              onClick={onUpgrade}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all"
+              title="Upgrade to Premium"
+            >
+              <span>🌍</span>
+              <span>Language</span>
+              <span className="text-yellow-600 text-xs">⭐</span>
+            </button>
+          )}
 
           {/* Actor / Director — premium only */}
           {isPremium ? (

@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
   const maxRuntime = req.nextUrl.searchParams.get("maxRuntime");
   const providerId = req.nextUrl.searchParams.get("providerId");
   const personId = req.nextUrl.searchParams.get("personId");
+  const language = req.nextUrl.searchParams.get("language") || undefined;
   const watchRegion = req.nextUrl.searchParams.get("region") ||
     req.headers.get("x-vercel-ip-country") ||
     req.headers.get("cf-ipcountry") ||
@@ -31,6 +32,7 @@ export async function GET(req: NextRequest) {
     maxRuntime: maxRuntime ? Number(maxRuntime) : undefined,
     providerId: providerId ? Number(providerId) : undefined,
     personId: personId ? Number(personId) : undefined,
+    language,
     watchRegion,
   }, locale);
 
