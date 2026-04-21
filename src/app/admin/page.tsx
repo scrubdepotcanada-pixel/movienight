@@ -456,8 +456,8 @@ export default function AdminPage() {
               return (
                 <div className="bg-gray-900 border border-gray-700/50 rounded-2xl overflow-hidden">
                   <div className="px-6 py-4 border-b border-gray-800">
-                    <h2 className="text-lg font-bold">Guest Sessions ({active.length} sessions from {rows.length} IPs)</h2>
-                    <p className="text-gray-500 text-xs mt-1">Anonymous visitors grouped by IP address</p>
+                    <h2 className="text-lg font-bold">Guest Activity ({rows.length} visitors, {active.length} sessions)</h2>
+                    <p className="text-gray-500 text-xs mt-1">{stats.guestDetails.length} total guest sessions · {rows.length} unique IPs with activity</p>
                   </div>
                   {rows.length === 0 ? (
                     <div className="px-6 py-8 text-center">
@@ -778,7 +778,9 @@ function StatRow({ label, value }: { label: string; value: string | number }) {
 
 function timeAgo(dateStr: string): string {
   const now = Date.now();
-  const then = new Date(dateStr).getTime();
+  const normalized = dateStr.includes("T") || dateStr.includes("Z") ? dateStr : dateStr + "Z";
+  const then = new Date(normalized).getTime();
+  if (isNaN(then)) return "—";
   const diff = now - then;
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "just now";
