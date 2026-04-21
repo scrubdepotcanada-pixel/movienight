@@ -1122,6 +1122,44 @@ export default function Home() {
               <ContentTypeToggle value={contentType} onChange={(v) => { setContentType(v); setSearchResults([]); setSelectedSearchId(null); }} />
             </div>
 
+            {/* Search by title — primary */}
+            <div className="max-w-xl mx-auto mb-6">
+              <h3 className="text-center text-gray-400 text-sm mb-3">Know what you like? Search by title</h3>
+              <SearchBar onSearch={handleSearch} loading={loading} />
+
+              {searchResults.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-lg font-medium text-gray-300 mb-4">
+                      {selectedSearchId
+                        ? "Tap again to deselect, or confirm below:"
+                        : contentType === "show" ? "Tap the show you love:" : "Tap the movie you love:"}
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                      {searchResults.map((movie) => (
+                        <MovieCard
+                          key={movie.id}
+                          movie={movie}
+                          selected={selectedSearchId === movie.id}
+                          onClick={() => handleSelectSearchMovie(movie)}
+                          contentType={contentType}
+                        />
+                      ))}
+                    </div>
+                    {selectedSearchId && (
+                      <div className="mt-6 text-center">
+                        <button
+                          onClick={handleConfirmPick}
+                          disabled={loading}
+                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-3 rounded-xl text-lg font-semibold transition-all hover:scale-105"
+                        >
+                          {contentType === "show" ? "Find Shows Like This" : "Find Movies Like This"} →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+            </div>
+
             {/* Pick up where you left off */}
             {activeCategories.filter(({ category }) => category !== "general").length > 0 && (
               <div className="mb-8 max-w-3xl mx-auto">
@@ -1171,44 +1209,6 @@ export default function Home() {
                 </button>
               </div>
             )}
-
-            {/* Search by title — secondary */}
-            <div className="mt-8 max-w-xl mx-auto">
-              <h3 className="text-center text-gray-400 text-sm mb-3">Know what you like? Search by title</h3>
-              <SearchBar onSearch={handleSearch} loading={loading} />
-
-              {searchResults.length > 0 && (
-                  <div className="mt-6">
-                    <h3 className="text-lg font-medium text-gray-300 mb-4">
-                      {selectedSearchId
-                        ? "Tap again to deselect, or confirm below:"
-                        : contentType === "show" ? "Tap the show you love:" : "Tap the movie you love:"}
-                    </h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {searchResults.map((movie) => (
-                        <MovieCard
-                          key={movie.id}
-                          movie={movie}
-                          selected={selectedSearchId === movie.id}
-                          onClick={() => handleSelectSearchMovie(movie)}
-                          contentType={contentType}
-                        />
-                      ))}
-                    </div>
-                    {selectedSearchId && (
-                      <div className="mt-6 text-center">
-                        <button
-                          onClick={handleConfirmPick}
-                          disabled={loading}
-                          className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white px-8 py-3 rounded-xl text-lg font-semibold transition-all hover:scale-105"
-                        >
-                          {contentType === "show" ? "Find Shows Like This" : "Find Movies Like This"} →
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-            </div>
 
             {loading && (
               <div className="mt-8">
