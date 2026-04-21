@@ -62,6 +62,7 @@ export default function LandingPage({ onSignIn, onGuest }: LandingPageProps) {
                 <a href="/" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">TV Show Recommendations</a>
                 <a href="/" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">Family Movie Picker</a>
                 <a href="/" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">Family Swipe Mode</a>
+                <a href="/premium" className="text-purple-400 hover:text-purple-300 text-sm transition-colors">Premium Features</a>
               </nav>
             </div>
             <div>
