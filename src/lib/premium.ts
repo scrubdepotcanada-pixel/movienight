@@ -7,8 +7,9 @@ export interface PremiumStatus {
 }
 
 export const PLANS = {
-  monthly: { price: 3.99, label: "$3.99/month" },
-  yearly: { price: 39.99, label: "$39.99/year", savings: "Save 17%" },
+  monthly: { price: 4.99, label: "$4.99/month" },
+  yearly: { price: 49.99, label: "$49.99/year", savings: "Save 17%" },
+  lifetime: { price: 99.99, label: "$99.99 one-time" },
 } as const;
 
 export const FREE_MEMBER_LIMIT = 2;

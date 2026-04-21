@@ -125,7 +125,7 @@ export async function GET(req: NextRequest) {
   // Revenue calculations from active paying subscribers
   const monthlyCount = payingSubscribers.rows.filter(r => r.subscription_plan === "monthly").length;
   const yearlyCount = payingSubscribers.rows.filter(r => r.subscription_plan === "yearly").length;
-  const mrr = Number(((monthlyCount * 3.99) + (yearlyCount * 39.99 / 12)).toFixed(2));
+  const mrr = Number(((monthlyCount * 4.99) + (yearlyCount * 49.99 / 12)).toFixed(2));
   const arr = Number((mrr * 12).toFixed(2));
 
   // Total revenue from actual payment records

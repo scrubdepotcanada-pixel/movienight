@@ -156,6 +156,7 @@ export async function initDB() {
     "ALTER TABLE families ADD COLUMN premium_until TEXT",
     "ALTER TABLE families ADD COLUMN subscription_plan TEXT",
     "ALTER TABLE families ADD COLUMN ip_address TEXT",
+    "ALTER TABLE families ADD COLUMN stripe_customer_id TEXT",
   ];
   for (const sql of migrations) {
     try {

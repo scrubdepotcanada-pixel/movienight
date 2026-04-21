@@ -20,21 +20,27 @@ export default function PremiumModal({ onClose, feature }: PremiumModalProps) {
 
         <div className="text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/popcorn--king.png" alt="" className="w-24 h-24 mx-auto mb-3 object-contain" />
+          <img src="/popcorn--king.png" alt="" className="w-20 h-20 mx-auto mb-3 object-contain" />
           <div className="inline-flex items-center gap-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">
             Premium
           </div>
-          <h2 className="text-xl font-bold text-white mb-1">Premium is coming soon</h2>
+          <h2 className="text-xl font-bold text-white mb-1">Unlock Premium</h2>
           {feature && (
-            <p className="text-gray-400 text-sm mb-4">{feature} will be a premium feature</p>
+            <p className="text-gray-400 text-sm mb-4">{feature} is a premium feature</p>
           )}
           {!feature && <div className="mb-4" />}
+
+          <div className="flex items-center justify-center gap-3 mb-4 text-sm">
+            <span className="text-gray-400">From</span>
+            <span className="text-white text-2xl font-bold">$4.99</span>
+            <span className="text-gray-400">/month</span>
+          </div>
 
           <button
             onClick={() => { onClose(); router.push("/premium"); }}
             className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white py-3 rounded-2xl font-bold transition-all hover:scale-[1.02] mb-3"
           >
-            See All Features &rarr;
+            See Plans &amp; Features &rarr;
           </button>
           <button
             onClick={onClose}

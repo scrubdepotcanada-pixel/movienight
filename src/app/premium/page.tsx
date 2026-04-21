@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 
+import PricingCards from "@/components/PricingCards";
+
 export const metadata: Metadata = {
   title: "Premium Features",
   description:
-    "Unlock the full Next Movie experience. Language filters, actor search, unlimited history, watchlists, and more — coming soon.",
+    "Unlock the full Next Movie experience. Language filters, actor search, unlimited history, watchlists, and more.",
 };
 
 const FEATURES = [
@@ -147,21 +149,13 @@ export default function PremiumPage() {
           ))}
         </div>
 
-        {/* Coming soon CTA */}
-        <div className="max-w-lg mx-auto text-center">
-          <div className="bg-purple-950/40 border border-purple-700/30 rounded-2xl p-8 mb-6">
-            <h2 className="text-2xl font-bold text-white mb-2">Coming Soon</h2>
-            <p className="text-gray-400 mb-6">
-              We&apos;re building Premium right now. Sign up for free today
-              and you&apos;ll be first to know when it launches.
-            </p>
-            <Link
-              href="/"
-              className="inline-block bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-2xl px-8 py-4 text-lg font-bold transition-all hover:scale-105"
-            >
-              Start Movie Night — Free
-            </Link>
-          </div>
+        {/* Pricing */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-center mb-8">Choose your plan</h2>
+          <PricingCards />
+        </div>
+
+        <div className="text-center mb-8">
           <Link href="/" className="text-gray-500 hover:text-gray-300 text-sm transition-colors">
             &larr; Back to Next Movie
           </Link>
