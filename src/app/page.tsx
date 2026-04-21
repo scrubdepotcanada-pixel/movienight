@@ -939,13 +939,13 @@ export default function Home() {
               )}
               {selectedMember && (
                 <>
-                  <span className="text-base">{selectedMember.avatar}</span>
+                  <span className="text-base hidden sm:inline">{selectedMember.avatar}</span>
                   {(() => {
                     const r = selectedMember.max_rating || (selectedMember.age != null ? (selectedMember.age < 7 ? "G" : selectedMember.age < 10 ? "PG" : selectedMember.age < 14 ? "PG-13" : selectedMember.age < 17 ? "R" : "ALL") : "ALL");
                     const color = r === "G" ? "bg-green-600" : r === "PG" ? "bg-blue-600" : r === "PG-13" ? "bg-yellow-600" : r === "R" ? "bg-red-600" : "bg-purple-600";
                     const label = r === "ALL" ? "All" : r;
                     return (
-                      <span className={`${color} text-white text-[11px] font-bold px-1.5 py-0.5 rounded`}>
+                      <span className={`${color} text-white text-[11px] font-bold px-1.5 py-0.5 rounded hidden sm:inline`}>
                         {label}
                       </span>
                     );
