@@ -146,7 +146,7 @@ export default function AdminPage() {
       body: JSON.stringify({ email, action, months }),
     })
       .then(r => r.json())
-      .then(d => {
+      .then((d: { ok: boolean; action?: string; until?: string; emailSent?: boolean; emailError?: string | null; error?: string }) => {
         if (d.ok) {
           if (action === "grant") {
             if (d.emailSent) {
@@ -155,18 +155,26 @@ export default function AdminPage() {
               setGrantStatus(prev => ({ ...prev, [email]: "error" }));
               if (d.emailError) alert("Premium granted but email failed:\n" + d.emailError);
             }
+            // Refresh in background so the spinner doesn't hide the status
+            loadAll(true);
             setTimeout(() => setGrantStatus(prev => { const n = { ...prev }; delete n[email]; return n; }), 5000);
+          } else {
+            loadAll(true);
           }
-          loadAll();
         } else {
           alert(d.error || "Something went wrong");
           if (action === "grant") setGrantStatus(prev => { const n = { ...prev }; delete n[email]; return n; });
         }
+      })
+      .catch((err: unknown) => {
+        const msg = err instanceof Error ? err.message : "Network error";
+        alert("Request failed: " + msg);
+        setGrantStatus(prev => { const n = { ...prev }; delete n[email]; return n; });
       });
   };
 
-  const loadAll = () => {
-    setLoading(true);
+  const loadAll = (silent = false) => {
+    if (!silent) setLoading(true);
     Promise.all([
       fetch("/api/admin/stats").then(r => r.ok ? r.json() : null),
       fetch("/api/admin/analytics").then(r => r.ok ? r.json() : null).catch(() => null),
@@ -234,7 +242,7 @@ export default function AdminPage() {
             Admin Dashboard
           </h1>
           <div className="flex items-center gap-3">
-            <button onClick={loadAll} className="text-gray-400 hover:text-white text-sm transition-colors">Refresh</button>
+            <button onClick={() => loadAll()} className="text-gray-400 hover:text-white text-sm transition-colors">Refresh</button>
             <a href="/" className="text-gray-400 hover:text-white text-sm">Back to app</a>
           </div>
         </div>
