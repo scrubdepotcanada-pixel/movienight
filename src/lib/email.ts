@@ -132,6 +132,128 @@ The Next Movie Team`,
   if (error) throw new Error(error.message);
 }
 
+// Email 3a: Sent at day 30 — user already gave feedback
+export async function sendExpiryThankYouEmail(to: string, name: string | null) {
+  const firstName = name?.split(" ")[0] || "there";
+
+  const html = emailWrapper(`
+    <p style="margin:0 0 20px;font-size:17px;line-height:1.6;color:#e5e7eb;">Hi ${firstName},</p>
+
+    <p style="margin:0 0 20px;font-size:16px;line-height:1.7;color:#d1d5db;">
+      Your free month of Next Movie Premium has come to an end. Hope it made a few movie nights easier.
+    </p>
+
+    <p style="margin:0 0 24px;font-size:16px;line-height:1.7;color:#d1d5db;">
+      Thank you for taking the time to share your feedback — it genuinely helps us build a better product.
+      We read every response and your input is already shaping what comes next.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+      <tr>
+        <td style="background:#1f2937;border:1px solid #374151;border-radius:14px;padding:20px 24px;text-align:center;">
+          <p style="margin:0 0 8px;font-size:15px;color:#d1d5db;">Want to keep Premium going?</p>
+          <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">From $4.99/month — cancel any time.</p>
+          <a href="https://nextmovie.app/premium"
+             style="display:inline-block;background:linear-gradient(90deg,#7c3aed,#db2777);color:#fff;font-size:14px;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;">
+            See Plans →
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6;">
+      Thanks again,<br />
+      <strong style="color:#9ca3af;">The Next Movie Team</strong>
+    </p>
+  `);
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Your Next Movie Premium month is up — thank you",
+    html,
+    text: `Hi ${firstName},
+
+Your free month of Next Movie Premium has come to an end. Hope it made a few movie nights easier.
+
+Thank you for taking the time to share your feedback — it genuinely helps us build a better product.
+
+Want to keep Premium going? From $4.99/month: https://nextmovie.app/premium
+
+Thanks again,
+The Next Movie Team`,
+  });
+
+  if (error) throw new Error(error.message);
+}
+
+// Email 3b: Sent at day 30 — user never gave feedback
+export async function sendExpiryFeedbackEmail(to: string, name: string | null) {
+  const firstName = name?.split(" ")[0] || "there";
+
+  const html = emailWrapper(`
+    <p style="margin:0 0 20px;font-size:17px;line-height:1.6;color:#e5e7eb;">Hi ${firstName},</p>
+
+    <p style="margin:0 0 20px;font-size:16px;line-height:1.7;color:#d1d5db;">
+      Your free month of Next Movie Premium has come to an end. Hope you had a chance to explore it.
+    </p>
+
+    <p style="margin:0 0 24px;font-size:16px;line-height:1.7;color:#d1d5db;">
+      We'd still love to hear what you thought — good or bad. What worked, what didn't, what you wished was there.
+      Even a sentence helps.
+    </p>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+      <tr>
+        <td align="center">
+          <a href="https://nextmovie.app/feedback"
+             style="display:inline-block;background:linear-gradient(90deg,#7c3aed,#db2777);color:#fff;font-size:15px;font-weight:700;padding:14px 36px;border-radius:12px;text-decoration:none;">
+            Share My Feedback →
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+      <tr>
+        <td style="background:#1f2937;border:1px solid #374151;border-radius:14px;padding:20px 24px;text-align:center;">
+          <p style="margin:0 0 8px;font-size:15px;color:#d1d5db;">Want to keep Premium going?</p>
+          <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">From $4.99/month — cancel any time.</p>
+          <a href="https://nextmovie.app/premium"
+             style="display:inline-block;background:#374151;color:#e5e7eb;font-size:14px;font-weight:700;padding:12px 28px;border-radius:10px;text-decoration:none;">
+            See Plans →
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    <p style="margin:0;font-size:14px;color:#6b7280;line-height:1.6;">
+      Thanks,<br />
+      <strong style="color:#9ca3af;">The Next Movie Team</strong>
+    </p>
+  `);
+
+  const { error } = await resend.emails.send({
+    from: FROM,
+    to,
+    subject: "Your Next Movie Premium month is up",
+    html,
+    text: `Hi ${firstName},
+
+Your free month of Next Movie Premium has come to an end. Hope you had a chance to explore it.
+
+We'd still love to hear what you thought — even a sentence helps:
+https://nextmovie.app/feedback
+
+Want to keep Premium going? From $4.99/month: https://nextmovie.app/premium
+
+Thanks,
+The Next Movie Team`,
+  });
+
+  if (error) throw new Error(error.message);
+}
+
 // Email 2: Sent 7 days after premium is granted
 export async function sendFeedbackRequestEmail(to: string, name: string | null) {
   const firstName = name?.split(" ")[0] || "there";

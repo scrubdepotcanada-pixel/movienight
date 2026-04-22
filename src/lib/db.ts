@@ -169,6 +169,7 @@ export async function initDB() {
     "ALTER TABLE families ADD COLUMN stripe_customer_id TEXT",
     "ALTER TABLE families ADD COLUMN gifted_at TEXT",
     "ALTER TABLE families ADD COLUMN feedback_email_sent_at TEXT",
+    "ALTER TABLE families ADD COLUMN expiry_email_sent_at TEXT",
   ];
   for (const sql of migrations) {
     try {
