@@ -43,6 +43,7 @@ interface Stats {
     name: string;
     signedUp: string;
     isPremium: boolean;
+    premiumUntil: string | null;
     plan: string | null;
     members: number;
     liked: number;
@@ -466,13 +467,20 @@ export default function AdminPage() {
                                       </td>
                                       <td className="px-3 py-3 text-center">
                                         {user.isPremium ? (
-                                          <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
-                                            user.plan === "admin" ? "bg-yellow-600/30 text-yellow-300 border border-yellow-600/40" :
-                                            user.plan === "gifted" ? "bg-green-600/30 text-green-300 border border-green-600/40" :
-                                            "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
-                                          }`}>
-                                            {user.plan === "admin" ? "ADMIN" : user.plan === "gifted" ? "GIFTED" : "PRO"}
-                                          </span>
+                                          <div className="flex flex-col items-center gap-1">
+                                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+                                              user.plan === "admin" ? "bg-yellow-600/30 text-yellow-300 border border-yellow-600/40" :
+                                              user.plan === "gifted" ? "bg-green-600/30 text-green-300 border border-green-600/40" :
+                                              "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                                            }`}>
+                                              {user.plan === "admin" ? "ADMIN" : user.plan === "gifted" ? "GIFTED" : "PRO"}
+                                            </span>
+                                            {user.premiumUntil && user.plan !== "admin" && (
+                                              <span className="text-[10px] text-gray-500">
+                                                {daysLeft(user.premiumUntil)}
+                                              </span>
+                                            )}
+                                          </div>
                                         ) : <span className="text-gray-600 text-xs">Free</span>}
                                       </td>
                                       <td className="px-3 py-3 text-center">
@@ -908,6 +916,19 @@ function StatRow({ label, value }: { label: string; value: string | number }) {
       <span className="text-white font-semibold text-sm">{typeof value === "number" ? value.toLocaleString() : value}</span>
     </div>
   );
+}
+
+function daysLeft(dateStr: string): string {
+  const normalized = dateStr.includes("T") || dateStr.includes("Z") ? dateStr : dateStr + "Z";
+  const end = new Date(normalized).getTime();
+  if (isNaN(end)) return "";
+  if (end > new Date("2099-01-01").getTime()) return "lifetime";
+  const days = Math.ceil((end - Date.now()) / 86400000);
+  if (days <= 0) return "expired";
+  if (days === 1) return "1 day left";
+  if (days < 30) return `${days}d left`;
+  const months = Math.round(days / 30);
+  return `~${months}mo left`;
 }
 
 function timeAgo(dateStr: string): string {

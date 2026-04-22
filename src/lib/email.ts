@@ -5,7 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function sendFreeMonthEmail(to: string, name: string | null) {
   const firstName = name?.split(" ")[0] || "there";
 
-  await resend.emails.send({
+  const { error } = await resend.emails.send({
     from: "Next Movie <support@nextmovie.app>",
     to,
     subject: "A free month on us — and a quick favor",
@@ -114,4 +114,8 @@ https://nextmovie.app/feedback
 Thanks for being early,
 The Next Movie Team`,
   });
+
+  if (error) {
+    throw new Error(error.message);
+  }
 }

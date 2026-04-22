@@ -182,6 +182,7 @@ export async function GET(req: NextRequest) {
       name: r.name,
       signedUp: r.created_at,
       isPremium: r.premium_until ? new Date(String(r.premium_until)) > new Date() : false,
+      premiumUntil: r.premium_until ? String(r.premium_until) : null,
       plan: r.subscription_plan,
       members: Number(r.member_count),
       liked: Number(r.liked_count),
