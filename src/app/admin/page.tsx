@@ -149,8 +149,13 @@ export default function AdminPage() {
       .then(d => {
         if (d.ok) {
           if (action === "grant") {
-            setGrantStatus(prev => ({ ...prev, [email]: d.emailSent ? "sent" : "error" }));
-            setTimeout(() => setGrantStatus(prev => { const n = { ...prev }; delete n[email]; return n; }), 4000);
+            if (d.emailSent) {
+              setGrantStatus(prev => ({ ...prev, [email]: "sent" }));
+            } else {
+              setGrantStatus(prev => ({ ...prev, [email]: "error" }));
+              if (d.emailError) alert("Premium granted but email failed:\n" + d.emailError);
+            }
+            setTimeout(() => setGrantStatus(prev => { const n = { ...prev }; delete n[email]; return n; }), 5000);
           }
           loadAll();
         } else {

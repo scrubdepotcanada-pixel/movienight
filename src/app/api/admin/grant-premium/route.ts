@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
 
   // Auto-send email when granting (unless explicitly opted out)
   let emailSent = false;
+  let emailError: string | null = null;
   if (sendEmail !== false && process.env.RESEND_API_KEY) {
     try {
       const result = await db.execute({
@@ -45,10 +46,14 @@ export async function POST(req: NextRequest) {
       const name = (result.rows[0]?.[0] as string | null) ?? null;
       await sendFreeMonthEmail(email, name);
       emailSent = true;
-    } catch (err) {
-      console.error("Email send failed:", err);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("Email send failed:", msg);
+      emailError = msg;
     }
+  } else if (!process.env.RESEND_API_KEY) {
+    emailError = "RESEND_API_KEY not set";
   }
 
-  return NextResponse.json({ ok: true, action: "granted", until: premiumUntil, emailSent });
+  return NextResponse.json({ ok: true, action: "granted", until: premiumUntil, emailSent, emailError });
 }
