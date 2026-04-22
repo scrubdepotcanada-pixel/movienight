@@ -137,6 +137,16 @@ export async function initDB() {
       paid_at TEXT DEFAULT (datetime('now')),
       FOREIGN KEY (family_id) REFERENCES families(id)
     )`,
+    `CREATE TABLE IF NOT EXISTS feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      email TEXT,
+      rating INTEGER,
+      what_love TEXT,
+      what_missing TEXT,
+      other TEXT,
+      submitted_at TEXT DEFAULT (datetime('now'))
+    )`,
   ]);
 
   // Migrations: add new columns to existing tables if missing

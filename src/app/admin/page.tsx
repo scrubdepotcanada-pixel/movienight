@@ -3,6 +3,17 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 
+interface FeedbackItem {
+  id: number;
+  name: string | null;
+  email: string | null;
+  rating: number;
+  whatLove: string | null;
+  whatMissing: string | null;
+  other: string | null;
+  submittedAt: string | null;
+}
+
 interface Stats {
   users: {
     googleSignIns: number;
@@ -85,7 +96,9 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
-  const [tab, setTab] = useState<"overview" | "users" | "revenue" | "analytics">("overview");
+  const [tab, setTab] = useState<"overview" | "users" | "revenue" | "analytics" | "feedback">("overview");
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
+  const [feedbackList, setFeedbackList] = useState<FeedbackItem[] | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -105,6 +118,22 @@ export default function AdminPage() {
       })
       .catch(() => setLoading(false));
   }, [status]);
+
+  const toggleMonth = (key: string) => {
+    setExpandedMonths(prev => {
+      const next = new Set(prev);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  };
+
+  const loadFeedback = (key?: string) => {
+    const url = key ? `/api/feedback?key=${encodeURIComponent(key)}` : "/api/feedback?key=";
+    fetch(url)
+      .then(r => r.ok ? r.json() : [])
+      .then(d => setFeedbackList(Array.isArray(d) ? d : []))
+      .catch(() => setFeedbackList([]));
+  };
 
   const grantPremium = (email: string, action: "grant" | "revoke", months?: number) => {
     fetch("/api/admin/grant-premium", {
@@ -194,12 +223,15 @@ export default function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 bg-gray-900 rounded-xl p-1 mb-8 max-w-lg">
-          {(["overview", "users", "revenue", "analytics"] as const).map(t => (
+        <div className="flex gap-1 bg-gray-900 rounded-xl p-1 mb-8 overflow-x-auto">
+          {(["overview", "users", "revenue", "analytics", "feedback"] as const).map(t => (
             <button
               key={t}
-              onClick={() => setTab(t)}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
+              onClick={() => {
+                setTab(t);
+                if (t === "feedback" && !feedbackList) loadFeedback(password);
+              }}
+              className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
                 tab === t ? "bg-purple-600 text-white" : "text-gray-400 hover:text-white"
               }`}
             >
@@ -293,147 +325,159 @@ export default function AdminPage() {
         {/* USERS TAB */}
         {tab === "users" && stats && (
           <div className="space-y-4">
-            <div className="bg-gray-900 border border-gray-700/50 rounded-2xl overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between">
-                <h2 className="text-lg font-bold">Users ({stats.userDetails.length})</h2>
-                <button
-                  onClick={() => {
-                    fetch("/api/admin/cleanup", { method: "POST" })
-                      .then(r => r.json())
-                      .then(d => {
-                        if (d.removed > 0) { alert(`Removed ${d.removed} duplicate account(s)`); loadAll(); }
-                        else alert("No duplicates found");
-                      });
-                  }}
-                  className="text-gray-400 hover:text-white text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors"
-                >
-                  Clean duplicates
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
-                      <th className="text-left px-6 py-3">User</th>
-                      <th className="text-left px-3 py-3">Signed Up</th>
-                      <th className="text-center px-2 py-3">Members</th>
-                      <th className="text-center px-2 py-3">Activity</th>
-                      <th className="text-left px-3 py-3">Last Active</th>
-                      <th className="text-center px-3 py-3">Plan</th>
-                      <th className="text-center px-3 py-3">Access</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {stats.userDetails.map((user, i) => {
-                      const totalActions = user.liked + user.disliked;
-                      const engagement = totalActions === 0 ? "none" : totalActions < 5 ? "low" : totalActions < 20 ? "medium" : "high";
-                      const engagementColor = {
-                        none: "text-gray-600",
-                        low: "text-yellow-500",
-                        medium: "text-blue-400",
-                        high: "text-green-400",
-                      }[engagement];
-                      return (
-                      <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
-                        <td className="px-6 py-3">
-                          <p className="text-white font-medium">{user.name || "—"}</p>
-                          <p className="text-gray-500 text-xs">{user.email || "—"}</p>
-                        </td>
-                        <td className="px-3 py-3 text-gray-400 text-xs">
-                          {user.signedUp ? new Date(user.signedUp).toLocaleDateString() : "—"}
-                        </td>
-                        <td className="px-2 py-3 text-center text-gray-300">{user.members}</td>
-                        <td className="px-2 py-3">
-                          <div className="flex flex-col gap-1.5 min-w-[120px]">
-                            <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1 bg-green-900/40 text-green-300 text-xs font-semibold px-2 py-0.5 rounded-md">
-                                👍 <span>{user.liked}</span>
+            {/* Users grouped by signup month */}
+            {(() => {
+              // Group by YYYY-MM
+              const byMonth: Record<string, typeof stats.userDetails> = {};
+              for (const user of stats.userDetails) {
+                const key = user.signedUp
+                  ? user.signedUp.slice(0, 7)
+                  : "Unknown";
+                if (!byMonth[key]) byMonth[key] = [];
+                byMonth[key].push(user);
+              }
+              const months = Object.keys(byMonth).sort((a, b) => b.localeCompare(a));
+
+              return (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-bold">Users ({stats.userDetails.length})</h2>
+                    <button
+                      onClick={() => {
+                        fetch("/api/admin/cleanup", { method: "POST" })
+                          .then(r => r.json())
+                          .then(d => {
+                            if (d.removed > 0) { alert(`Removed ${d.removed} duplicate account(s)`); loadAll(); }
+                            else alert("No duplicates found");
+                          });
+                      }}
+                      className="text-gray-400 hover:text-white text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors"
+                    >
+                      Clean duplicates
+                    </button>
+                  </div>
+
+                  {months.map(monthKey => {
+                    const users = byMonth[monthKey];
+                    const isOpen = expandedMonths.has(monthKey);
+                    const label = monthKey === "Unknown" ? "Unknown date" : new Date(monthKey + "-01").toLocaleDateString("en-US", { year: "numeric", month: "long" });
+                    const premiumCount = users.filter(u => u.isPremium).length;
+                    const totalLiked = users.reduce((s, u) => s + u.liked, 0);
+                    const totalDisliked = users.reduce((s, u) => s + u.disliked, 0);
+
+                    return (
+                      <div key={monthKey} className="bg-gray-900 border border-gray-700/50 rounded-2xl overflow-hidden">
+                        <button
+                          onClick={() => toggleMonth(monthKey)}
+                          className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-800/40 transition-colors"
+                        >
+                          <div className="flex items-center gap-4">
+                            <span className="text-base font-bold text-white">{label}</span>
+                            <span className="text-gray-400 text-sm">{users.length} user{users.length !== 1 ? "s" : ""}</span>
+                            {premiumCount > 0 && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-900/40 text-purple-300 border border-purple-700/40">
+                                {premiumCount} premium
                               </span>
-                              <span className="inline-flex items-center gap-1 bg-red-900/40 text-red-300 text-xs font-semibold px-2 py-0.5 rounded-md">
-                                👎 <span>{user.disliked}</span>
-                              </span>
-                              {user.watchlist > 0 && (
-                                <span className="inline-flex items-center gap-1 bg-purple-900/40 text-purple-300 text-xs font-semibold px-2 py-0.5 rounded-md">
-                                  📋 <span>{user.watchlist}</span>
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1 text-gray-400 text-xs" title="Recommendations served">
-                                🎬 <span>{user.recs}</span> recs
-                              </span>
-                              {user.swipes > 0 && (
-                                <span className="inline-flex items-center gap-1 text-orange-400 text-xs" title="Swipe sessions">
-                                  🔀 <span>{user.swipes}</span>
-                                </span>
-                              )}
-                            </div>
-                            <span className={`text-[10px] font-bold uppercase tracking-wider ${engagementColor}`}>{engagement}</span>
-                          </div>
-                        </td>
-                        <td className="px-3 py-3 text-xs">
-                          {user.lastActive ? (
-                            <div>
-                              <p className="text-gray-300">{new Date(user.lastActive).toLocaleDateString()}</p>
-                              <p className="text-gray-600 text-[10px]">{timeAgo(user.lastActive)}</p>
-                            </div>
-                          ) : (
-                            <span className="text-gray-600">Never</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-3 text-center">
-                          {user.isPremium ? (
-                            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
-                              user.plan === "admin" ? "bg-yellow-600/30 text-yellow-300 border border-yellow-600/40" :
-                              user.plan === "gifted" ? "bg-green-600/30 text-green-300 border border-green-600/40" :
-                              "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
-                            }`}>
-                              {user.plan === "admin" ? "ADMIN" : user.plan === "gifted" ? "GIFTED" : "PRO"}
+                            )}
+                            <span className="text-gray-600 text-xs hidden sm:inline">
+                              👍 {totalLiked} · 👎 {totalDisliked}
                             </span>
-                          ) : (
-                            <span className="text-gray-600 text-xs">Free</span>
-                          )}
-                        </td>
-                        <td className="px-3 py-3 text-center">
-                          {user.plan === "admin" ? (
-                            <span className="text-gray-600 text-xs">—</span>
-                          ) : user.isPremium ? (
-                            <button
-                              onClick={() => grantPremium(user.email, "revoke")}
-                              className="text-[10px] text-red-400 hover:text-red-300 border border-red-800/40 hover:border-red-600/60 px-2 py-1 rounded-lg transition-colors"
-                            >
-                              Revoke
-                            </button>
-                          ) : (
-                            <div className="flex items-center justify-center gap-1">
-                              <button
-                                onClick={() => grantPremium(user.email, "grant", 1)}
-                                className="text-[10px] text-purple-300 hover:text-white border border-purple-800/40 hover:border-purple-500/60 px-2 py-1 rounded-lg transition-colors"
-                              >
-                                1mo
-                              </button>
-                              <button
-                                onClick={() => grantPremium(user.email, "grant", 12)}
-                                className="text-[10px] text-purple-300 hover:text-white border border-purple-800/40 hover:border-purple-500/60 px-2 py-1 rounded-lg transition-colors"
-                              >
-                                1yr
-                              </button>
-                              <button
-                                onClick={() => grantPremium(user.email, "grant", 999)}
-                                className="text-[10px] bg-purple-600/20 text-purple-300 hover:bg-purple-600/40 hover:text-white border border-purple-600/40 px-2 py-1 rounded-lg transition-colors"
-                              >
-                                ∞
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                          </div>
+                          <span className="text-gray-500 text-lg">{isOpen ? "▲" : "▼"}</span>
+                        </button>
+
+                        {isOpen && (
+                          <div className="border-t border-gray-800 overflow-x-auto">
+                            <table className="w-full text-sm">
+                              <thead>
+                                <tr className="text-gray-400 text-xs uppercase tracking-wider border-b border-gray-800">
+                                  <th className="text-left px-6 py-3">User</th>
+                                  <th className="text-left px-3 py-3">Signed Up</th>
+                                  <th className="text-center px-2 py-3">Members</th>
+                                  <th className="text-center px-2 py-3">Activity</th>
+                                  <th className="text-left px-3 py-3">Last Active</th>
+                                  <th className="text-center px-3 py-3">Plan</th>
+                                  <th className="text-center px-3 py-3">Access</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {users.map((user, i) => {
+                                  const totalActions = user.liked + user.disliked;
+                                  const engagement = totalActions === 0 ? "none" : totalActions < 5 ? "low" : totalActions < 20 ? "medium" : "high";
+                                  const engagementColor = { none: "text-gray-600", low: "text-yellow-500", medium: "text-blue-400", high: "text-green-400" }[engagement];
+                                  return (
+                                    <tr key={i} className="border-b border-gray-800/50 hover:bg-gray-800/30">
+                                      <td className="px-6 py-3">
+                                        <p className="text-white font-medium">{user.name || "—"}</p>
+                                        <p className="text-gray-500 text-xs">{user.email || "—"}</p>
+                                      </td>
+                                      <td className="px-3 py-3 text-gray-400 text-xs">
+                                        {user.signedUp ? new Date(user.signedUp).toLocaleDateString() : "—"}
+                                      </td>
+                                      <td className="px-2 py-3 text-center text-gray-300">{user.members}</td>
+                                      <td className="px-2 py-3">
+                                        <div className="flex flex-col gap-1.5 min-w-[120px]">
+                                          <div className="flex items-center gap-2">
+                                            <span className="inline-flex items-center gap-1 bg-green-900/40 text-green-300 text-xs font-semibold px-2 py-0.5 rounded-md">👍 {user.liked}</span>
+                                            <span className="inline-flex items-center gap-1 bg-red-900/40 text-red-300 text-xs font-semibold px-2 py-0.5 rounded-md">👎 {user.disliked}</span>
+                                            {user.watchlist > 0 && (
+                                              <span className="inline-flex items-center gap-1 bg-purple-900/40 text-purple-300 text-xs font-semibold px-2 py-0.5 rounded-md">📋 {user.watchlist}</span>
+                                            )}
+                                          </div>
+                                          <div className="flex items-center gap-2">
+                                            <span className="text-gray-400 text-xs">🎬 {user.recs} recs</span>
+                                            {user.swipes > 0 && <span className="text-orange-400 text-xs">🔀 {user.swipes}</span>}
+                                          </div>
+                                          <span className={`text-[10px] font-bold uppercase tracking-wider ${engagementColor}`}>{engagement}</span>
+                                        </div>
+                                      </td>
+                                      <td className="px-3 py-3 text-xs">
+                                        {user.lastActive ? (
+                                          <div>
+                                            <p className="text-gray-300">{new Date(user.lastActive).toLocaleDateString()}</p>
+                                            <p className="text-gray-600 text-[10px]">{timeAgo(user.lastActive)}</p>
+                                          </div>
+                                        ) : <span className="text-gray-600">Never</span>}
+                                      </td>
+                                      <td className="px-3 py-3 text-center">
+                                        {user.isPremium ? (
+                                          <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
+                                            user.plan === "admin" ? "bg-yellow-600/30 text-yellow-300 border border-yellow-600/40" :
+                                            user.plan === "gifted" ? "bg-green-600/30 text-green-300 border border-green-600/40" :
+                                            "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
+                                          }`}>
+                                            {user.plan === "admin" ? "ADMIN" : user.plan === "gifted" ? "GIFTED" : "PRO"}
+                                          </span>
+                                        ) : <span className="text-gray-600 text-xs">Free</span>}
+                                      </td>
+                                      <td className="px-3 py-3 text-center">
+                                        {user.plan === "admin" ? (
+                                          <span className="text-gray-600 text-xs">—</span>
+                                        ) : user.isPremium ? (
+                                          <button onClick={() => grantPremium(user.email, "revoke")} className="text-[10px] text-red-400 hover:text-red-300 border border-red-800/40 hover:border-red-600/60 px-2 py-1 rounded-lg transition-colors">
+                                            Revoke
+                                          </button>
+                                        ) : (
+                                          <div className="flex items-center justify-center gap-1">
+                                            <button onClick={() => grantPremium(user.email, "grant", 1)} className="text-[10px] text-purple-300 hover:text-white border border-purple-800/40 hover:border-purple-500/60 px-2 py-1 rounded-lg transition-colors">1mo</button>
+                                            <button onClick={() => grantPremium(user.email, "grant", 12)} className="text-[10px] text-purple-300 hover:text-white border border-purple-800/40 hover:border-purple-500/60 px-2 py-1 rounded-lg transition-colors">1yr</button>
+                                            <button onClick={() => grantPremium(user.email, "grant", 999)} className="text-[10px] bg-purple-600/20 text-purple-300 hover:bg-purple-600/40 hover:text-white border border-purple-600/40 px-2 py-1 rounded-lg transition-colors">∞</button>
+                                          </div>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
 
             {/* Guest Sessions — grouped by IP */}
             {(() => {
@@ -752,6 +796,65 @@ export default function AdminPage() {
               </div>
             )}
           </>
+        )}
+
+        {/* FEEDBACK TAB */}
+        {tab === "feedback" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-bold">User Feedback</h2>
+              <button onClick={() => loadFeedback(password)} className="text-gray-400 hover:text-white text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors">
+                Refresh
+              </button>
+            </div>
+            {feedbackList === null ? (
+              <div className="text-center py-16 text-gray-500">Loading...</div>
+            ) : feedbackList.length === 0 ? (
+              <div className="bg-gray-900 border border-gray-700/40 rounded-2xl p-12 text-center">
+                <p className="text-gray-500 text-sm">No feedback yet.</p>
+                <p className="text-gray-600 text-xs mt-2">Share <span className="text-purple-400 font-mono">nextmovie.app/feedback</span> with your early users.</p>
+              </div>
+            ) : (
+              feedbackList.map((item) => (
+                <div key={item.id} className="bg-gray-900 border border-gray-700/40 rounded-2xl p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <p className="text-white font-bold">{item.name || "Anonymous"}</p>
+                      {item.email && <p className="text-gray-500 text-xs mt-0.5">{item.email}</p>}
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="flex gap-0.5">
+                        {[1,2,3,4,5].map(s => (
+                          <span key={s} className={s <= item.rating ? "text-yellow-400" : "text-gray-700"}>★</span>
+                        ))}
+                      </div>
+                      <span className="text-gray-600 text-xs">{item.submittedAt ? new Date(item.submittedAt + "Z").toLocaleDateString() : "—"}</span>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {item.whatLove && (
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-green-400 mb-1">What they love</p>
+                        <p className="text-gray-300 text-sm leading-relaxed">{item.whatLove}</p>
+                      </div>
+                    )}
+                    {item.whatMissing && (
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-orange-400 mb-1">What&apos;s missing</p>
+                        <p className="text-gray-300 text-sm leading-relaxed">{item.whatMissing}</p>
+                      </div>
+                    )}
+                    {item.other && (
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-1">Other</p>
+                        <p className="text-gray-300 text-sm leading-relaxed">{item.other}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         )}
       </div>
     </div>
