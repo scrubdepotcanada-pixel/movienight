@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import "./globals.css";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -103,16 +104,6 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <head>
-        {/* Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-322V3KQPHK" />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', 'G-322V3KQPHK');`,
-          }}
-        />
         {/* JSON-LD Structured Data for SEO + AEO */}
         <script
           type="application/ld+json"
@@ -236,6 +227,7 @@ gtag('config', 'G-322V3KQPHK');`,
         />
       </head>
       <body className="min-h-full flex flex-col">
+        <GoogleAnalytics />
         <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
