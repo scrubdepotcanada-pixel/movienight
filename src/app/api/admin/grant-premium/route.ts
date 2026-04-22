@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdminEmail } from "@/lib/session";
 import db, { initDB } from "@/lib/db";
+import { sendFreeMonthEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -11,7 +12,7 @@ export async function POST(req: NextRequest) {
 
   await initDB();
 
-  const { email, action, months } = await req.json();
+  const { email, action, months, sendEmail } = await req.json();
   if (!email) return NextResponse.json({ error: "Missing email" }, { status: 400 });
 
   if (action === "revoke") {
@@ -33,5 +34,21 @@ export async function POST(req: NextRequest) {
     args: [premiumUntil, email],
   });
 
-  return NextResponse.json({ ok: true, action: "granted", until: premiumUntil });
+  // Auto-send email when granting (unless explicitly opted out)
+  let emailSent = false;
+  if (sendEmail !== false && process.env.RESEND_API_KEY) {
+    try {
+      const result = await db.execute({
+        sql: "SELECT name FROM families WHERE email = ?",
+        args: [email],
+      });
+      const name = (result.rows[0]?.[0] as string | null) ?? null;
+      await sendFreeMonthEmail(email, name);
+      emailSent = true;
+    } catch (err) {
+      console.error("Email send failed:", err);
+    }
+  }
+
+  return NextResponse.json({ ok: true, action: "granted", until: premiumUntil, emailSent });
 }

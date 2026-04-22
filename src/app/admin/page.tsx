@@ -99,6 +99,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<"overview" | "users" | "revenue" | "analytics" | "feedback">("overview");
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[] | null>(null);
+  const [grantStatus, setGrantStatus] = useState<Record<string, "sending" | "sent" | "error">>({});
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -136,6 +137,9 @@ export default function AdminPage() {
   };
 
   const grantPremium = (email: string, action: "grant" | "revoke", months?: number) => {
+    if (action === "grant") {
+      setGrantStatus(prev => ({ ...prev, [email]: "sending" }));
+    }
     fetch("/api/admin/grant-premium", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -143,8 +147,16 @@ export default function AdminPage() {
     })
       .then(r => r.json())
       .then(d => {
-        if (d.ok) loadAll();
-        else alert(d.error || "Something went wrong");
+        if (d.ok) {
+          if (action === "grant") {
+            setGrantStatus(prev => ({ ...prev, [email]: d.emailSent ? "sent" : "error" }));
+            setTimeout(() => setGrantStatus(prev => { const n = { ...prev }; delete n[email]; return n; }), 4000);
+          }
+          loadAll();
+        } else {
+          alert(d.error || "Something went wrong");
+          if (action === "grant") setGrantStatus(prev => { const n = { ...prev }; delete n[email]; return n; });
+        }
       });
   };
 
@@ -451,7 +463,13 @@ export default function AdminPage() {
                                         ) : <span className="text-gray-600 text-xs">Free</span>}
                                       </td>
                                       <td className="px-3 py-3 text-center">
-                                        {user.plan === "admin" ? (
+                                        {grantStatus[user.email] === "sending" ? (
+                                          <span className="text-[10px] text-gray-400 animate-pulse">Sending…</span>
+                                        ) : grantStatus[user.email] === "sent" ? (
+                                          <span className="text-[10px] text-green-400">✉ Sent!</span>
+                                        ) : grantStatus[user.email] === "error" ? (
+                                          <span className="text-[10px] text-yellow-400">✓ Granted</span>
+                                        ) : user.plan === "admin" ? (
                                           <span className="text-gray-600 text-xs">—</span>
                                         ) : user.isPremium ? (
                                           <button onClick={() => grantPremium(user.email, "revoke")} className="text-[10px] text-red-400 hover:text-red-300 border border-red-800/40 hover:border-red-600/60 px-2 py-1 rounded-lg transition-colors">
