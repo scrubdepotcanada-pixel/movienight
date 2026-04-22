@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { isAdminEmail } from "@/lib/session";
 import db, { initDB } from "@/lib/db";
-import { sendFreeMonthEmail } from "@/lib/email";
+import { sendPremiumGiftEmail } from "@/lib/email";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   const premiumUntil = m >= 999 ? "2099-12-31T23:59:59Z" : until.toISOString();
 
   await db.execute({
-    sql: "UPDATE families SET premium_until = ?, subscription_plan = 'gifted' WHERE email = ?",
+    sql: "UPDATE families SET premium_until = ?, subscription_plan = 'gifted', gifted_at = datetime('now'), feedback_email_sent_at = NULL WHERE email = ?",
     args: [premiumUntil, email],
   });
 
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
         args: [email],
       });
       const name = (result.rows[0]?.[0] as string | null) ?? null;
-      await sendFreeMonthEmail(email, name);
+      await sendPremiumGiftEmail(email, name);
       emailSent = true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
