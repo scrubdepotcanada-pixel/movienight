@@ -25,9 +25,9 @@ export async function sendFreeMonthEmail(to: string, name: string | null) {
           <!-- Logo -->
           <tr>
             <td align="center" style="padding-bottom:32px;">
-              <span style="font-size:22px;font-weight:800;background:linear-gradient(90deg,#a855f7,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;color:#a855f7;">
+              <p style="margin:0;font-size:22px;font-weight:800;color:#a855f7;letter-spacing:-0.5px;">
                 🎬 Next Movie
-              </span>
+              </p>
             </td>
           </tr>
 
