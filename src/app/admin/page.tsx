@@ -178,7 +178,7 @@ export default function AdminPage() {
     if (!silent) setLoading(true);
     Promise.all([
       fetch("/api/admin/stats").then(r => r.ok ? r.json() : null),
-      fetch("/api/admin/analytics").then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch("/api/admin/analytics").then(r => r.json()).catch(() => ({ error: "Network error reaching analytics API" })),
     ]).then(([s, a]) => {
       if (s) setStats(s);
       if (a && !a.error) {
@@ -824,6 +824,11 @@ export default function AdminPage() {
             ) : (
               <div className="bg-gray-900 border border-gray-700/40 rounded-2xl p-8 text-center">
                 <p className="text-gray-400 text-lg mb-2">Google Analytics not connected</p>
+                {analyticsError && (
+                  <div className="bg-red-950/40 border border-red-800/40 rounded-xl p-3 mb-4 max-w-md mx-auto">
+                    <p className="text-red-400 text-sm font-mono break-all">{analyticsError}</p>
+                  </div>
+                )}
                 <p className="text-gray-600 text-sm mb-4">Add these env vars to Vercel to enable:</p>
                 <div className="bg-gray-800 rounded-xl p-4 text-left max-w-md mx-auto text-sm font-mono">
                   <p className="text-purple-400">GA4_PROPERTY_ID=<span className="text-gray-500">your-property-id</span></p>
