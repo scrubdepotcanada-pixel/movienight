@@ -1294,15 +1294,15 @@ export default function ClientPage() {
             ) : (
               <>
                 {/* Inline filters right above posters */}
-                {isPremium && (
                   <InlineFilters
                     filters={activeFilters}
                     onChange={(f) => handleDiscoverApply(f)}
                     onClear={() => { setActiveFilters({}); handleStartFresh(); }}
                     isPremium={isPremium}
-                    onUpgrade={() => openPremiumModal("Actor / Director filter")}
+                    isGuest={isGuest}
+                    onUpgrade={() => openPremiumModal("Advanced filters")}
+                    onSignIn={() => signIn("google")}
                   />
-                )}
 
                 {renderRecommendationGrid()}
 
@@ -1338,15 +1338,15 @@ export default function ClientPage() {
               <MovieLoadingScreen />
             ) : (
               <>
-                {isPremium && (
                   <InlineFilters
                     filters={activeFilters}
                     onChange={(f) => handleDiscoverApply(f)}
                     onClear={() => { setActiveFilters({}); handleStartFresh(); }}
                     isPremium={isPremium}
-                    onUpgrade={() => openPremiumModal("Actor / Director filter")}
+                    isGuest={isGuest}
+                    onUpgrade={() => openPremiumModal("Advanced filters")}
+                    onSignIn={() => signIn("google")}
                   />
-                )}
                 {renderRecommendationGrid()}
 
                 <div className="flex flex-col items-center gap-4 mt-8">
@@ -1383,15 +1383,15 @@ export default function ClientPage() {
               <MovieLoadingScreen />
             ) : (
               <>
-                {isPremium && (
                   <InlineFilters
                     filters={activeFilters}
                     onChange={(f) => handleDiscoverApply(f)}
                     onClear={() => { setActiveFilters({}); handleStartFresh(); }}
                     isPremium={isPremium}
-                    onUpgrade={() => openPremiumModal("Actor / Director filter")}
+                    isGuest={isGuest}
+                    onUpgrade={() => openPremiumModal("Advanced filters")}
+                    onSignIn={() => signIn("google")}
                   />
-                )}
                 {renderRecommendationGrid()}
 
                 <div className="flex flex-col items-center gap-4 mt-8">
@@ -1426,15 +1426,15 @@ export default function ClientPage() {
               <MovieLoadingScreen />
             ) : (
               <>
-                {isPremium && (
                   <InlineFilters
                     filters={activeFilters}
                     onChange={(f) => handleDiscoverApply(f)}
                     onClear={() => { setActiveFilters({}); handleStartFresh(); }}
                     isPremium={isPremium}
-                    onUpgrade={() => openPremiumModal("Actor / Director filter")}
+                    isGuest={isGuest}
+                    onUpgrade={() => openPremiumModal("Advanced filters")}
+                    onSignIn={() => signIn("google")}
                   />
-                )}
                 {renderRecommendationGrid()}
 
                 <div className="flex flex-col items-center gap-4 mt-8">

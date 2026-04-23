@@ -12,7 +12,9 @@ interface InlineFiltersProps {
   onChange: (filters: InlineFiltersProps["filters"]) => void;
   onClear: () => void;
   isPremium?: boolean;
+  isGuest?: boolean;
   onUpgrade?: () => void;
+  onSignIn?: () => void;
 }
 
 const PLATFORMS = [
@@ -230,7 +232,7 @@ function PersonSearch({ value, onSelect, onClear }: {
   );
 }
 
-export default function InlineFilters({ filters, onChange, onClear, isPremium = true, onUpgrade }: InlineFiltersProps) {
+export default function InlineFilters({ filters, onChange, onClear, isPremium = true, isGuest = false, onUpgrade, onSignIn }: InlineFiltersProps) {
   const [detectedCountry, setDetectedCountry] = useState<string>("US");
 
   useEffect(() => {
@@ -258,8 +260,8 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
             <span>{currentRegion}</span>
           </div>
 
-          {/* Platform — premium only */}
-          {isPremium ? (
+          {/* Platform — free for signed-in users, sign-up prompt for guests */}
+          {!isGuest ? (
             <FilterDropdown label="📺 " value={filters.providerName || "Any"} active={!!filters.providerId}>
               <DropdownItem label="Any platform" selected={!filters.providerId} onClick={() => update({ providerId: undefined, providerName: undefined })} />
               {PLATFORMS.map(p => (
@@ -273,8 +275,8 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
               ))}
             </FilterDropdown>
           ) : (
-            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all" title="Upgrade to Premium">
-              <span>📺</span><span>Platform</span><span className="text-yellow-600 text-xs">⭐</span>
+            <button onClick={onSignIn} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all" title="Sign up free to filter by platform">
+              <span>📺</span><span>Platform</span><span className="text-blue-400 text-xs">🔓</span>
             </button>
           )}
 

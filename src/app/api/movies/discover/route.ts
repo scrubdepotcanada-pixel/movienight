@@ -7,11 +7,6 @@ export async function GET(req: NextRequest) {
   const familyId = await getOrCreateFamily();
   if (!familyId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  const premium = await getFamilyPremiumStatus(familyId);
-  if (!premium.isPremium) {
-    return NextResponse.json({ error: "PREMIUM_REQUIRED", message: "Upgrade to use advanced filters" }, { status: 403 });
-  }
-
   const locale = req.cookies.get("locale")?.value;
   const genreName = req.nextUrl.searchParams.get("genre") || undefined;
   const decade = req.nextUrl.searchParams.get("decade") || undefined;
@@ -20,6 +15,13 @@ export async function GET(req: NextRequest) {
   const providerId = req.nextUrl.searchParams.get("providerId");
   const personId = req.nextUrl.searchParams.get("personId");
   const language = req.nextUrl.searchParams.get("language") || undefined;
+
+  // Platform filter is free for signed-in users; all other filters require premium
+  const hasPremiumFilter = decade || minRating || maxRuntime || personId || language;
+  const premium = await getFamilyPremiumStatus(familyId);
+  if (hasPremiumFilter && !premium.isPremium) {
+    return NextResponse.json({ error: "PREMIUM_REQUIRED", message: "Upgrade to use advanced filters" }, { status: 403 });
+  }
   const watchRegion = req.nextUrl.searchParams.get("region") ||
     req.headers.get("x-vercel-ip-country") ||
     req.headers.get("cf-ipcountry") ||
