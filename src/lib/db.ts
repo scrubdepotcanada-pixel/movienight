@@ -147,6 +147,14 @@ export async function initDB() {
       other TEXT,
       submitted_at TEXT DEFAULT (datetime('now'))
     )`,
+    `CREATE TABLE IF NOT EXISTS filter_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      family_id TEXT,
+      filter_name TEXT NOT NULL,
+      filter_value TEXT,
+      is_guest INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now'))
+    )`,
   ]);
 
   // Migrations: add new columns to existing tables if missing

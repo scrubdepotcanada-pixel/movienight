@@ -232,6 +232,14 @@ function PersonSearch({ value, onSelect, onClear }: {
   );
 }
 
+function trackFilter(name: string, value: string) {
+  fetch("/api/analytics/filter", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ filterName: name, filterValue: value }),
+  }).catch(() => {});
+}
+
 export default function InlineFilters({ filters, onChange, onClear, isPremium = true, isGuest = false, onUpgrade, onSignIn }: InlineFiltersProps) {
   const [detectedCountry, setDetectedCountry] = useState<string>("US");
 
@@ -243,6 +251,13 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
   }, []);
 
   const update = (patch: Partial<InlineFiltersProps["filters"]>) => {
+    if (patch.providerId) trackFilter("platform", patch.providerName || String(patch.providerId));
+    if (patch.genre) trackFilter("genre", patch.genre);
+    if (patch.decade) trackFilter("decade", `${patch.decade}s`);
+    if (patch.minRating) trackFilter("rating", `${patch.minRating}+`);
+    if (patch.maxRuntime) trackFilter("runtime", `<${patch.maxRuntime}m`);
+    if (patch.language) trackFilter("language", patch.languageName || patch.language);
+    if (patch.personId) trackFilter("person", patch.personName || String(patch.personId));
     onChange({ ...filters, ...patch });
   };
 
@@ -275,7 +290,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
               ))}
             </FilterDropdown>
           ) : (
-            <button onClick={onSignIn} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Sign up free to filter by platform">
+            <button onClick={() => { trackFilter("platform", "locked:signin"); onSignIn?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Sign up free to filter by platform">
               <span>📺</span><span>Platform</span><span className="text-blue-400 text-xs">🔓</span>
             </button>
           )}
@@ -294,7 +309,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
               ))}
             </FilterDropdown>
           ) : (
-            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
+            <button onClick={() => { trackFilter("genre", "locked:upgrade"); onUpgrade?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
               <span>🎭</span><span>Genre</span><span className="text-yellow-600 text-xs">⭐</span>
             </button>
           )}
@@ -313,7 +328,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
               ))}
             </FilterDropdown>
           ) : (
-            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
+            <button onClick={() => { trackFilter("decade", "locked:upgrade"); onUpgrade?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
               <span>📅</span><span>Decade</span><span className="text-yellow-600 text-xs">⭐</span>
             </button>
           )}
@@ -331,7 +346,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
               ))}
             </FilterDropdown>
           ) : (
-            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
+            <button onClick={() => { trackFilter("rating", "locked:upgrade"); onUpgrade?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
               <span>⭐</span><span>Rating</span><span className="text-yellow-600 text-xs">⭐</span>
             </button>
           )}
@@ -345,7 +360,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
               <DropdownItem label="< 2.5 hrs" selected={filters.maxRuntime === 150} onClick={() => update({ maxRuntime: 150 })} />
             </FilterDropdown>
           ) : (
-            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
+            <button onClick={() => { trackFilter("runtime", "locked:upgrade"); onUpgrade?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
               <span>⏱</span><span>Runtime</span><span className="text-yellow-600 text-xs">⭐</span>
             </button>
           )}
@@ -360,7 +375,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
             </FilterDropdown>
           ) : (
             <button
-              onClick={onUpgrade}
+              onClick={() => { trackFilter("language", "locked:upgrade"); onUpgrade?.(); }}
               className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all"
               title="Upgrade to Premium"
             >
@@ -379,7 +394,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
             />
           ) : (
             <button
-              onClick={onUpgrade}
+              onClick={() => { trackFilter("person", "locked:upgrade"); onUpgrade?.(); }}
               className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all"
               title="Upgrade to Premium"
             >

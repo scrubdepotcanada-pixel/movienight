@@ -71,8 +71,21 @@ export default function AdvancedFilters({ onApply, loading, onClose }: AdvancedF
       .catch(() => {});
   }, []);
 
+  const trackFilter = (name: string, value: string) => {
+    fetch("/api/analytics/filter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filterName: name, filterValue: value }),
+    }).catch(() => {});
+  };
+
   const handleApply = () => {
     const platform = PLATFORMS.find(p => p.id === providerId);
+    if (providerId && platform) trackFilter("platform", platform.name);
+    if (genre) trackFilter("genre", genre);
+    if (decade) trackFilter("decade", `${decade}s`);
+    if (minRating) trackFilter("rating", `${minRating}+`);
+    if (maxRuntime) trackFilter("runtime", `<${maxRuntime}m`);
     onApply({
       genre: genre || undefined,
       decade: decade || undefined,

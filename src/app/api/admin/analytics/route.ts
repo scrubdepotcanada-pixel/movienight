@@ -31,7 +31,7 @@ export async function GET() {
   }
 
   try {
-    const [realtime, last7, last30, topPages, topCountries, devices] = await Promise.all([
+    const [realtime, last7, last30, todayVsYesterday, topPages, topCountries, devices, hourly] = await Promise.all([
       client.runRealtimeReport({
         property: `properties/${propertyId}`,
         metrics: [{ name: "activeUsers" }],
@@ -61,6 +61,23 @@ export async function GET() {
         ],
       }),
 
+      // Today vs yesterday comparison — two date ranges in one request
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [
+          { startDate: "today", endDate: "today" },
+          { startDate: "yesterday", endDate: "yesterday" },
+        ],
+        metrics: [
+          { name: "activeUsers" },
+          { name: "sessions" },
+          { name: "screenPageViews" },
+          { name: "newUsers" },
+          { name: "averageSessionDuration" },
+          { name: "bounceRate" },
+        ],
+      }),
+
       client.runReport({
         property: `properties/${propertyId}`,
         dateRanges: [{ startDate: "7daysAgo", endDate: "today" }],
@@ -86,15 +103,48 @@ export async function GET() {
         metrics: [{ name: "activeUsers" }],
         orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
       }),
+
+      // Hourly breakdown for today
+      client.runReport({
+        property: `properties/${propertyId}`,
+        dateRanges: [{ startDate: "today", endDate: "today" }],
+        dimensions: [{ name: "hour" }],
+        metrics: [{ name: "activeUsers" }, { name: "sessions" }],
+        orderBys: [{ dimension: { dimensionName: "hour" } }],
+      }),
     ]);
 
     const getMetric = (report: typeof last7, idx: number) =>
       report[0]?.rows?.[0]?.metricValues?.[idx]?.value || "0";
 
+    // Multi-range report: rows[0] = today, rows[1] = yesterday
+    const todayRows = todayVsYesterday[0]?.rows || [];
+    const getTodayMetric = (rowIdx: number, metricIdx: number) =>
+      Number(todayRows[rowIdx]?.metricValues?.[metricIdx]?.value || 0);
+
+    const todayData = {
+      users: getTodayMetric(0, 0),
+      sessions: getTodayMetric(0, 1),
+      pageViews: getTodayMetric(0, 2),
+      newUsers: getTodayMetric(0, 3),
+      avgSessionDuration: Number(getTodayMetric(0, 4).toFixed(0)),
+      bounceRate: Number((getTodayMetric(0, 5) * 100).toFixed(1)),
+    };
+    const yesterdayData = {
+      users: getTodayMetric(1, 0),
+      sessions: getTodayMetric(1, 1),
+      pageViews: getTodayMetric(1, 2),
+      newUsers: getTodayMetric(1, 3),
+      avgSessionDuration: Number(getTodayMetric(1, 4).toFixed(0)),
+      bounceRate: Number((getTodayMetric(1, 5) * 100).toFixed(1)),
+    };
+
     return NextResponse.json({
       realtime: {
         activeUsers: Number(realtime[0]?.rows?.[0]?.metricValues?.[0]?.value || 0),
       },
+      today: todayData,
+      yesterday: yesterdayData,
       last7Days: {
         users: Number(getMetric(last7, 0)),
         sessions: Number(getMetric(last7, 1)),
@@ -120,6 +170,11 @@ export async function GET() {
       devices: (devices[0]?.rows || []).map(r => ({
         device: r.dimensionValues?.[0]?.value || "",
         users: Number(r.metricValues?.[0]?.value || 0),
+      })),
+      hourlyToday: (hourly[0]?.rows || []).map(r => ({
+        hour: Number(r.dimensionValues?.[0]?.value || 0),
+        users: Number(r.metricValues?.[0]?.value || 0),
+        sessions: Number(r.metricValues?.[1]?.value || 0),
       })),
     });
   } catch (err) {

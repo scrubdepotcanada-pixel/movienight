@@ -3,6 +3,13 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 
+interface FilterStats {
+  total: { last7d: number; last30d: number; allTime: number };
+  byFilter: { name: string; allTime: number; last7d: number; last30d: number; lockedClicks: number; realUses: number }[];
+  topValues: { filterName: string; value: string; count: number }[];
+  guestVsSigned: { guest: number; signed: number };
+}
+
 interface FeedbackItem {
   id: number;
   name: string | null;
@@ -67,25 +74,26 @@ interface Stats {
   }[];
 }
 
+interface DayStats {
+  users: number; sessions: number; pageViews: number;
+  newUsers: number; avgSessionDuration: number; bounceRate: number;
+}
+
 interface Analytics {
   realtime: { activeUsers: number };
+  today: DayStats;
+  yesterday: DayStats;
   last7Days: {
-    users: number;
-    sessions: number;
-    pageViews: number;
-    avgSessionDuration: number;
-    bounceRate: number;
-    newUsers: number;
+    users: number; sessions: number; pageViews: number;
+    avgSessionDuration: number; bounceRate: number; newUsers: number;
   };
   last30Days: {
-    users: number;
-    sessions: number;
-    pageViews: number;
-    newUsers: number;
+    users: number; sessions: number; pageViews: number; newUsers: number;
   };
   topPages: { path: string; views: number }[];
   topCountries: { country: string; users: number }[];
   devices: { device: string; users: number }[];
+  hourlyToday: { hour: number; users: number; sessions: number }[];
 }
 
 export default function AdminPage() {
@@ -97,9 +105,10 @@ export default function AdminPage() {
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [authed, setAuthed] = useState(false);
-  const [tab, setTab] = useState<"overview" | "users" | "revenue" | "analytics" | "feedback">("overview");
+  const [tab, setTab] = useState<"overview" | "users" | "revenue" | "analytics" | "feedback" | "filters">("overview");
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[] | null>(null);
+  const [filterStats, setFilterStats] = useState<FilterStats | null>(null);
   const [grantStatus, setGrantStatus] = useState<Record<string, "sending" | "sent" | "error">>({});
 
   useEffect(() => {
@@ -127,6 +136,14 @@ export default function AdminPage() {
       next.has(key) ? next.delete(key) : next.add(key);
       return next;
     });
+  };
+
+  const loadFilterStats = (key?: string) => {
+    const url = key ? `/api/admin/filter-stats?key=${encodeURIComponent(key)}` : "/api/admin/filter-stats";
+    fetch(url)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d) setFilterStats(d); })
+      .catch(() => {});
   };
 
   const loadFeedback = (key?: string) => {
@@ -250,12 +267,13 @@ export default function AdminPage() {
 
         {/* Tabs */}
         <div className="flex gap-1 bg-gray-900 rounded-xl p-1 mb-8 overflow-x-auto">
-          {(["overview", "users", "revenue", "analytics", "feedback"] as const).map(t => (
+          {(["overview", "users", "revenue", "analytics", "feedback", "filters"] as const).map(t => (
             <button
               key={t}
               onClick={() => {
                 setTab(t);
                 if (t === "feedback" && !feedbackList) loadFeedback(password);
+                if (t === "filters" && !filterStats) loadFilterStats(password);
               }}
               className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
                 tab === t ? "bg-purple-600 text-white" : "text-gray-400 hover:text-white"
@@ -313,28 +331,34 @@ export default function AdminPage() {
               <MetricCard label="Swipe Sessions" value={stats.activity.totalSwipeSessions} color="text-orange-400" />
             </div>
 
-            {/* GA 7-day + 30-day side by side */}
-            {analytics && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <div className="bg-gray-900 border border-gray-700/40 rounded-2xl p-5">
-                  <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-4">Last 7 Days</h3>
-                  <div className="space-y-3">
-                    <StatRow label="Users" value={analytics.last7Days.users} />
-                    <StatRow label="New Users" value={analytics.last7Days.newUsers} />
-                    <StatRow label="Sessions" value={analytics.last7Days.sessions} />
-                    <StatRow label="Page Views" value={analytics.last7Days.pageViews} />
-                    <StatRow label="Avg Session" value={`${analytics.last7Days.avgSessionDuration}s`} />
-                    <StatRow label="Bounce Rate" value={`${analytics.last7Days.bounceRate}%`} />
-                  </div>
-                </div>
-                <div className="bg-gray-900 border border-gray-700/40 rounded-2xl p-5">
-                  <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-4">Last 30 Days</h3>
-                  <div className="space-y-3">
-                    <StatRow label="Users" value={analytics.last30Days.users} />
-                    <StatRow label="New Users" value={analytics.last30Days.newUsers} />
-                    <StatRow label="Sessions" value={analytics.last30Days.sessions} />
-                    <StatRow label="Page Views" value={analytics.last30Days.pageViews} />
-                  </div>
+            {/* Today snapshot on overview */}
+            {analytics && analytics.today && (
+              <div className="mb-6 bg-gray-900 border border-gray-700/40 rounded-2xl p-5">
+                <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-3">Today vs Yesterday</h3>
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                  {([
+                    { label: "Users", today: analytics.today.users, yest: analytics.yesterday.users },
+                    { label: "New Users", today: analytics.today.newUsers, yest: analytics.yesterday.newUsers },
+                    { label: "Sessions", today: analytics.today.sessions, yest: analytics.yesterday.sessions },
+                    { label: "Page Views", today: analytics.today.pageViews, yest: analytics.yesterday.pageViews },
+                    { label: "Avg Session", today: analytics.today.avgSessionDuration, yest: analytics.yesterday.avgSessionDuration, suffix: "s" },
+                    { label: "Bounce", today: analytics.today.bounceRate, yest: analytics.yesterday.bounceRate, suffix: "%", lowerIsBetter: true },
+                  ] as { label: string; today: number; yest: number; suffix?: string; lowerIsBetter?: boolean }[]).map(({ label, today, yest, suffix = "", lowerIsBetter }) => {
+                    const diff = today - yest;
+                    const pct = yest > 0 ? ((diff / yest) * 100).toFixed(0) : null;
+                    const up = diff > 0;
+                    const good = lowerIsBetter ? !up : up;
+                    const color = diff === 0 ? "text-gray-500" : good ? "text-green-400" : "text-red-400";
+                    return (
+                      <div key={label} className="text-center">
+                        <p className="text-gray-600 text-[10px] mb-1">{label}</p>
+                        <p className="text-white text-lg font-bold">{today.toLocaleString()}{suffix}</p>
+                        <p className={`text-[10px] ${color}`}>
+                          {diff > 0 ? "▲" : diff < 0 ? "▼" : "—"}{pct !== null ? ` ${Math.abs(Number(pct))}%` : ""}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -753,10 +777,97 @@ export default function AdminPage() {
             {analytics ? (
               <div className="space-y-6">
                 {/* Realtime */}
-                <div className="bg-green-950/30 border border-green-800/30 rounded-2xl p-6 text-center">
-                  <p className="text-gray-400 text-xs uppercase tracking-wider mb-2">Right Now</p>
-                  <p className="text-green-400 text-5xl font-bold">{analytics.realtime.activeUsers}</p>
-                  <p className="text-gray-500 text-sm mt-1">active users</p>
+                <div className="bg-green-950/30 border border-green-800/30 rounded-2xl p-4 flex items-center gap-4">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse flex-shrink-0" />
+                  <div>
+                    <span className="text-green-400 text-3xl font-bold">{analytics.realtime.activeUsers}</span>
+                    <span className="text-gray-400 text-sm ml-2">active right now</span>
+                  </div>
+                </div>
+
+                {/* Today vs Yesterday */}
+                <div className="bg-gray-900 border border-gray-700/40 rounded-2xl p-5">
+                  <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-4">Today vs Yesterday</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {(
+                      [
+                        { label: "Users", today: analytics.today.users, yest: analytics.yesterday.users },
+                        { label: "New Users", today: analytics.today.newUsers, yest: analytics.yesterday.newUsers },
+                        { label: "Sessions", today: analytics.today.sessions, yest: analytics.yesterday.sessions },
+                        { label: "Page Views", today: analytics.today.pageViews, yest: analytics.yesterday.pageViews },
+                        { label: "Avg Session", today: analytics.today.avgSessionDuration, yest: analytics.yesterday.avgSessionDuration, suffix: "s" },
+                        { label: "Bounce Rate", today: analytics.today.bounceRate, yest: analytics.yesterday.bounceRate, suffix: "%", lowerIsBetter: true },
+                      ] as { label: string; today: number; yest: number; suffix?: string; lowerIsBetter?: boolean }[]
+                    ).map(({ label, today, yest, suffix = "", lowerIsBetter }) => {
+                      const diff = today - yest;
+                      const pct = yest > 0 ? ((diff / yest) * 100).toFixed(0) : null;
+                      const up = diff > 0;
+                      const good = lowerIsBetter ? !up : up;
+                      const color = diff === 0 ? "text-gray-500" : good ? "text-green-400" : "text-red-400";
+                      return (
+                        <div key={label} className="bg-gray-800/50 rounded-xl p-3">
+                          <p className="text-gray-500 text-xs mb-1">{label}</p>
+                          <p className="text-white text-xl font-bold">{today.toLocaleString()}{suffix}</p>
+                          <div className={`flex items-center gap-1 mt-1 text-xs ${color}`}>
+                            <span>{diff > 0 ? "▲" : diff < 0 ? "▼" : "—"}</span>
+                            <span>{pct !== null ? `${Math.abs(Number(pct))}%` : "no data"}</span>
+                            <span className="text-gray-600 ml-1">vs {yest.toLocaleString()}{suffix}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Hourly chart for today */}
+                {analytics.hourlyToday.length > 0 && (
+                  <div className="bg-gray-900 border border-gray-700/40 rounded-2xl p-5">
+                    <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-4">Today by hour (users)</h3>
+                    <div className="flex items-end gap-1 h-20">
+                      {Array.from({ length: 24 }, (_, h) => {
+                        const entry = analytics.hourlyToday.find(x => x.hour === h);
+                        const val = entry?.users || 0;
+                        const max = Math.max(...analytics.hourlyToday.map(x => x.users), 1);
+                        const pct = (val / max) * 100;
+                        const now = new Date().getHours();
+                        return (
+                          <div key={h} className="flex-1 flex flex-col items-center gap-1" title={`${h}:00 — ${val} users`}>
+                            <div
+                              className={`w-full rounded-sm transition-all ${h === now ? "bg-purple-400" : val > 0 ? "bg-purple-600/60" : "bg-gray-800"}`}
+                              style={{ height: `${Math.max(pct, val > 0 ? 8 : 2)}%` }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-between text-gray-600 text-[10px] mt-1">
+                      <span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* GA 7-day + 30-day side by side */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-gray-900 border border-gray-700/40 rounded-2xl p-5">
+                    <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-4">Last 7 Days</h3>
+                    <div className="space-y-3">
+                      <StatRow label="Users" value={analytics.last7Days.users} />
+                      <StatRow label="New Users" value={analytics.last7Days.newUsers} />
+                      <StatRow label="Sessions" value={analytics.last7Days.sessions} />
+                      <StatRow label="Page Views" value={analytics.last7Days.pageViews} />
+                      <StatRow label="Avg Session" value={`${analytics.last7Days.avgSessionDuration}s`} />
+                      <StatRow label="Bounce Rate" value={`${analytics.last7Days.bounceRate}%`} />
+                    </div>
+                  </div>
+                  <div className="bg-gray-900 border border-gray-700/40 rounded-2xl p-5">
+                    <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-4">Last 30 Days</h3>
+                    <div className="space-y-3">
+                      <StatRow label="Users" value={analytics.last30Days.users} />
+                      <StatRow label="New Users" value={analytics.last30Days.newUsers} />
+                      <StatRow label="Sessions" value={analytics.last30Days.sessions} />
+                      <StatRow label="Page Views" value={analytics.last30Days.pageViews} />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Top pages */}
@@ -840,6 +951,155 @@ export default function AdminPage() {
               </div>
             )}
           </>
+        )}
+
+        {/* FILTERS TAB */}
+        {tab === "filters" && (
+          <div className="space-y-6">
+            {filterStats === null ? (
+              <div className="text-center py-16 text-gray-500">Loading...</div>
+            ) : filterStats.total.allTime === 0 ? (
+              <div className="bg-gray-900 border border-gray-700/40 rounded-2xl p-12 text-center">
+                <p className="text-gray-400 text-lg mb-2">No filter events yet</p>
+                <p className="text-gray-600 text-sm">Events will appear here once users start using the filters.</p>
+              </div>
+            ) : (
+              <>
+                {/* Summary */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-gray-900 border border-gray-700/40 rounded-xl p-4 text-center">
+                    <p className="text-purple-400 text-3xl font-bold">{filterStats.total.last7d}</p>
+                    <p className="text-gray-500 text-xs mt-1">Filter uses (7d)</p>
+                  </div>
+                  <div className="bg-gray-900 border border-gray-700/40 rounded-xl p-4 text-center">
+                    <p className="text-blue-400 text-3xl font-bold">{filterStats.total.last30d}</p>
+                    <p className="text-gray-500 text-xs mt-1">Filter uses (30d)</p>
+                  </div>
+                  <div className="bg-gray-900 border border-gray-700/40 rounded-xl p-4 text-center">
+                    <p className="text-white text-3xl font-bold">{filterStats.total.allTime}</p>
+                    <p className="text-gray-500 text-xs mt-1">All time</p>
+                  </div>
+                </div>
+
+                {/* Guest vs Signed-in */}
+                <div className="bg-gray-900 border border-gray-700/40 rounded-2xl p-5">
+                  <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-4">Who&apos;s using filters</h3>
+                  {(() => {
+                    const total = filterStats.guestVsSigned.guest + filterStats.guestVsSigned.signed;
+                    const signedPct = total > 0 ? Math.round((filterStats.guestVsSigned.signed / total) * 100) : 0;
+                    const guestPct = 100 - signedPct;
+                    return (
+                      <div className="space-y-3">
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-gray-300 text-sm">Signed-in users</span>
+                            <span className="text-purple-400 font-bold text-sm">{filterStats.guestVsSigned.signed} ({signedPct}%)</span>
+                          </div>
+                          <div className="w-full bg-gray-800 rounded-full h-2">
+                            <div className="h-full bg-purple-600 rounded-full" style={{ width: `${signedPct}%` }} />
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-gray-300 text-sm">Guests</span>
+                            <span className="text-gray-400 font-bold text-sm">{filterStats.guestVsSigned.guest} ({guestPct}%)</span>
+                          </div>
+                          <div className="w-full bg-gray-800 rounded-full h-2">
+                            <div className="h-full bg-gray-600 rounded-full" style={{ width: `${guestPct}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* Filter breakdown */}
+                <div className="bg-gray-900 border border-gray-700/40 rounded-2xl p-5">
+                  <h3 className="text-gray-400 text-xs uppercase tracking-wider mb-4">Filter usage breakdown</h3>
+                  <div className="space-y-4">
+                    {filterStats.byFilter.map(f => {
+                      const maxUses = Math.max(...filterStats.byFilter.map(x => x.allTime), 1);
+                      const FILTER_ICONS: Record<string, string> = {
+                        platform: "📺", genre: "🎭", decade: "📅", rating: "⭐",
+                        runtime: "⏱", language: "🌍", person: "🎬",
+                      };
+                      const icon = FILTER_ICONS[f.name] || "🔧";
+                      const lockedPct = f.allTime > 0 ? Math.round((f.lockedClicks / f.allTime) * 100) : 0;
+                      return (
+                        <div key={f.name}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span>{icon}</span>
+                              <span className="text-gray-300 text-sm capitalize font-medium">{f.name}</span>
+                              {f.lockedClicks > 0 && (
+                                <span className="text-[10px] text-yellow-500 bg-yellow-900/30 px-1.5 py-0.5 rounded-full border border-yellow-700/30">
+                                  {lockedPct}% locked clicks
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                              <span>{f.last7d}d7</span>
+                              <span>{f.last30d}d30</span>
+                              <span className="text-white font-bold">{f.realUses} uses</span>
+                            </div>
+                          </div>
+                          <div className="w-full bg-gray-800 rounded-full h-2">
+                            <div
+                              className="h-full bg-gradient-to-r from-purple-600 to-pink-600 rounded-full"
+                              style={{ width: `${(f.realUses / maxUses) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Top values per filter */}
+                {(() => {
+                  const grouped: Record<string, { value: string; count: number }[]> = {};
+                  for (const row of filterStats.topValues) {
+                    if (!grouped[row.filterName]) grouped[row.filterName] = [];
+                    grouped[row.filterName].push({ value: row.value, count: row.count });
+                  }
+                  const filterNames = Object.keys(grouped);
+                  if (filterNames.length === 0) return null;
+                  return (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {filterNames.map(name => {
+                        const values = grouped[name].slice(0, 8);
+                        const max = values[0]?.count || 1;
+                        const FILTER_ICONS: Record<string, string> = {
+                          platform: "📺", genre: "🎭", decade: "📅", rating: "⭐",
+                          runtime: "⏱", language: "🌍", person: "🎬",
+                        };
+                        return (
+                          <div key={name} className="bg-gray-900 border border-gray-700/40 rounded-2xl p-4">
+                            <h4 className="text-gray-400 text-xs uppercase tracking-wider mb-3">
+                              {FILTER_ICONS[name] || "🔧"} Top {name} values
+                            </h4>
+                            <div className="space-y-2">
+                              {values.map(v => (
+                                <div key={v.value}>
+                                  <div className="flex justify-between mb-0.5">
+                                    <span className="text-gray-300 text-xs">{v.value}</span>
+                                    <span className="text-purple-400 text-xs font-bold">{v.count}</span>
+                                  </div>
+                                  <div className="w-full bg-gray-800 rounded-full h-1.5">
+                                    <div className="h-full bg-purple-600/70 rounded-full" style={{ width: `${(v.count / max) * 100}%` }} />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+              </>
+            )}
+          </div>
         )}
 
         {/* FEEDBACK TAB */}
