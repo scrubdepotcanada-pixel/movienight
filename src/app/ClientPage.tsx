@@ -972,25 +972,22 @@ export default function ClientPage() {
                       onAdvancedFilters={() => setShowAdvancedFilters(true)}
                     />
                   )}
-                  <button
-                    onClick={async () => {
-                      if (isGuest) {
-                        await fetch("/api/guest/clear", { method: "POST" });
-                        setMembers([]);
-                        setGuestMode(false);
-                      }
-                      setSelectedMember(null);
-                      setRecommendations([]);
-                      setSearchResults([]);
-                      setCategoryLiked([]);
-                      setCategoryDisliked([]);
-                      setActiveCategories([]);
-                      setStep("select-member");
-                    }}
-                    className="text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 px-2 py-1 rounded-lg"
-                  >
-                    {isGuest ? "Restart" : "Switch"}
-                  </button>
+                  {!isGuest && (
+                    <button
+                      onClick={() => {
+                        setSelectedMember(null);
+                        setRecommendations([]);
+                        setSearchResults([]);
+                        setCategoryLiked([]);
+                        setCategoryDisliked([]);
+                        setActiveCategories([]);
+                        setStep("select-member");
+                      }}
+                      className="text-xs bg-gray-600 hover:bg-gray-500 text-white px-2.5 py-1 rounded-lg font-medium"
+                    >
+                      Switch
+                    </button>
+                  )}
                 </>
               )}
               {!isGuest && isPremium && !selectedMember && (
@@ -1309,7 +1306,7 @@ export default function ClientPage() {
                 <div className="flex flex-col items-center gap-4 mt-8">
                   <button
                     onClick={handleStartFresh}
-                    className="text-gray-400 hover:text-white text-sm underline"
+                    className="text-sm font-medium text-gray-300 hover:text-white bg-gray-700/60 hover:bg-gray-600/80 border border-gray-600/50 hover:border-gray-500 px-5 py-2.5 rounded-xl transition-all"
                   >
                     Start over with a different movie
                   </button>
@@ -1352,7 +1349,7 @@ export default function ClientPage() {
                 <div className="flex flex-col items-center gap-4 mt-8">
                   <button
                     onClick={handleStartFresh}
-                    className="text-gray-400 hover:text-white text-sm underline"
+                    className="text-sm font-medium text-gray-300 hover:text-white bg-gray-700/60 hover:bg-gray-600/80 border border-gray-600/50 hover:border-gray-500 px-5 py-2.5 rounded-xl transition-all"
                   >
                     Browse a different category
                   </button>
@@ -1397,7 +1394,7 @@ export default function ClientPage() {
                 <div className="flex flex-col items-center gap-4 mt-8">
                   <button
                     onClick={handleStartFresh}
-                    className="text-gray-400 hover:text-white text-sm underline"
+                    className="text-sm font-medium text-gray-300 hover:text-white bg-gray-700/60 hover:bg-gray-600/80 border border-gray-600/50 hover:border-gray-500 px-5 py-2.5 rounded-xl transition-all"
                   >
                     Start fresh with a new movie
                   </button>
@@ -1440,7 +1437,7 @@ export default function ClientPage() {
                 <div className="flex flex-col items-center gap-4 mt-8">
                   <button
                     onClick={handleStartFresh}
-                    className="text-gray-400 hover:text-white text-sm underline"
+                    className="text-sm font-medium text-gray-300 hover:text-white bg-gray-700/60 hover:bg-gray-600/80 border border-gray-600/50 hover:border-gray-500 px-5 py-2.5 rounded-xl transition-all"
                   >
                     Browse a different category
                   </button>
