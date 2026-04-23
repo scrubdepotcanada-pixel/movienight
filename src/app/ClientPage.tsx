@@ -20,6 +20,7 @@ import AdvancedFilters from "@/components/AdvancedFilters";
 import PersonFilmography from "@/components/PersonFilmography";
 import { useLocale } from "@/lib/i18n";
 import LandingPage from "@/components/landing/LandingPage";
+import SignInModal from "@/components/SignInModal";
 
 interface Movie {
   id: number;
@@ -101,6 +102,7 @@ export default function ClientPage() {
   // Premium state
   const [isPremium, setIsPremium] = useState(false);
   const [showPremiumModal, setShowPremiumModal] = useState(false);
+  const [showSignInModal, setShowSignInModal] = useState(false);
   const [premiumFeature, setPremiumFeature] = useState<string>("");
   const [showTasteProfile, setShowTasteProfile] = useState(false);
   const [showWatchlist, setShowWatchlist] = useState(false);
@@ -922,12 +924,22 @@ export default function ClientPage() {
 
   // Not signed in and not guest — show landing page
   if (!session && !guestMode) {
-    return <LandingPage onSignIn={() => signIn("google")} onGuest={async () => {
-      // Clear any old guest session so it's fresh
-      await fetch("/api/guest/clear", { method: "POST" });
-      setMembers([]);
-      setGuestMode(true);
-    }} />;
+    return (
+      <>
+        <LandingPage onSignIn={() => setShowSignInModal(true)} onGuest={async () => {
+          await fetch("/api/guest/clear", { method: "POST" });
+          setMembers([]);
+          setGuestMode(true);
+        }} />
+        {showSignInModal && (
+          <SignInModal
+            onGoogle={() => { setShowSignInModal(false); signIn("google"); }}
+            onFacebook={() => { setShowSignInModal(false); signIn("facebook"); }}
+            onClose={() => setShowSignInModal(false)}
+          />
+        )}
+      </>
+    );
   }
 
   const isGuest = !session;
@@ -1010,7 +1022,7 @@ export default function ClientPage() {
               )}
               {isGuest ? (
                 <button
-                  onClick={() => signIn("google")}
+                  onClick={() => setShowSignInModal(true)}
                   className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-2.5 py-1 rounded-lg"
                 >
                   Sign in
@@ -1317,7 +1329,7 @@ export default function ClientPage() {
                     isPremium={isPremium}
                     isGuest={isGuest}
                     onUpgrade={() => openPremiumModal("Advanced filters")}
-                    onSignIn={() => signIn("google")}
+                    onSignIn={() => setShowSignInModal(true)}
                   />
 
                 {renderRecommendationGrid()}
@@ -1361,7 +1373,7 @@ export default function ClientPage() {
                     isPremium={isPremium}
                     isGuest={isGuest}
                     onUpgrade={() => openPremiumModal("Advanced filters")}
-                    onSignIn={() => signIn("google")}
+                    onSignIn={() => setShowSignInModal(true)}
                   />
                 {renderRecommendationGrid()}
 
@@ -1406,7 +1418,7 @@ export default function ClientPage() {
                     isPremium={isPremium}
                     isGuest={isGuest}
                     onUpgrade={() => openPremiumModal("Advanced filters")}
-                    onSignIn={() => signIn("google")}
+                    onSignIn={() => setShowSignInModal(true)}
                   />
                 {renderRecommendationGrid()}
 
@@ -1449,7 +1461,7 @@ export default function ClientPage() {
                     isPremium={isPremium}
                     isGuest={isGuest}
                     onUpgrade={() => openPremiumModal("Advanced filters")}
-                    onSignIn={() => signIn("google")}
+                    onSignIn={() => setShowSignInModal(true)}
                   />
                 {renderRecommendationGrid()}
 
@@ -1574,6 +1586,13 @@ export default function ClientPage() {
       </div>
 
       {/* Premium modals */}
+      {showSignInModal && (
+        <SignInModal
+          onGoogle={() => { setShowSignInModal(false); signIn("google"); }}
+          onFacebook={() => { setShowSignInModal(false); signIn("facebook"); }}
+          onClose={() => setShowSignInModal(false)}
+        />
+      )}
       {showPremiumModal && (
         <PremiumModal onClose={() => setShowPremiumModal(false)} feature={premiumFeature || undefined} />
       )}
