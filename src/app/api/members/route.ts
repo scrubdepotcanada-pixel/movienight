@@ -27,7 +27,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const familyId = await getOrCreateFamily();
   if (!familyId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  const { name, avatar, age, maxRating } = await req.json();
+  let { name, avatar, age, maxRating } = await req.json();
 
   if (!name || !name.trim()) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -38,6 +38,27 @@ export async function POST(req: NextRequest) {
     const count = await getMemberCount(familyId);
     if (count >= FREE_MEMBER_LIMIT) {
       return NextResponse.json({ error: "PREMIUM_REQUIRED", message: "Upgrade to add more family members", limit: FREE_MEMBER_LIMIT }, { status: 403 });
+    }
+  }
+
+  // For guests, reuse the name from a previous session with the same IP
+  if (familyId.startsWith("guest_")) {
+    const ipRow = await db.execute({
+      sql: "SELECT ip_address FROM families WHERE id = ?",
+      args: [familyId],
+    });
+    const ip = ipRow.rows[0]?.ip_address;
+    if (ip) {
+      const prev = await db.execute({
+        sql: `SELECT m.name FROM members m
+              JOIN families f ON m.family_id = f.id
+              WHERE f.ip_address = ? AND f.id != ? AND f.google_id IS NULL
+              LIMIT 1`,
+        args: [String(ip), familyId],
+      });
+      if (prev.rows.length > 0 && prev.rows[0].name) {
+        name = String(prev.rows[0].name);
+      }
     }
   }
 
