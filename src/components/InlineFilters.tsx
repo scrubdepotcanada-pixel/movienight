@@ -104,10 +104,10 @@ function FilterDropdown({ label, value, children, active }: {
         className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium transition-all whitespace-nowrap ${
           active
             ? "bg-purple-600/30 border border-purple-500/50 text-purple-200"
-            : "bg-gray-800/60 border border-gray-700/50 text-gray-400 hover:text-white hover:border-gray-600"
+            : "bg-gray-700/50 border border-gray-600/50 text-gray-300 hover:text-white hover:border-gray-500"
         }`}
       >
-        <span className="text-gray-500">{label}</span>
+        <span>{label}</span>
         <span className={active ? "text-white font-semibold" : ""}>{value}</span>
         <svg className={`w-3 h-3 ml-0.5 transition-transform ${open ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -252,10 +252,10 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
 
   return (
     <div className="max-w-6xl mx-auto px-4 mb-4">
-      <div className="bg-gray-800/30 border border-gray-700/30 rounded-2xl px-4 py-3">
+      <div className="bg-gray-800/50 border border-gray-700/40 rounded-2xl px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
           {/* Country chip — always visible */}
-          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs bg-gray-800/60 border border-gray-700/30 text-gray-500 whitespace-nowrap" title={COUNTRY_NAMES[currentRegion] || currentRegion}>
+          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs bg-gray-700/50 border border-gray-600/40 text-gray-300 whitespace-nowrap" title={COUNTRY_NAMES[currentRegion] || currentRegion}>
             <span>{COUNTRY_FLAGS[currentRegion] || "🌍"}</span>
             <span>{currentRegion}</span>
           </div>
@@ -275,7 +275,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
               ))}
             </FilterDropdown>
           ) : (
-            <button onClick={onSignIn} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all" title="Sign up free to filter by platform">
+            <button onClick={onSignIn} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Sign up free to filter by platform">
               <span>📺</span><span>Platform</span><span className="text-blue-400 text-xs">🔓</span>
             </button>
           )}
@@ -294,7 +294,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
               ))}
             </FilterDropdown>
           ) : (
-            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all" title="Upgrade to Premium">
+            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
               <span>🎭</span><span>Genre</span><span className="text-yellow-600 text-xs">⭐</span>
             </button>
           )}
@@ -313,7 +313,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
               ))}
             </FilterDropdown>
           ) : (
-            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all" title="Upgrade to Premium">
+            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
               <span>📅</span><span>Decade</span><span className="text-yellow-600 text-xs">⭐</span>
             </button>
           )}
@@ -331,7 +331,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
               ))}
             </FilterDropdown>
           ) : (
-            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all" title="Upgrade to Premium">
+            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
               <span>⭐</span><span>Rating</span><span className="text-yellow-600 text-xs">⭐</span>
             </button>
           )}
@@ -345,7 +345,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
               <DropdownItem label="< 2.5 hrs" selected={filters.maxRuntime === 150} onClick={() => update({ maxRuntime: 150 })} />
             </FilterDropdown>
           ) : (
-            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all" title="Upgrade to Premium">
+            <button onClick={onUpgrade} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
               <span>⏱</span><span>Runtime</span><span className="text-yellow-600 text-xs">⭐</span>
             </button>
           )}
@@ -361,7 +361,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
           ) : (
             <button
               onClick={onUpgrade}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all"
               title="Upgrade to Premium"
             >
               <span>🌍</span>
@@ -380,7 +380,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
           ) : (
             <button
               onClick={onUpgrade}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-800/60 border border-gray-700/50 text-gray-600 hover:text-gray-400 whitespace-nowrap transition-all"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all"
               title="Upgrade to Premium"
             >
               <span>🎬</span>
