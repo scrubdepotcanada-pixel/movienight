@@ -392,19 +392,34 @@ export default function AdminPage() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <h2 className="text-lg font-bold">Users ({stats.userDetails.length})</h2>
-                    <button
-                      onClick={() => {
-                        fetch("/api/admin/cleanup", { method: "POST" })
-                          .then(r => r.json())
-                          .then(d => {
-                            if (d.removed > 0) { alert(`Removed ${d.removed} duplicate account(s)`); loadAll(); }
-                            else alert("No duplicates found");
-                          });
-                      }}
-                      className="text-gray-400 hover:text-white text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors"
-                    >
-                      Clean duplicates
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          fetch("/api/admin/fix-guest-names", { method: "POST" })
+                            .then(r => r.json())
+                            .then(d => {
+                              alert(d.fixed > 0 ? `Fixed ${d.fixed} guest name(s) across ${d.ips} IP(s)` : "All guest names already consistent");
+                              loadAll(true);
+                            });
+                        }}
+                        className="text-gray-400 hover:text-white text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        Fix guest names
+                      </button>
+                      <button
+                        onClick={() => {
+                          fetch("/api/admin/cleanup", { method: "POST" })
+                            .then(r => r.json())
+                            .then(d => {
+                              if (d.removed > 0) { alert(`Removed ${d.removed} duplicate account(s)`); loadAll(); }
+                              else alert("No duplicates found");
+                            });
+                        }}
+                        className="text-gray-400 hover:text-white text-xs bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg transition-colors"
+                      >
+                        Clean duplicates
+                      </button>
+                    </div>
                   </div>
 
                   {months.map(monthKey => {
