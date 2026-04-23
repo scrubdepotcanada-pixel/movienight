@@ -31,8 +31,14 @@ export async function GET(req: NextRequest) {
     paymentHistory,
   ] = await Promise.all([
     db.execute("SELECT COUNT(*) as count FROM families WHERE google_id IS NOT NULL"),
-    db.execute("SELECT COUNT(*) as count FROM families WHERE google_id IS NULL"),
-    db.execute("SELECT COUNT(*) as count FROM members m JOIN families f ON m.family_id = f.id WHERE f.google_id IS NOT NULL"),
+    db.execute("SELECT COUNT(DISTINCT COALESCE(ip_address, id)) as count FROM families WHERE google_id IS NULL"),
+    db.execute(`
+      SELECT
+        (SELECT COUNT(*) FROM families WHERE google_id IS NOT NULL)
+        +
+        (SELECT COUNT(DISTINCT COALESCE(ip_address, id)) FROM families WHERE google_id IS NULL)
+        as count
+    `),
     db.execute("SELECT COUNT(*) as count FROM families WHERE premium_until IS NOT NULL AND premium_until > datetime('now')"),
     db.execute("SELECT COUNT(*) as count FROM liked_movies"),
     db.execute("SELECT COUNT(*) as count FROM disliked_movies"),
