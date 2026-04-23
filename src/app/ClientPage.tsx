@@ -78,6 +78,7 @@ export default function ClientPage() {
 
   // Search state
   const [searchResults, setSearchResults] = useState<Movie[]>([]);
+  const [lastSearchQuery, setLastSearchQuery] = useState<string | null>(null);
   const [searchTab, setSearchTab] = useState<"search" | "mood" | "category">("search");
   const [selectedSearchId, setSelectedSearchId] = useState<number | null>(null);
 
@@ -333,6 +334,7 @@ export default function ClientPage() {
 
   const handleSearch = async (query: string) => {
     setLoading(true);
+    setLastSearchQuery(query);
     try {
       const searchUrl = contentType === "show"
         ? `/api/shows/search?q=${encodeURIComponent(query)}`
@@ -1140,7 +1142,7 @@ export default function ClientPage() {
               <h3 className="text-center text-gray-400 text-sm mb-3">Know what you like? Search by title</h3>
               <SearchBar onSearch={handleSearch} loading={loading} />
 
-              {searchResults.length > 0 && (
+              {searchResults.length > 0 ? (
                   <div className="mt-6">
                     <h3 className="text-lg font-medium text-gray-300 mb-4">
                       {selectedSearchId
@@ -1169,6 +1171,21 @@ export default function ClientPage() {
                         </button>
                       </div>
                     )}
+                  </div>
+                ) : lastSearchQuery && !loading && (
+                  <div className="mt-6 bg-gray-800/40 border border-gray-700/40 rounded-2xl p-6 text-center">
+                    <p className="text-gray-300 font-medium mb-1">
+                      We couldn&apos;t find a {contentType === "show" ? "show" : "movie"} called &ldquo;{lastSearchQuery}&rdquo;
+                    </p>
+                    <p className="text-gray-500 text-sm mb-4">
+                      This search works best with an exact title — try the mood search below to describe what you&apos;re after
+                    </p>
+                    <button
+                      onClick={() => { setLastSearchQuery(null); document.getElementById("mood-search")?.scrollIntoView({ behavior: "smooth" }); }}
+                      className="text-sm text-purple-400 hover:text-purple-300 underline transition-colors"
+                    >
+                      Try mood search instead →
+                    </button>
                   </div>
                 )}
             </div>
@@ -1222,7 +1239,9 @@ export default function ClientPage() {
             )}
 
             {/* Describe what you want — mood or theme */}
-            <MoodSearch onSearch={handleMoodSearch} loading={loading} />
+            <div id="mood-search">
+              <MoodSearch onSearch={handleMoodSearch} loading={loading} />
+            </div>
 
             {/* Category grid */}
             <div className="mt-8">
