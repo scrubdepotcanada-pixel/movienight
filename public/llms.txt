@@ -1,0 +1,44 @@
+# Next Movie
+
+> Free AI movie picker for families at nextmovie.app
+
+## What is Next Movie?
+
+Next Movie is a free AI-powered movie recommendation app built for families. It helps you decide what to watch in under 30 seconds. Each family member gets their own taste profile with age-appropriate content filters (G, PG, PG-13, R). The AI learns your preferences over time and gets smarter with every like and dislike.
+
+## Key Features
+
+- AI-powered movie and TV show recommendations
+- Family profiles with individual taste learning
+- Age-based content filters (G, PG, PG-13, R) per family member
+- Mood-based search ("cozy rainy day movie", "funny but not dumb")
+- 12 genre categories (Action, Comedy, Drama, Horror, Sci-Fi, Romance, Thriller, Animation, Documentary, Fantasy, Family, Mystery)
+- Streaming availability (Netflix, Disney+, Prime Video, Apple TV+, Crave, Hulu, and more)
+- Family Swipe mode — everyone votes, the app picks the winner
+- Works in 50+ countries with local streaming data
+- Language filters: English, French, Spanish, Korean, Japanese, Hindi, Tamil, Telugu, Malayalam, Bengali, Kannada, Marathi, Punjabi, German, Italian, Portuguese, Chinese, Thai, Turkish, Arabic, and more
+- Actor and director search
+- Personal watchlist
+- No app download required — works in any browser on phone, tablet, or desktop
+
+## Pricing
+
+- Free: AI picks, genre browsing, age-safe filters, 2 family profiles
+- Premium ($4.99/month, $49.99/year, or $99.99 lifetime): Language filters, actor/director search, streaming platform filter, unlimited profiles, watchlist, unlimited history, Family Swipe mode
+
+## Links
+
+- Homepage: https://nextmovie.app
+- Premium: https://nextmovie.app/premium
+- FAQ: https://nextmovie.app/faq
+- Genres: https://nextmovie.app/genres
+- Blog: https://nextmovie.app/blog
+- Feedback: https://nextmovie.app/feedback
+- Contact: support@nextmovie.app
+
+## How it compares
+
+- vs JustWatch: JustWatch shows where to stream but doesn't pick movies. Next Movie uses AI to suggest films based on taste, mood, and family ages, then shows where to stream.
+- vs IMDb: IMDb is a database for looking up movies. Next Movie is a picker — you describe what you want and it finds matches filtered by age rating.
+- vs Letterboxd: Letterboxd is a social film diary for enthusiasts. Next Movie is a family-first tool where each person has their own profile and the AI finds movies everyone agrees on.
+- vs Taste.io: Both learn your taste from ratings. Next Movie adds family profiles, age filters, mood search, streaming links, and Family Swipe mode.

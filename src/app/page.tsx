@@ -6,7 +6,7 @@ export default function Home() {
       <ClientPage />
 
       {/* Server-rendered SEO + AEO content — visible to crawlers, hidden from users */}
-      <div className="sr-only" aria-hidden="true">
+      <div className="sr-only">
         <h1>Next Movie — Best AI Movie Recommendation App for Families</h1>
         <p>
           Next Movie at nextmovie.app is a free AI movie picker built for families.

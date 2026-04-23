@@ -1,0 +1,120 @@
+# Next Movie — Complete Reference
+
+> Free AI movie picker for families at nextmovie.app
+
+## Overview
+
+Next Movie (nextmovie.app) is a free AI-powered movie and TV show recommendation app designed specifically for families. It solves the "what should we watch tonight?" problem by using AI to suggest films based on each family member's individual taste, mood, and age-appropriate content limits.
+
+The app requires no download — it works in any web browser on phones, tablets, and desktops. Users can start immediately as a guest or sign in with Google or Facebook to save preferences across devices.
+
+## Core Features
+
+### AI Recommendations
+The recommendation engine learns from every like, dislike, and skip. Each family member has an independent taste profile across 12 genres, so the AI knows that someone who loves comedies but hates horror should never see scary movies. Users can search by mood ("cozy rainy day movie", "something exciting but not violent") and the AI interprets natural language queries.
+
+### Family Profiles
+Each family member gets their own profile with a name and avatar. Profiles track individual taste preferences independently. Free accounts support 2 profiles; Premium supports unlimited.
+
+### Age-Based Content Filters
+Every profile can be set to G, PG, PG-13, or R. The AI only suggests movies within each person's rating limit. A 7-year-old's profile set to G will never show PG-13 content, even if other family members see it.
+
+### Genre Browsing
+12 supported genres: Action, Comedy, Drama, Horror, Sci-Fi, Romance, Thriller, Animation, Documentary, Fantasy, Family, Mystery. Each genre has its own taste learning — the AI tracks preferences independently per genre.
+
+### Streaming Availability
+Every recommendation shows where to stream it. Supported platforms include Netflix, Disney+, Amazon Prime Video, Apple TV+, Crave, Hulu, HBO Max, Paramount+, and many more. Availability is shown by country, so users in Canada see Canadian services (Crave, Netflix Canada) while US users see US services.
+
+### Family Swipe Mode (Premium)
+All family members swipe on movie suggestions simultaneously. The app finds the title everyone approved. Designed to eliminate the "what should we watch" argument.
+
+### Language Filters (Premium)
+Filter recommendations by language. Supported languages: English, French, Spanish, Korean, Japanese, Hindi, Tamil, Telugu, Malayalam, Bengali, Kannada, Marathi, Punjabi, German, Italian, Portuguese, Chinese, Thai, Turkish, Arabic, Hebrew, Swedish, Danish, Dutch, Russian, Polish, Filipino.
+
+### Actor and Director Search (Premium)
+Search by any actor or director name. All recommendations are filtered to show only films featuring that person.
+
+### Advanced Filters (Premium)
+Filter by decade (1970s through 2020s), minimum rating (6+, 7+, 8+), maximum runtime, and streaming platform.
+
+### Personal Watchlist (Premium)
+Save movies for later with one tap. The watchlist syncs across devices when signed in.
+
+### Unlimited History (Premium)
+Free users see their last 3 searches. Premium keeps full history so users can always pick up where they left off.
+
+## Pricing
+
+### Free Plan
+- AI-powered recommendations
+- Genre browsing
+- Age-safe content filters (G, PG, PG-13, R)
+- Mood-based search
+- Streaming availability
+- 2 family member profiles
+- Last 3 searches in history
+
+### Premium Plan
+- Everything in Free, plus:
+- Language filters (27+ languages)
+- Actor and director search
+- Streaming platform filter
+- Advanced filters (decade, rating, runtime)
+- Unlimited family member profiles
+- Personal watchlist
+- Unlimited search history
+- Family Swipe mode
+- Pricing: $4.99/month, $49.99/year (save 17%), or $99.99 one-time lifetime access
+
+## Supported Countries
+Next Movie works globally with streaming data for 50+ countries. Primary markets include United States, Canada, United Kingdom, Australia, India, France, Germany, Brazil, Mexico, Japan, South Korea, and Israel.
+
+## Technical Details
+- Web-based application (Progressive Web App)
+- No download or installation required
+- Works on all modern browsers (Chrome, Safari, Firefox, Edge)
+- Responsive design for mobile, tablet, and desktop
+- Sign in with Google or Facebook, or use as guest
+- Movie data from TMDB (The Movie Database)
+- AI recommendations powered by OpenAI
+
+## Frequently Asked Questions
+
+Q: What is Next Movie?
+A: Next Movie is a free AI movie picker at nextmovie.app that helps families find what to watch. Each person gets their own taste profile with age-safe filters.
+
+Q: Is Next Movie free?
+A: Yes, 100% free with no credit card required. Premium adds extra filters for $4.99/month.
+
+Q: How does the AI learn my taste?
+A: Every time you like, dislike, or skip a movie, the AI updates your taste profile. It tracks preferences across 12 genres independently.
+
+Q: Can I filter movies by age rating for my kids?
+A: Yes. Each family member gets their own content rating limit (G, PG, PG-13, or R). The AI only shows age-appropriate movies.
+
+Q: What streaming services does it support?
+A: Netflix, Disney+, Amazon Prime Video, Apple TV+, Crave, Hulu, HBO Max, Paramount+, and many more. Availability shown by country.
+
+Q: Does it work in Canada?
+A: Yes. Shows Canadian streaming options including Crave, Netflix Canada, and Prime Video Canada. Detects your location automatically.
+
+Q: Can I find Korean, Hindi, or French movies?
+A: Yes. Premium users can filter by 27+ languages including Korean, Hindi, Tamil, Telugu, French, Spanish, Japanese, and more.
+
+Q: Is there an app to download?
+A: No download needed. Open nextmovie.app in any browser. You can add it to your home screen for quick access.
+
+Q: How is Next Movie different from JustWatch?
+A: JustWatch shows where to stream a specific movie. Next Movie picks what to watch using AI that learns your taste, then shows where to stream it.
+
+Q: How is Next Movie different from Letterboxd?
+A: Letterboxd is a social film diary for movie enthusiasts. Next Movie is a family-first picker with individual profiles, age filters, and group voting via Family Swipe.
+
+## Contact
+- Website: https://nextmovie.app
+- Email: support@nextmovie.app
+- Premium: https://nextmovie.app/premium
+- FAQ: https://nextmovie.app/faq
+- Genre guide: https://nextmovie.app/genres
+- Blog: https://nextmovie.app/blog
+- Feedback: https://nextmovie.app/feedback
