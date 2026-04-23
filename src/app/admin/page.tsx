@@ -74,6 +74,14 @@ interface Stats {
   }[];
 }
 
+interface AdPeriod {
+  spend: number; impressions: number; reach: number; clicks: number;
+  ctr: number; cpc: number; frequency: number; linkClicks: number;
+}
+interface FacebookAds {
+  today: AdPeriod; yesterday: AdPeriod; last7d: AdPeriod; last30d: AdPeriod;
+}
+
 interface DayStats {
   users: number; sessions: number; pageViews: number;
   newUsers: number; avgSessionDuration: number; bounceRate: number;
@@ -109,6 +117,8 @@ export default function AdminPage() {
   const [expandedMonths, setExpandedMonths] = useState<Set<string>>(new Set());
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[] | null>(null);
   const [filterStats, setFilterStats] = useState<FilterStats | null>(null);
+  const [facebookAds, setFacebookAds] = useState<FacebookAds | null>(null);
+  const [facebookAdsError, setFacebookAdsError] = useState<string | null>(null);
   const [grantStatus, setGrantStatus] = useState<Record<string, "sending" | "sent" | "error">>({});
 
   useEffect(() => {
@@ -196,13 +206,20 @@ export default function AdminPage() {
     Promise.all([
       fetch("/api/admin/stats").then(r => r.ok ? r.json() : null),
       fetch("/api/admin/analytics").then(r => r.json()).catch(() => ({ error: "Network error reaching analytics API" })),
-    ]).then(([s, a]) => {
+      fetch("/api/admin/facebook-ads").then(r => r.json()).catch(() => ({ error: "Network error" })),
+    ]).then(([s, a, fb]) => {
       if (s) setStats(s);
       if (a && !a.error) {
         setAnalytics(a);
         setAnalyticsError(null);
       } else if (a?.error) {
         setAnalyticsError(a.error);
+      }
+      if (fb && !fb.error) {
+        setFacebookAds(fb);
+        setFacebookAdsError(null);
+      } else if (fb?.error) {
+        setFacebookAdsError(fb.error);
       }
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -884,6 +901,86 @@ export default function AdminPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Facebook Ads */}
+                {facebookAds ? (
+                  <div className="bg-gray-900 border border-blue-800/30 rounded-2xl p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-blue-400 text-lg">📘</span>
+                      <h3 className="text-gray-400 text-xs uppercase tracking-wider">Facebook Ads</h3>
+                    </div>
+                    {/* Today vs Yesterday */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                      {([
+                        { label: "Spend", today: facebookAds.today.spend, yest: facebookAds.yesterday.spend, prefix: "$", lowerIsBetter: true },
+                        { label: "Reach", today: facebookAds.today.reach, yest: facebookAds.yesterday.reach },
+                        { label: "Clicks", today: facebookAds.today.clicks, yest: facebookAds.yesterday.clicks },
+                        { label: "CTR", today: facebookAds.today.ctr, yest: facebookAds.yesterday.ctr, suffix: "%" },
+                        { label: "CPC", today: facebookAds.today.cpc, yest: facebookAds.yesterday.cpc, prefix: "$", lowerIsBetter: true },
+                        { label: "Impressions", today: facebookAds.today.impressions, yest: facebookAds.yesterday.impressions },
+                        { label: "Frequency", today: facebookAds.today.frequency, yest: facebookAds.yesterday.frequency, lowerIsBetter: true },
+                        { label: "Link Clicks", today: facebookAds.today.linkClicks, yest: facebookAds.yesterday.linkClicks },
+                      ] as { label: string; today: number; yest: number; prefix?: string; suffix?: string; lowerIsBetter?: boolean }[]).map(({ label, today, yest, prefix = "", suffix = "", lowerIsBetter }) => {
+                        const diff = today - yest;
+                        const pct = yest > 0 ? ((diff / yest) * 100).toFixed(0) : null;
+                        const up = diff > 0;
+                        const good = lowerIsBetter ? !up : up;
+                        const color = diff === 0 || !pct ? "text-gray-500" : good ? "text-green-400" : "text-red-400";
+                        return (
+                          <div key={label} className="bg-gray-800/50 rounded-xl p-3">
+                            <p className="text-gray-500 text-xs mb-1">{label}</p>
+                            <p className="text-white text-lg font-bold">{prefix}{typeof today === "number" && today % 1 !== 0 ? today.toFixed(2) : today.toLocaleString()}{suffix}</p>
+                            <p className={`text-[10px] mt-0.5 ${color}`}>
+                              {diff > 0 ? "▲" : diff < 0 ? "▼" : "—"}{pct ? ` ${Math.abs(Number(pct))}%` : ""} <span className="text-gray-600">vs {prefix}{yest}{suffix}</span>
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* 7d and 30d totals */}
+                    <div className="grid grid-cols-2 gap-3 border-t border-gray-800 pt-4">
+                      <div>
+                        <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Last 7 days</p>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between"><span className="text-gray-400">Spend</span><span className="text-white font-semibold">${facebookAds.last7d.spend.toFixed(2)}</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400">Reach</span><span className="text-white font-semibold">{facebookAds.last7d.reach.toLocaleString()}</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400">Clicks</span><span className="text-white font-semibold">{facebookAds.last7d.clicks.toLocaleString()}</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400">CTR</span><span className="text-white font-semibold">{facebookAds.last7d.ctr}%</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400">CPC</span><span className="text-white font-semibold">${facebookAds.last7d.cpc.toFixed(2)}</span></div>
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 text-xs uppercase tracking-wider mb-2">Last 30 days</p>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between"><span className="text-gray-400">Spend</span><span className="text-white font-semibold">${facebookAds.last30d.spend.toFixed(2)}</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400">Reach</span><span className="text-white font-semibold">{facebookAds.last30d.reach.toLocaleString()}</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400">Clicks</span><span className="text-white font-semibold">{facebookAds.last30d.clicks.toLocaleString()}</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400">CTR</span><span className="text-white font-semibold">{facebookAds.last30d.ctr}%</span></div>
+                          <div className="flex justify-between"><span className="text-gray-400">CPC</span><span className="text-white font-semibold">${facebookAds.last30d.cpc.toFixed(2)}</span></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : facebookAdsError ? (
+                  <div className="bg-gray-900 border border-gray-700/40 rounded-2xl p-5">
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-blue-400 text-lg">📘</span>
+                      <h3 className="text-gray-400 text-xs uppercase tracking-wider">Facebook Ads</h3>
+                    </div>
+                    {facebookAdsError.includes("env vars") ? (
+                      <>
+                        <p className="text-gray-500 text-sm mb-3">Add these env vars to Vercel to enable:</p>
+                        <div className="bg-gray-800 rounded-xl p-4 text-sm font-mono">
+                          <p className="text-blue-400">META_ACCESS_TOKEN=<span className="text-gray-500">your-long-lived-token</span></p>
+                          <p className="text-blue-400 mt-1">META_AD_ACCOUNT_ID=<span className="text-gray-500">your-account-id</span></p>
+                        </div>
+                        <p className="text-gray-600 text-xs mt-3">Get these from Meta Business Manager → Settings → Ad Accounts</p>
+                      </>
+                    ) : (
+                      <p className="text-red-400 text-sm font-mono break-all">{facebookAdsError}</p>
+                    )}
+                  </div>
+                ) : null}
 
                 {/* Top pages */}
                 <div className="bg-gray-900 border border-gray-700/40 rounded-2xl p-5">
