@@ -9,7 +9,7 @@ export default function PricingCards() {
 
   const handleCheckout = async (plan: string) => {
     if (!session) {
-      signIn("google");
+      signIn();
       return;
     }
     setLoading(plan);

@@ -282,7 +282,7 @@ export default function AdminPage() {
 
             {/* Key metrics */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-              <MetricCard label="Google Sign-ins" value={stats.users.googleSignIns} color="text-purple-400" />
+              <MetricCard label="Sign-ins" value={stats.users.googleSignIns} color="text-purple-400" />
               <MetricCard label="Guest Sessions" value={stats.users.guestSessions} color="text-gray-400" />
               <MetricCard label="Total Members" value={stats.users.totalMembers} color="text-blue-400" />
               <MetricCard label="Premium Users" value={stats.users.premiumUsers} color="text-green-400" />

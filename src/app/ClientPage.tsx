@@ -920,7 +920,7 @@ export default function ClientPage() {
 
   // Not signed in and not guest — show landing page
   if (!session && !guestMode) {
-    return <LandingPage onSignIn={() => signIn("google")} onGuest={async () => {
+    return <LandingPage onSignIn={() => signIn()} onGuest={async () => {
       // Clear any old guest session so it's fresh
       await fetch("/api/guest/clear", { method: "POST" });
       setMembers([]);
@@ -1011,7 +1011,7 @@ export default function ClientPage() {
               )}
               {isGuest ? (
                 <button
-                  onClick={() => signIn("google")}
+                  onClick={() => signIn()}
                   className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-2.5 py-1 rounded-lg"
                 >
                   Sign in
