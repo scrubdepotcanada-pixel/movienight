@@ -1078,7 +1078,7 @@ export default function ClientPage() {
                   </div>
                   <div className="relative">
                     <div className="flex items-center justify-center gap-4 mb-4">
-                      <img src="/popcorn-clapperboard.png" alt="" className="w-20 h-20 sm:w-28 sm:h-28 object-contain flex-shrink-0" />
+                      <img src="/popcorn-clapperboard.png" alt="" className="w-28 h-28 sm:w-36 sm:h-36 object-contain flex-shrink-0" />
                       <div className="text-left">
                         <h2 className="text-4xl sm:text-5xl font-bold mb-2">
                           <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Who&apos;s watching</span> tonight?
