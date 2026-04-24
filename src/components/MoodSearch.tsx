@@ -60,17 +60,17 @@ export default function MoodSearch({ onSearch, loading }: MoodSearchProps) {
 
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
-      {/* Describe it yourself */}
-      <div className="bg-gray-800/40 border border-gray-700/40 rounded-2xl p-4">
-        <p className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Describe what you want</p>
-        <form onSubmit={handleSubmit}>
+      {/* Primary: vibe input + mood pills (one unified card) */}
+      <div className="bg-gray-800/50 border border-purple-700/30 rounded-2xl p-5 shadow-lg shadow-purple-900/10">
+        <p className="text-center text-white text-sm font-medium mb-3">What vibe tonight?</p>
+        <form onSubmit={handleSubmit} className="mb-4">
           <div className="relative">
             <input
               type="text"
               value={customMood}
               onChange={(e) => setCustomMood(e.target.value)}
               placeholder={`e.g. ${placeholder}`}
-              className="w-full px-5 py-3.5 bg-gray-900/60 border border-gray-600/50 rounded-xl text-white text-base placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all pr-24"
+              className="w-full px-5 py-3.5 bg-gray-900/60 border border-gray-600/50 rounded-xl text-white text-base placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all pr-32"
               disabled={loading}
             />
             <button
@@ -78,15 +78,10 @@ export default function MoodSearch({ onSearch, loading }: MoodSearchProps) {
               disabled={loading || !customMood.trim()}
               className="absolute right-2 top-1/2 -translate-y-1/2 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white px-4 py-2 rounded-xl font-medium transition-colors text-sm"
             >
-              {loading ? "..." : "Go"}
+              {loading ? "..." : "Show picks"}
             </button>
           </div>
         </form>
-      </div>
-
-      {/* Mood presets */}
-      <div className="bg-purple-950/30 border border-purple-800/30 rounded-2xl p-4">
-        <p className="text-center text-purple-400 text-xs uppercase tracking-wider mb-3">How are you feeling?</p>
         <div className="flex flex-wrap justify-center gap-2">
           {MOOD_PRESETS.map((preset) => (
             <button
@@ -102,9 +97,9 @@ export default function MoodSearch({ onSearch, loading }: MoodSearchProps) {
         </div>
       </div>
 
-      {/* Theme presets */}
-      <div className="bg-pink-950/20 border border-pink-800/25 rounded-2xl p-4">
-        <p className="text-center text-pink-400 text-xs uppercase tracking-wider mb-3">Pick a theme</p>
+      {/* Secondary: theme presets */}
+      <div className="bg-gray-800/30 border border-gray-700/30 rounded-2xl p-4">
+        <p className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Jump right in</p>
         <div className="flex flex-wrap justify-center gap-2">
           {THEME_PRESETS.map((preset) => (
             <button

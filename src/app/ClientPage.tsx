@@ -1134,7 +1134,7 @@ export default function ClientPage() {
                 <h2 className="text-2xl sm:text-3xl font-bold mb-1">
                   Hey {selectedMember.name}! {selectedMember.avatar}
                 </h2>
-                <p className="text-gray-300 text-lg">What are you looking for?</p>
+                <p className="text-gray-300 text-lg">What are we watching tonight?</p>
               </div>
             </div>
 
@@ -1143,9 +1143,15 @@ export default function ClientPage() {
               <ContentTypeToggle value={contentType} onChange={(v) => { setContentType(v); setSearchResults([]); setSelectedSearchId(null); }} />
             </div>
 
-            {/* Instant start scenarios */}
+            {/* PRIMARY: Mood / vibe search */}
+            <div id="mood-search" className="mb-6">
+              <MoodSearch onSearch={handleMoodSearch} loading={loading} />
+            </div>
+
+            {/* SECONDARY: Instant start scenarios (first-time users only) */}
             {activeCategories.filter(({ category }) => category !== "general").length === 0 && (
-              <div className="max-w-2xl mx-auto mb-8">
+              <div className="max-w-2xl mx-auto mb-6">
+                <p className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Quick starts</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {[
                     { emoji: "👨‍👩‍👧‍👦", label: "Family movie night", mood: "family-friendly movie everyone can enjoy, fun and heartwarming, PG rated", category: "Family Night" },
@@ -1169,9 +1175,18 @@ export default function ClientPage() {
               </div>
             )}
 
-            {/* Search by title — primary */}
-            <div className="max-w-xl mx-auto mb-6">
-              <h3 className="text-center text-gray-400 text-sm mb-3">Know what you like? Search by title</h3>
+            {/* TERTIARY: Genre grid */}
+            <div className="mb-6">
+              <h3 className="text-center text-gray-400 text-xs uppercase tracking-wider mb-3">Browse by genre</h3>
+              <GenreSelector onSelect={handleSelectCategory} loading={loading} />
+            </div>
+
+            {/* UTILITY: Search by title (demoted) */}
+            <div className="max-w-lg mx-auto mb-4">
+              <div className="flex items-center gap-2 text-gray-500 text-xs mb-2 justify-center">
+                <span>🔍</span>
+                <span>Know a title? Search directly</span>
+              </div>
               <SearchBar onSearch={handleSearch} loading={loading} />
 
               {searchResults.length > 0 ? (
@@ -1210,21 +1225,21 @@ export default function ClientPage() {
                       We couldn&apos;t find a {contentType === "show" ? "show" : "movie"} called &ldquo;{lastSearchQuery}&rdquo;
                     </p>
                     <p className="text-gray-500 text-sm mb-4">
-                      This search works best with an exact title — try the mood search below to describe what you&apos;re after
+                      Try the vibe search above to describe what you&apos;re after
                     </p>
                     <button
                       onClick={() => { setLastSearchQuery(null); document.getElementById("mood-search")?.scrollIntoView({ behavior: "smooth" }); }}
                       className="text-sm text-purple-400 hover:text-purple-300 underline transition-colors"
                     >
-                      Try mood search instead →
+                      Try vibe search instead →
                     </button>
                   </div>
                 )}
             </div>
 
-            {/* Pick up where you left off — collapsible */}
+            {/* UTILITY: Pick up where you left off — collapsible */}
             {activeCategories.filter(({ category }) => category !== "general").length > 0 && (
-              <div className="mb-8 max-w-xl mx-auto">
+              <div className="mb-4 max-w-lg mx-auto">
                 <button
                   onClick={() => setShowHistory(!showHistory)}
                   className="w-full flex items-center justify-center gap-2 bg-gray-800/50 hover:bg-gray-800/80 border border-gray-700/50 rounded-xl px-4 py-2.5 transition-all text-sm"
@@ -1279,23 +1294,12 @@ export default function ClientPage() {
               </div>
             )}
 
-            {/* Describe what you want — mood or theme */}
-            <div id="mood-search">
-              <MoodSearch onSearch={handleMoodSearch} loading={loading} />
-            </div>
-
-            {/* Category grid */}
-            <div className="mt-8">
-              <h3 className="text-center text-gray-400 text-sm mb-4">Or pick a genre</h3>
-              <GenreSelector onSelect={handleSelectCategory} loading={loading} />
-            </div>
-
             {/* Advanced Filters — premium */}
             {!isGuest && (
-              <div className="mt-6 text-center">
+              <div className="mt-2 text-center">
                 <button
                   onClick={() => isPremium ? setShowAdvancedFilters(true) : openPremiumModal("Advanced filters")}
-                  className="inline-flex items-center gap-2 text-gray-400 hover:text-white text-sm transition-colors"
+                  className="inline-flex items-center gap-2 text-gray-500 hover:text-white text-xs transition-colors"
                 >
                   <span>🎚️</span>
                   <span>Advanced Filters</span>
