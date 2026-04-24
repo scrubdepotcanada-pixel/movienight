@@ -872,40 +872,46 @@ export default function ClientPage() {
         </div>
       )}
 
-      {/* Movie/Show row - 6 cards, deduped */}
+      {/* Movie/Show row - 6 cards, deduped, #1 crowned */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
         {(() => {
           const seen = new Set<string>();
-          return recommendations
+          const filtered = recommendations
             .filter((m) => {
-              // Remove liked movies
               if (categoryLiked.some((l) => l.title === m.title)) return false;
-              // Dedup by title (case-insensitive)
               const key = m.title.toLowerCase();
               if (seen.has(key)) return false;
               seen.add(key);
               return true;
             })
-            .slice(0, 6)
-            .map((movie) => (
-          <MovieCard
-            key={movie.id}
-            movie={movie}
-            showLike
-            onLike={() => handleLike(movie)}
-            likeLoading={likeLoadingId === movie.id}
-            showPass
-            onPass={() => handlePass(movie)}
-            passLoading={passLoadingId === movie.id}
-            showDislike
-            onDislike={() => handleDislike(movie)}
-            dislikeLoading={dislikeLoadingId === movie.id}
-            contentType={contentType}
-            onPersonClick={!isGuest ? handlePersonClick : undefined}
-            onAddToWatchlist={!isGuest && isPremium ? () => handleAddToWatchlist(movie) : undefined}
-            isOnWatchlist={watchlistIds.has(movie.id)}
-          />
-        ));
+            .slice(0, 6);
+          return filtered.map((movie, idx) => (
+            <div key={movie.id} className={idx === 0 ? "relative" : ""}>
+              {idx === 0 && (
+                <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10 bg-gradient-to-r from-amber-500 to-yellow-400 text-black text-[10px] sm:text-xs font-bold px-3 py-0.5 rounded-full shadow-lg whitespace-nowrap">
+                  Top pick for tonight
+                </div>
+              )}
+              <div className={idx === 0 ? "ring-2 ring-amber-500/40 rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.15)]" : ""}>
+                <MovieCard
+                  movie={movie}
+                  showLike
+                  onLike={() => handleLike(movie)}
+                  likeLoading={likeLoadingId === movie.id}
+                  showPass
+                  onPass={() => handlePass(movie)}
+                  passLoading={passLoadingId === movie.id}
+                  showDislike
+                  onDislike={() => handleDislike(movie)}
+                  dislikeLoading={dislikeLoadingId === movie.id}
+                  contentType={contentType}
+                  onPersonClick={!isGuest ? handlePersonClick : undefined}
+                  onAddToWatchlist={!isGuest && isPremium ? () => handleAddToWatchlist(movie) : undefined}
+                  isOnWatchlist={watchlistIds.has(movie.id)}
+                />
+              </div>
+            </div>
+          ));
         })()}
       </div>
     </div>
@@ -1135,6 +1141,32 @@ export default function ClientPage() {
             <div className="flex justify-center mb-6">
               <ContentTypeToggle value={contentType} onChange={(v) => { setContentType(v); setSearchResults([]); setSelectedSearchId(null); }} />
             </div>
+
+            {/* Instant start scenarios */}
+            {activeCategories.filter(({ category }) => category !== "general").length === 0 && (
+              <div className="max-w-2xl mx-auto mb-8">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    { emoji: "👨‍👩‍👧‍👦", label: "Family movie night", mood: "family-friendly movie everyone can enjoy, fun and heartwarming, PG rated", category: "Family Night" },
+                    { emoji: "😂", label: "Funny & smart", mood: "smart comedy that's actually funny and clever, not dumb slapstick", category: "Smart Comedy" },
+                    { emoji: "⚡", label: "Action, under 2hrs", mood: "fast-paced action movie under 2 hours that doesn't drag", category: "Quick Action" },
+                    { emoji: "✨", label: "Like Harry Potter", mood: "magical adventure with world-building and wonder, different from Harry Potter", category: "Magical Adventure" },
+                    { emoji: "🧒", label: "Kids + parents", mood: "animated or kids movie that parents actually enjoy watching too", category: "Kids Pick" },
+                    { emoji: "🌙", label: "Cozy & easy", mood: "cozy relaxing feel-good movie, nothing intense or stressful", category: "Cozy Night" },
+                  ].map((s) => (
+                    <button
+                      key={s.category}
+                      onClick={() => handleMoodSearch(s.mood, s.category)}
+                      disabled={loading}
+                      className="flex items-center gap-2 bg-gray-800/60 hover:bg-purple-600/30 border border-gray-700/50 hover:border-purple-500/50 rounded-xl px-4 py-3 text-left transition-all disabled:opacity-50"
+                    >
+                      <span className="text-xl">{s.emoji}</span>
+                      <span className="text-sm text-gray-200 font-medium">{s.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Search by title — primary */}
             <div className="max-w-xl mx-auto mb-6">
