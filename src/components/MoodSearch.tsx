@@ -61,7 +61,7 @@ export default function MoodSearch({ onSearch, loading }: MoodSearchProps) {
   return (
     <div className="w-full max-w-2xl mx-auto space-y-4">
       {/* Primary: vibe input + mood pills (one unified card) */}
-      <div className="bg-gray-800/50 border border-purple-700/30 rounded-2xl p-5 shadow-lg shadow-purple-900/10">
+      <div className="bg-gray-800/50 border border-purple-500/40 rounded-2xl p-5 shadow-lg shadow-purple-900/20 ring-1 ring-purple-500/10">
         <p className="text-center text-white text-sm font-medium mb-3">What vibe tonight?</p>
         <form onSubmit={handleSubmit} className="mb-4">
           <div className="relative">

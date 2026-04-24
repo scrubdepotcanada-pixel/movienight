@@ -1129,7 +1129,7 @@ export default function ClientPage() {
           <div className="pt-2">
             {/* Greeting */}
             <div className="flex items-center justify-center gap-4 mb-4">
-              <img src="/popcorn--surprised.png" alt="" className="w-20 h-20 sm:w-28 sm:h-28 object-contain flex-shrink-0" />
+              <img src="/popcorn--surprised.png" alt="" className="w-28 h-28 sm:w-36 sm:h-36 object-contain flex-shrink-0" />
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold mb-1">
                   Hey {selectedMember.name}! {selectedMember.avatar}
