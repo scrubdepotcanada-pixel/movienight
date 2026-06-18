@@ -329,3 +329,32 @@ export async function getReplacementShowsAI(
     fetchCount
   );
 }
+
+export async function getForYouAI(
+  likedMovies: string[],
+  watchedTitles: string[] = [],
+  dislikedTitles: string[] = [],
+  maxRating: MaxRating | null = null
+): Promise<MovieSuggestion[]> {
+  const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
+  const ratingBlock = ratingRestrictionPrompt(maxRating);
+  const count = 10 + bonusCount(maxRating);
+
+  const movieList = likedMovies.map((t) => `"${t}"`).join(", ");
+
+  return askForMovies(
+    `The user picked these 5 movies as ones they love: ${movieList}.
+
+Analyze their taste — what genres, themes, tones, eras, and styles do they gravitate toward? Then recommend ${count} movies they should watch next.
+
+Rules:
+- Mix well-known crowd-pleasers with hidden gems they probably missed
+- Cover a range of genres that match their taste (don't just pick one genre)
+- Include movies from different decades
+- Do NOT include any of the 5 movies listed above
+${excludeBlock}${ratingBlock}
+
+Return exactly ${count} movies.`,
+    count
+  );
+}

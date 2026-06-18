@@ -150,6 +150,54 @@ export function providerLogoUrl(path: string): string {
   return `${TMDB_IMAGE_BASE}/w92${path}`;
 }
 
+export async function getPopularMovies(locale?: string): Promise<Movie[]> {
+  const res = await fetch(
+    `${TMDB_BASE}/movie/popular?language=${tmdbLanguage(locale)}&page=1`,
+    { headers: headers() }
+  );
+  const data = await res.json();
+  return (data.results || []).map((m: Record<string, unknown>) => ({
+    id: Number(m.id),
+    title: String(m.title || ""),
+    poster_path: m.poster_path ? String(m.poster_path) : null,
+    vote_average: Number(m.vote_average || 0),
+    overview: String(m.overview || ""),
+    release_date: String(m.release_date || ""),
+  }));
+}
+
+export async function getTopRatedMovies(locale?: string): Promise<Movie[]> {
+  const res = await fetch(
+    `${TMDB_BASE}/movie/top_rated?language=${tmdbLanguage(locale)}&page=1`,
+    { headers: headers() }
+  );
+  const data = await res.json();
+  return (data.results || []).map((m: Record<string, unknown>) => ({
+    id: Number(m.id),
+    title: String(m.title || ""),
+    poster_path: m.poster_path ? String(m.poster_path) : null,
+    vote_average: Number(m.vote_average || 0),
+    overview: String(m.overview || ""),
+    release_date: String(m.release_date || ""),
+  }));
+}
+
+export async function getTrendingMovies(locale?: string): Promise<Movie[]> {
+  const res = await fetch(
+    `${TMDB_BASE}/trending/movie/week?language=${tmdbLanguage(locale)}`,
+    { headers: headers() }
+  );
+  const data = await res.json();
+  return (data.results || []).map((m: Record<string, unknown>) => ({
+    id: Number(m.id),
+    title: String(m.title || ""),
+    poster_path: m.poster_path ? String(m.poster_path) : null,
+    vote_average: Number(m.vote_average || 0),
+    overview: String(m.overview || ""),
+    release_date: String(m.release_date || ""),
+  }));
+}
+
 // ── Credits & Person ────────────────────────────────────────────
 
 export interface CastMember {
