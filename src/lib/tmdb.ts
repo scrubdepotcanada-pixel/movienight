@@ -278,6 +278,7 @@ export async function getPersonMovies(personId: number, locale?: string): Promis
 
 export interface DiscoverFilters {
   minRating?: number;
+  minVoteCount?: number;
   decade?: string;
   maxRuntime?: number;
   genre?: number;
@@ -303,7 +304,7 @@ export async function discoverMovies(filters: DiscoverFilters, locale?: string, 
     include_adult: "false",
     language: tmdbLanguage(locale),
     sort_by: filters.sortBy || "vote_average.desc",
-    "vote_count.gte": "100",
+    "vote_count.gte": String(filters.minVoteCount || 100),
     page: String(page),
   });
   if (filters.minRating) params.set("vote_average.gte", String(filters.minRating));
