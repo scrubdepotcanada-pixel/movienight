@@ -49,6 +49,7 @@ export default function ClientPage() {
   const [loadingGrid, setLoadingGrid] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [gridPage, setGridPage] = useState(1);
+  const [showMoreCount, setShowMoreCount] = useState(0);
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [swipingId, setSwipingId] = useState<number | null>(null);
@@ -88,7 +89,11 @@ export default function ClientPage() {
     setLoadingMore(false);
   };
 
+  const MAX_SHOW_MORE = 10;
+
   const handleShowMore = () => {
+    if (showMoreCount >= MAX_SHOW_MORE) return;
+    setShowMoreCount((c: number) => c + 1);
     loadGrid(gridPage + 1, true, activeGenre);
   };
 
@@ -438,13 +443,17 @@ export default function ClientPage() {
 
               {/* Show More button */}
               <div className="mt-6 text-center">
-                <button
-                  onClick={handleShowMore}
-                  disabled={loadingMore}
-                  className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white font-medium px-6 py-2.5 rounded-full text-sm transition-all disabled:opacity-50"
-                >
-                  {loadingMore ? "Loading..." : "Show More Movies"}
-                </button>
+                {showMoreCount < MAX_SHOW_MORE ? (
+                  <button
+                    onClick={handleShowMore}
+                    disabled={loadingMore}
+                    className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white font-medium px-6 py-2.5 rounded-full text-sm transition-all disabled:opacity-50"
+                  >
+                    {loadingMore ? "Loading..." : `Show More Movies (${MAX_SHOW_MORE - showMoreCount} left)`}
+                  </button>
+                ) : (
+                  <p className="text-gray-600 text-sm">You&apos;ve loaded all available batches</p>
+                )}
               </div>
             </>
           )}
