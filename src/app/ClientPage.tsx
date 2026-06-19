@@ -62,11 +62,13 @@ export default function ClientPage() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [step]);
 
-  const loadGrid = async (page = 1, append = false) => {
+  const loadGrid = async (page = 1, append = false, genreId?: string | null) => {
     if (page === 1) setLoadingGrid(true);
     else setLoadingMore(true);
     try {
-      const res = await fetch(`/api/movies/popular-grid?page=${page}`);
+      const params = new URLSearchParams({ page: String(page) });
+      if (genreId) params.set("genre", genreId);
+      const res = await fetch(`/api/movies/popular-grid?${params}`);
       const data = await res.json();
       const newMovies: Movie[] = data.movies || [];
       if (append) {
@@ -87,7 +89,13 @@ export default function ClientPage() {
   };
 
   const handleShowMore = () => {
-    loadGrid(gridPage + 1, true);
+    loadGrid(gridPage + 1, true, activeGenre);
+  };
+
+  const handleGenreChange = (genreId: string | null) => {
+    setActiveGenre(genreId);
+    setGridPage(1);
+    loadGrid(1, false, genreId);
   };
 
   const handleSelectMember = (member: Member) => {
@@ -311,10 +319,6 @@ export default function ClientPage() {
       { id: 99, label: "Documentary" },
     ];
 
-    const filteredMovies = activeGenre
-      ? gridMovies.filter((m: Movie) => m.genre_ids?.includes(Number(activeGenre)))
-      : gridMovies;
-
     return (
       <div className="min-h-screen bg-[#0a0a1a] flex flex-col">
         <Header
@@ -337,7 +341,7 @@ export default function ClientPage() {
           {/* Genre filter chips */}
           <div className="flex gap-2 overflow-x-auto pb-4 mb-2 scrollbar-hide">
             <button
-              onClick={() => setActiveGenre(null)}
+              onClick={() => handleGenreChange(null)}
               className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                 !activeGenre
                   ? "bg-purple-600 text-white"
@@ -349,7 +353,7 @@ export default function ClientPage() {
             {GENRE_FILTERS.map((g) => (
               <button
                 key={g.id}
-                onClick={() => setActiveGenre(activeGenre === String(g.id) ? null : String(g.id))}
+                onClick={() => handleGenreChange(activeGenre === String(g.id) ? null : String(g.id))}
                 className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                   activeGenre === String(g.id)
                     ? "bg-purple-600 text-white"
@@ -368,7 +372,7 @@ export default function ClientPage() {
           ) : (
             <>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                {filteredMovies.map((movie: Movie) => {
+                {gridMovies.map((movie: Movie) => {
                   const isSelected = selectedIds.has(movie.id);
                   const isFull = count >= 5 && !isSelected;
                   return (
@@ -426,7 +430,7 @@ export default function ClientPage() {
                 })}
               </div>
 
-              {filteredMovies.length === 0 && (
+              {gridMovies.length === 0 && (
                 <div className="text-center text-gray-500 py-12">
                   No movies in this genre yet. Try &quot;Show More&quot; to load more.
                 </div>
@@ -515,12 +519,20 @@ export default function ClientPage() {
 
         <div className="flex-1 px-4 pt-4 pb-8 max-w-2xl mx-auto w-full">
           <div className="text-center mb-6">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
               Your Next Watch
             </h2>
-            <p className="text-gray-500 text-sm">
-              Swipe right = seen it &middot; Swipe left = not interested
-            </p>
+            <div className="flex items-center justify-center gap-6">
+              <div className="flex items-center gap-2">
+                <span className="text-2xl">👈</span>
+                <span className="text-red-400 font-bold text-sm">Not interested</span>
+              </div>
+              <div className="w-px h-6 bg-gray-700" />
+              <div className="flex items-center gap-2">
+                <span className="text-green-400 font-bold text-sm">Seen it</span>
+                <span className="text-2xl">👉</span>
+              </div>
+            </div>
           </div>
 
           {error && (

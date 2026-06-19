@@ -298,13 +298,13 @@ export function getGenreId(name: string): number | undefined {
   return GENRE_IDS[name.toLowerCase()];
 }
 
-export async function discoverMovies(filters: DiscoverFilters, locale?: string): Promise<Movie[]> {
+export async function discoverMovies(filters: DiscoverFilters, locale?: string, page = 1): Promise<Movie[]> {
   const params = new URLSearchParams({
     include_adult: "false",
     language: tmdbLanguage(locale),
     sort_by: filters.sortBy || "vote_average.desc",
     "vote_count.gte": "100",
-    page: "1",
+    page: String(page),
   });
   if (filters.minRating) params.set("vote_average.gte", String(filters.minRating));
   if (filters.maxRuntime) params.set("with_runtime.lte", String(filters.maxRuntime));
@@ -330,6 +330,7 @@ export async function discoverMovies(filters: DiscoverFilters, locale?: string):
     vote_average: Number(m.vote_average || 0),
     overview: String(m.overview || ""),
     release_date: String(m.release_date || ""),
+    genre_ids: Array.isArray(m.genre_ids) ? m.genre_ids.map(Number) : [],
   }));
 }
 
