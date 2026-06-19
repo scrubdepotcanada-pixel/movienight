@@ -16,6 +16,7 @@ export interface Movie {
   overview: string;
   release_date: string;
   certification?: string;
+  genre_ids?: number[];
 }
 
 export function posterUrl(path: string | null, size: string = "w342"): string {
@@ -150,9 +151,9 @@ export function providerLogoUrl(path: string): string {
   return `${TMDB_IMAGE_BASE}/w92${path}`;
 }
 
-export async function getPopularMovies(locale?: string): Promise<Movie[]> {
+export async function getPopularMovies(page = 1, locale?: string): Promise<Movie[]> {
   const res = await fetch(
-    `${TMDB_BASE}/movie/popular?language=${tmdbLanguage(locale)}&page=1`,
+    `${TMDB_BASE}/movie/popular?language=${tmdbLanguage(locale)}&page=${page}`,
     { headers: headers() }
   );
   const data = await res.json();
@@ -163,12 +164,13 @@ export async function getPopularMovies(locale?: string): Promise<Movie[]> {
     vote_average: Number(m.vote_average || 0),
     overview: String(m.overview || ""),
     release_date: String(m.release_date || ""),
+    genre_ids: Array.isArray(m.genre_ids) ? m.genre_ids.map(Number) : [],
   }));
 }
 
-export async function getTopRatedMovies(locale?: string): Promise<Movie[]> {
+export async function getTopRatedMovies(page = 1, locale?: string): Promise<Movie[]> {
   const res = await fetch(
-    `${TMDB_BASE}/movie/top_rated?language=${tmdbLanguage(locale)}&page=1`,
+    `${TMDB_BASE}/movie/top_rated?language=${tmdbLanguage(locale)}&page=${page}`,
     { headers: headers() }
   );
   const data = await res.json();
@@ -179,12 +181,13 @@ export async function getTopRatedMovies(locale?: string): Promise<Movie[]> {
     vote_average: Number(m.vote_average || 0),
     overview: String(m.overview || ""),
     release_date: String(m.release_date || ""),
+    genre_ids: Array.isArray(m.genre_ids) ? m.genre_ids.map(Number) : [],
   }));
 }
 
-export async function getTrendingMovies(locale?: string): Promise<Movie[]> {
+export async function getTrendingMovies(page = 1, locale?: string): Promise<Movie[]> {
   const res = await fetch(
-    `${TMDB_BASE}/trending/movie/week?language=${tmdbLanguage(locale)}`,
+    `${TMDB_BASE}/trending/movie/week?language=${tmdbLanguage(locale)}&page=${page}`,
     { headers: headers() }
   );
   const data = await res.json();
@@ -195,6 +198,7 @@ export async function getTrendingMovies(locale?: string): Promise<Movie[]> {
     vote_average: Number(m.vote_average || 0),
     overview: String(m.overview || ""),
     release_date: String(m.release_date || ""),
+    genre_ids: Array.isArray(m.genre_ids) ? m.genre_ids.map(Number) : [],
   }));
 }
 

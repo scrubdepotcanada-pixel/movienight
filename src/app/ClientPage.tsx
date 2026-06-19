@@ -12,6 +12,7 @@ interface Movie {
   overview?: string;
   release_date?: string;
   certification?: string;
+  genre_ids?: number[];
   providers?: {
     flatrate?: { provider_id: number; provider_name: string; logo_path: string }[];
   };
@@ -46,6 +47,9 @@ export default function ClientPage() {
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [recBuffer, setRecBuffer] = useState<Movie[]>([]);
   const [loadingGrid, setLoadingGrid] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [gridPage, setGridPage] = useState(1);
+  const [activeGenre, setActiveGenre] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [swipingId, setSwipingId] = useState<number | null>(null);
 
@@ -58,16 +62,32 @@ export default function ClientPage() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [step]);
 
-  const loadGrid = async () => {
-    setLoadingGrid(true);
+  const loadGrid = async (page = 1, append = false) => {
+    if (page === 1) setLoadingGrid(true);
+    else setLoadingMore(true);
     try {
-      const res = await fetch("/api/movies/popular-grid");
+      const res = await fetch(`/api/movies/popular-grid?page=${page}`);
       const data = await res.json();
-      setGridMovies(data.movies || []);
+      const newMovies: Movie[] = data.movies || [];
+      if (append) {
+        setGridMovies((prev: Movie[]) => {
+          const existingIds = new Set(prev.map((m: Movie) => m.id));
+          const unique = newMovies.filter((m: Movie) => !existingIds.has(m.id));
+          return [...prev, ...unique];
+        });
+      } else {
+        setGridMovies(newMovies);
+      }
+      setGridPage(page);
     } catch {
       setError("Couldn't load movies. Please try again.");
     }
     setLoadingGrid(false);
+    setLoadingMore(false);
+  };
+
+  const handleShowMore = () => {
+    loadGrid(gridPage + 1, true);
   };
 
   const handleSelectMember = (member: Member) => {
@@ -277,6 +297,24 @@ export default function ClientPage() {
   // ── Pick 5 movies ──
   if (step === "pick") {
     const count = selectedIds.size;
+
+    const GENRE_FILTERS: { id: number; label: string }[] = [
+      { id: 28, label: "Action" },
+      { id: 35, label: "Comedy" },
+      { id: 18, label: "Drama" },
+      { id: 27, label: "Horror" },
+      { id: 878, label: "Sci-Fi" },
+      { id: 10749, label: "Romance" },
+      { id: 53, label: "Thriller" },
+      { id: 16, label: "Animation" },
+      { id: 14, label: "Fantasy" },
+      { id: 99, label: "Documentary" },
+    ];
+
+    const filteredMovies = activeGenre
+      ? gridMovies.filter((m: Movie) => m.genre_ids?.includes(Number(activeGenre)))
+      : gridMovies;
+
     return (
       <div className="min-h-screen bg-[#0a0a1a] flex flex-col">
         <Header
@@ -287,7 +325,7 @@ export default function ClientPage() {
         />
 
         <div className="flex-1 px-4 pt-4 pb-32 max-w-4xl mx-auto w-full">
-          <div className="text-center mb-6">
+          <div className="text-center mb-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
               Pick 5 movies you love
             </h2>
@@ -296,69 +334,115 @@ export default function ClientPage() {
             </p>
           </div>
 
+          {/* Genre filter chips */}
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-2 scrollbar-hide">
+            <button
+              onClick={() => setActiveGenre(null)}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                !activeGenre
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+              }`}
+            >
+              All
+            </button>
+            {GENRE_FILTERS.map((g) => (
+              <button
+                key={g.id}
+                onClick={() => setActiveGenre(activeGenre === String(g.id) ? null : String(g.id))}
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                  activeGenre === String(g.id)
+                    ? "bg-purple-600 text-white"
+                    : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                }`}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+
           {loadingGrid ? (
             <div className="flex items-center justify-center py-20">
               <div className="text-gray-400">Loading movies...</div>
             </div>
           ) : (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-              {gridMovies.map((movie: Movie) => {
-                const isSelected = selectedIds.has(movie.id);
-                const isFull = count >= 5 && !isSelected;
-                return (
-                  <button
-                    key={movie.id}
-                    onClick={() => toggleMovie(movie.id)}
-                    disabled={isFull}
-                    className={`relative group rounded-xl overflow-hidden transition-all duration-200 ${
-                      isSelected
-                        ? "ring-3 ring-amber-400 scale-[1.03] shadow-lg shadow-amber-400/20"
-                        : isFull
-                          ? "opacity-40 cursor-not-allowed"
-                          : "hover:scale-[1.03] hover:shadow-lg"
-                    }`}
-                  >
-                    {movie.poster_path ? (
-                      <img
-                        src={posterUrl(movie.poster_path, "w342")}
-                        alt={movie.title}
-                        className="w-full aspect-[2/3] object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full aspect-[2/3] bg-gray-800 flex items-center justify-center text-gray-600 text-xs p-2 text-center">
-                        {movie.title}
-                      </div>
-                    )}
-
-                    {isSelected && (
-                      <div className="absolute inset-0 bg-amber-400/20 flex items-center justify-center">
-                        <div className="w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center shadow-lg">
-                          <svg className="w-6 h-6 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
+            <>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                {filteredMovies.map((movie: Movie) => {
+                  const isSelected = selectedIds.has(movie.id);
+                  const isFull = count >= 5 && !isSelected;
+                  return (
+                    <button
+                      key={movie.id}
+                      onClick={() => toggleMovie(movie.id)}
+                      disabled={isFull}
+                      className={`relative group rounded-xl overflow-hidden transition-all duration-200 ${
+                        isSelected
+                          ? "ring-3 ring-amber-400 scale-[1.03] shadow-lg shadow-amber-400/20"
+                          : isFull
+                            ? "opacity-40 cursor-not-allowed"
+                            : "hover:scale-[1.03] hover:shadow-lg"
+                      }`}
+                    >
+                      {movie.poster_path ? (
+                        <img
+                          src={posterUrl(movie.poster_path, "w342")}
+                          alt={movie.title}
+                          className="w-full aspect-[2/3] object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="w-full aspect-[2/3] bg-gray-800 flex items-center justify-center text-gray-600 text-xs p-2 text-center">
+                          {movie.title}
                         </div>
+                      )}
+
+                      {isSelected && (
+                        <div className="absolute inset-0 bg-amber-400/20 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center shadow-lg">
+                            <svg className="w-6 h-6 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-2 pt-8">
+                        <p className="text-white text-xs font-medium leading-tight line-clamp-2">
+                          {movie.title}
+                        </p>
+                        <p className="text-gray-400 text-[10px]">
+                          {movie.release_date?.slice(0, 4)}
+                        </p>
                       </div>
-                    )}
 
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-2 pt-8">
-                      <p className="text-white text-xs font-medium leading-tight line-clamp-2">
-                        {movie.title}
-                      </p>
-                      <p className="text-gray-400 text-[10px]">
-                        {movie.release_date?.slice(0, 4)}
-                      </p>
-                    </div>
+                      <div className="absolute top-1.5 left-1.5">
+                        <span className="text-[10px] font-bold bg-black/70 text-amber-400 px-1.5 py-0.5 rounded">
+                          {movie.vote_average.toFixed(1)}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
 
-                    <div className="absolute top-1.5 left-1.5">
-                      <span className="text-[10px] font-bold bg-black/70 text-amber-400 px-1.5 py-0.5 rounded">
-                        {movie.vote_average.toFixed(1)}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+              {filteredMovies.length === 0 && (
+                <div className="text-center text-gray-500 py-12">
+                  No movies in this genre yet. Try &quot;Show More&quot; to load more.
+                </div>
+              )}
+
+              {/* Show More button */}
+              <div className="mt-6 text-center">
+                <button
+                  onClick={handleShowMore}
+                  disabled={loadingMore}
+                  className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white font-medium px-6 py-2.5 rounded-full text-sm transition-all disabled:opacity-50"
+                >
+                  {loadingMore ? "Loading..." : "Show More Movies"}
+                </button>
+              </div>
+            </>
           )}
         </div>
 

@@ -3,11 +3,12 @@ import { getPopularMovies, getTopRatedMovies, getTrendingMovies } from "@/lib/tm
 
 export async function GET(req: NextRequest) {
   const locale = req.cookies.get("locale")?.value;
+  const page = Number(req.nextUrl.searchParams.get("page") || "1");
 
   const [popular, topRated, trending] = await Promise.all([
-    getPopularMovies(locale),
-    getTopRatedMovies(locale),
-    getTrendingMovies(locale),
+    getPopularMovies(page, locale),
+    getTopRatedMovies(page, locale),
+    getTrendingMovies(page, locale),
   ]);
 
   const seen = new Set<number>();
