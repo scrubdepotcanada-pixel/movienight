@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   const allMovies = await resolveAISuggestions(suggestions, locale);
   const movies = allMovies
     .filter((m) => isMovieAllowed(m.certification, maxRating))
-    .slice(0, 10);
+    .slice(0, 20);
 
   const providers: Record<number, WatchProviders> = {};
   await Promise.all(

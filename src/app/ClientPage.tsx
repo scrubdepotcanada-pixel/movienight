@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import MemberSelector from "@/components/MemberSelector";
 
@@ -44,8 +44,10 @@ export default function ClientPage() {
   const [gridMovies, setGridMovies] = useState<Movie[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
+  const [recBuffer, setRecBuffer] = useState<Movie[]>([]);
   const [loadingGrid, setLoadingGrid] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [swipingId, setSwipingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (status !== "authenticated" && !guestMode) return;
@@ -98,8 +100,8 @@ export default function ClientPage() {
 
   const handleGetRecommendations = async () => {
     const titles = gridMovies
-      .filter((m) => selectedIds.has(m.id))
-      .map((m) => m.title);
+      .filter((m: Movie) => selectedIds.has(m.id))
+      .map((m: Movie) => m.title);
 
     if (titles.length < 5) return;
 
@@ -116,13 +118,54 @@ export default function ClientPage() {
         }),
       });
       const data = await res.json();
-      setRecommendations(data.movies || []);
+      const all = data.movies || [];
+      setRecommendations(all.slice(0, 10));
+      setRecBuffer(all.slice(10));
       setStep("results");
     } catch {
       setError("Something went wrong. Please try again.");
       setStep("pick");
     }
   };
+
+  const handleSwipe = useCallback((movie: Movie, direction: "left" | "right") => {
+    setSwipingId(movie.id);
+
+    setTimeout(() => {
+      setRecommendations((prev: Movie[]) => {
+        const idx = prev.findIndex((m: Movie) => m.id === movie.id);
+        if (idx === -1) return prev;
+        const next = [...prev];
+        next.splice(idx, 1);
+        return next;
+      });
+
+      setRecBuffer((prev: Movie[]) => {
+        if (prev.length === 0) return prev;
+        const [replacement, ...rest] = prev;
+        setRecommendations((recs: Movie[]) => [...recs, replacement]);
+        return rest;
+      });
+
+      setSwipingId(null);
+    }, 300);
+
+    if (selectedMember) {
+      if (direction === "right") {
+        fetch("/api/movies/watched", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ memberId: selectedMember.id, movie, category: "for-you" }),
+        }).catch(() => {});
+      } else {
+        fetch("/api/movies/dislike", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ memberId: selectedMember.id, movie, category: "for-you" }),
+        }).catch(() => {});
+      }
+    }
+  }, [selectedMember]);
 
   const handleStartOver = () => {
     setSelectedIds(new Set());
@@ -259,7 +302,7 @@ export default function ClientPage() {
             </div>
           ) : (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-              {gridMovies.map((movie) => {
+              {gridMovies.map((movie: Movie) => {
                 const isSelected = selectedIds.has(movie.id);
                 const isFull = count >= 5 && !isSelected;
                 return (
@@ -387,12 +430,12 @@ export default function ClientPage() {
         />
 
         <div className="flex-1 px-4 pt-4 pb-8 max-w-2xl mx-auto w-full">
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
               Your Next Watch
             </h2>
             <p className="text-gray-500 text-sm">
-              Based on your 5 picks, here&apos;s what we think you&apos;ll love
+              Swipe right = seen it &middot; Swipe left = not interested
             </p>
           </div>
 
@@ -400,77 +443,81 @@ export default function ClientPage() {
             <div className="text-red-400 text-center mb-6">{error}</div>
           )}
 
-          <div className="space-y-4">
-            {recommendations.map((movie, i) => (
-              <div
+          <div className="space-y-3">
+            {recommendations.map((movie: Movie, i: number) => (
+              <SwipeableCard
                 key={movie.id}
-                className="flex gap-4 bg-gray-900/60 rounded-2xl p-4 border border-gray-800/50"
+                onSwipeLeft={() => handleSwipe(movie, "left")}
+                onSwipeRight={() => handleSwipe(movie, "right")}
+                isSwiping={swipingId === movie.id}
               >
-                <div className="relative shrink-0">
-                  {i === 0 && (
-                    <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-amber-500 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-full z-10 whitespace-nowrap">
-                      #1 Pick
-                    </div>
-                  )}
-                  {movie.poster_path ? (
-                    <img
-                      src={posterUrl(movie.poster_path, "w185")}
-                      alt={movie.title}
-                      className="w-24 sm:w-28 rounded-xl"
-                    />
-                  ) : (
-                    <div className="w-24 sm:w-28 aspect-[2/3] bg-gray-800 rounded-xl flex items-center justify-center text-gray-600 text-xs">
-                      No poster
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-semibold text-lg leading-tight">
-                    {movie.title}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-1 text-sm">
-                    <span className="text-gray-500">
-                      {movie.release_date?.slice(0, 4)}
-                    </span>
-                    {movie.certification && movie.certification !== "NR" && (
-                      <span className="text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded text-xs">
-                        {movie.certification}
-                      </span>
+                <div className="flex gap-4 bg-gray-900/60 rounded-2xl p-4 border border-gray-800/50">
+                  <div className="relative shrink-0">
+                    {i === 0 && (
+                      <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-amber-500 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-full z-10 whitespace-nowrap">
+                        #1 Pick
+                      </div>
                     )}
-                    <span className="text-amber-400 font-medium">
-                      {movie.vote_average?.toFixed(1)}
-                    </span>
+                    {movie.poster_path ? (
+                      <img
+                        src={posterUrl(movie.poster_path, "w185")}
+                        alt={movie.title}
+                        className="w-24 sm:w-28 rounded-xl"
+                      />
+                    ) : (
+                      <div className="w-24 sm:w-28 aspect-[2/3] bg-gray-800 rounded-xl flex items-center justify-center text-gray-600 text-xs">
+                        No poster
+                      </div>
+                    )}
                   </div>
 
-                  {movie.overview && (
-                    <p className="text-gray-400 text-sm mt-2 line-clamp-3 leading-relaxed">
-                      {movie.overview}
-                    </p>
-                  )}
-
-                  {movie.providers?.flatrate && movie.providers.flatrate.length > 0 && (
-                    <div className="flex items-center gap-1.5 mt-3">
-                      <span className="text-gray-600 text-xs">Stream on</span>
-                      {movie.providers.flatrate.slice(0, 4).map((p) => (
-                        <img
-                          key={p.provider_id}
-                          src={`${TMDB_IMG}/w45${p.logo_path}`}
-                          alt={p.provider_name}
-                          title={p.provider_name}
-                          className="w-6 h-6 rounded"
-                        />
-                      ))}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-white font-semibold text-lg leading-tight">
+                      {movie.title}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1 text-sm">
+                      <span className="text-gray-500">
+                        {movie.release_date?.slice(0, 4)}
+                      </span>
+                      {movie.certification && movie.certification !== "NR" && (
+                        <span className="text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded text-xs">
+                          {movie.certification}
+                        </span>
+                      )}
+                      <span className="text-amber-400 font-medium">
+                        {movie.vote_average?.toFixed(1)}
+                      </span>
                     </div>
-                  )}
+
+                    {movie.overview && (
+                      <p className="text-gray-400 text-sm mt-2 line-clamp-3 leading-relaxed">
+                        {movie.overview}
+                      </p>
+                    )}
+
+                    {movie.providers?.flatrate && movie.providers.flatrate.length > 0 && (
+                      <div className="flex items-center gap-1.5 mt-3">
+                        <span className="text-gray-600 text-xs">Stream on</span>
+                        {movie.providers.flatrate.slice(0, 4).map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
+                          <img
+                            key={p.provider_id}
+                            src={`${TMDB_IMG}/w45${p.logo_path}`}
+                            alt={p.provider_name}
+                            title={p.provider_name}
+                            className="w-6 h-6 rounded"
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </SwipeableCard>
             ))}
           </div>
 
           {recommendations.length === 0 && !error && (
             <div className="text-center text-gray-500 py-12">
-              No recommendations found. Try picking different movies.
+              No more recommendations. Try picking different movies!
             </div>
           )}
 
@@ -536,5 +583,109 @@ function Header({
         ) : null}
       </div>
     </header>
+  );
+}
+
+// ── Swipeable Card ──
+
+function SwipeableCard({
+  children,
+  onSwipeLeft,
+  onSwipeRight,
+  isSwiping,
+}: {
+  children: React.ReactNode;
+  onSwipeLeft: () => void;
+  onSwipeRight: () => void;
+  isSwiping?: boolean;
+}) {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const startX = useRef(0);
+  const currentX = useRef(0);
+  const isDragging = useRef(false);
+  const [offset, setOffset] = useState(0);
+  const [exitDir, setExitDir] = useState<"left" | "right" | null>(null);
+
+  const THRESHOLD = 80;
+
+  const handleStart = (x: number) => {
+    isDragging.current = true;
+    startX.current = x;
+    currentX.current = x;
+  };
+
+  const handleMove = (x: number) => {
+    if (!isDragging.current) return;
+    currentX.current = x;
+    const dx = x - startX.current;
+    setOffset(dx);
+  };
+
+  const handleEnd = () => {
+    if (!isDragging.current) return;
+    isDragging.current = false;
+
+    if (offset > THRESHOLD) {
+      setExitDir("right");
+      setTimeout(onSwipeRight, 250);
+    } else if (offset < -THRESHOLD) {
+      setExitDir("left");
+      setTimeout(onSwipeLeft, 250);
+    }
+
+    setOffset(0);
+  };
+
+  useEffect(() => {
+    if (isSwiping) return;
+    setExitDir(null);
+  }, [isSwiping]);
+
+  const onTouchStart = (e: React.TouchEvent) => handleStart(e.touches[0].clientX);
+  const onTouchMove = (e: React.TouchEvent) => handleMove(e.touches[0].clientX);
+  const onTouchEnd = () => handleEnd();
+  const onMouseDown = (e: React.MouseEvent) => { e.preventDefault(); handleStart(e.clientX); };
+  const onMouseMove = (e: React.MouseEvent) => handleMove(e.clientX);
+  const onMouseUp = () => handleEnd();
+  const onMouseLeave = () => { if (isDragging.current) handleEnd(); };
+
+  const rotation = offset * 0.05;
+  const opacity = exitDir ? 0 : 1;
+  const translateX = exitDir === "left" ? -400 : exitDir === "right" ? 400 : offset;
+  const showLabel = Math.abs(offset) > 30;
+
+  return (
+    <div
+      ref={cardRef}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseLeave}
+      className="relative select-none cursor-grab active:cursor-grabbing"
+      style={{
+        transform: `translateX(${translateX}px) rotate(${rotation}deg)`,
+        opacity,
+        transition: isDragging.current ? "none" : "all 0.3s ease-out",
+      }}
+    >
+      {showLabel && offset < 0 && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+          <span className="text-red-400 font-bold text-lg bg-red-900/60 px-4 py-2 rounded-xl border-2 border-red-400 -rotate-12">
+            Not interested
+          </span>
+        </div>
+      )}
+      {showLabel && offset > 0 && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+          <span className="text-green-400 font-bold text-lg bg-green-900/60 px-4 py-2 rounded-xl border-2 border-green-400 rotate-12">
+            Seen it
+          </span>
+        </div>
+      )}
+      {children}
+    </div>
   );
 }

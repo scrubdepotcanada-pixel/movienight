@@ -338,7 +338,7 @@ export async function getForYouAI(
 ): Promise<MovieSuggestion[]> {
   const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
   const ratingBlock = ratingRestrictionPrompt(maxRating);
-  const count = 10 + bonusCount(maxRating);
+  const count = 20 + bonusCount(maxRating);
 
   const movieList = likedMovies.map((t) => `"${t}"`).join(", ");
 
