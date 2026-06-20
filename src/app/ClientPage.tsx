@@ -28,6 +28,17 @@ interface Member {
 
 const TMDB_IMG = "https://image.tmdb.org/t/p";
 
+const GENRE_MAP: Record<string, string> = {
+  "28": "Action", "35": "Comedy", "18": "Drama", "27": "Horror",
+  "878": "Sci-Fi", "10749": "Romance", "53": "Thriller", "16": "Animation",
+  "14": "Fantasy", "99": "Documentary", "9648": "Mystery", "12": "Adventure",
+};
+
+function genreLabel(category: string): string {
+  if (category === "for-you" || category === "all") return "All Genres";
+  return GENRE_MAP[category] || category;
+}
+
 function posterUrl(path: string | null, size = "w342") {
   if (!path) return "";
   return `${TMDB_IMG}/${size}${path}`;
@@ -41,7 +52,7 @@ export default function ClientPage() {
   const [guestMode, setGuestMode] = useState(false);
   const isLoggedIn = status === "authenticated" || guestMode;
 
-  const [step, setStep] = useState<"select-member" | "pick" | "loading" | "results">("select-member");
+  const [step, setStep] = useState<"select-member" | "saved-genres" | "pick" | "loading" | "results">("select-member");
   const [gridMovies, setGridMovies] = useState<Movie[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
@@ -51,6 +62,8 @@ export default function ClientPage() {
   const [gridPage, setGridPage] = useState(1);
   const [showMoreCount, setShowMoreCount] = useState(0);
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>("for-you");
+  const [savedCategories, setSavedCategories] = useState<{ category: string; count: number }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [swipingId, setSwipingId] = useState<number | null>(null);
 
@@ -110,7 +123,26 @@ export default function ClientPage() {
     setRecBuffer([]);
 
     try {
-      const res = await fetch(`/api/session?memberId=${member.id}&category=for-you`);
+      const res = await fetch(`/api/session/categories?memberId=${member.id}`);
+      const cats: { category: string; count: number }[] = await res.json();
+      if (Array.isArray(cats) && cats.length > 0) {
+        setSavedCategories(cats);
+        setStep("saved-genres");
+        return;
+      }
+    } catch {}
+
+    setStep("pick");
+    loadGrid();
+  };
+
+  const loadSavedGenre = async (category: string) => {
+    if (!selectedMember) return;
+    setActiveCategory(category);
+    setStep("loading");
+
+    try {
+      const res = await fetch(`/api/session?memberId=${selectedMember.id}&category=${encodeURIComponent(category)}`);
       const data = await res.json();
       if (data.activeRecommendations && data.activeRecommendations.length > 0) {
         const saved = data.activeRecommendations.map((r: Record<string, unknown>) => ({
@@ -123,13 +155,15 @@ export default function ClientPage() {
           release_date: r.release_date ? String(r.release_date) : undefined,
         }));
         setRecommendations(saved);
+        setRecBuffer([]);
         setStep("results");
         return;
       }
     } catch {}
 
     setStep("pick");
-    loadGrid();
+    setActiveGenre(category === "for-you" ? null : category);
+    loadGrid(1, false, category === "for-you" ? null : category);
   };
 
   const handleGuestStart = () => {
@@ -162,6 +196,9 @@ export default function ClientPage() {
     setStep("loading");
     setError(null);
 
+    const category = activeGenre || "for-you";
+    setActiveCategory(category);
+
     try {
       const res = await fetch("/api/movies/for-you", {
         method: "POST",
@@ -169,6 +206,7 @@ export default function ClientPage() {
         body: JSON.stringify({
           movieTitles: titles,
           memberId: selectedMember?.id,
+          category,
         }),
       });
       const data = await res.json();
@@ -224,8 +262,18 @@ export default function ClientPage() {
   const handleStartOver = () => {
     setSelectedIds(new Set());
     setRecommendations([]);
+    setRecBuffer([]);
+    setShowMoreCount(0);
     setStep("pick");
-    loadGrid();
+    loadGrid(1, false, activeGenre);
+  };
+
+  const handleBackToGenres = () => {
+    if (selectedMember) {
+      handleSelectMember(selectedMember);
+    } else {
+      handleStartOver();
+    }
   };
 
   const handleAddMember = async (name: string, avatar: string, age: number | null, maxRating: string) => {
@@ -322,6 +370,56 @@ export default function ClientPage() {
               viewingAll={false}
               onViewAll={() => {}}
             />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Saved genres ──
+  if (step === "saved-genres") {
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] flex flex-col">
+        <Header
+          session={session}
+          onSignOut={() => signOut()}
+          onSwitch={() => { setSelectedMember(null); setStep("select-member"); }}
+          memberName={selectedMember?.name}
+        />
+        <div className="flex-1 px-4 pt-8 pb-8 max-w-lg mx-auto w-full">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold text-white mb-2">Welcome back!</h2>
+            <p className="text-gray-500 text-sm">Continue where you left off or start fresh</p>
+          </div>
+
+          <div className="space-y-3 mb-8">
+            {savedCategories.map((cat) => (
+              <button
+                key={cat.category}
+                onClick={() => loadSavedGenre(cat.category)}
+                className="w-full flex items-center justify-between bg-gray-900/60 hover:bg-gray-800/80 border border-gray-800/50 rounded-2xl px-5 py-4 transition-all group"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">🎬</span>
+                  <div className="text-left">
+                    <p className="text-white font-semibold">{genreLabel(cat.category)}</p>
+                    <p className="text-gray-500 text-xs">{cat.count} movies rated</p>
+                  </div>
+                </div>
+                <svg className="w-5 h-5 text-gray-600 group-hover:text-white transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <button
+              onClick={() => { setStep("pick"); setActiveGenre(null); setActiveCategory("for-you"); loadGrid(); }}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold px-8 py-3 rounded-full hover:from-purple-500 hover:to-pink-500 transition shadow-lg shadow-purple-500/25"
+            >
+              New Picks
+            </button>
           </div>
         </div>
       </div>
@@ -549,9 +647,12 @@ export default function ClientPage() {
 
         <div className="flex-1 px-4 pt-4 pb-8 max-w-2xl mx-auto w-full">
           <div className="text-center mb-6">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1">
               Your Next Watch
             </h2>
+            {activeCategory && activeCategory !== "for-you" && (
+              <p className="text-purple-400 text-sm font-medium mb-2">{genreLabel(activeCategory)}</p>
+            )}
             <div className="flex items-center justify-center gap-6">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">👈</span>
@@ -654,6 +755,14 @@ export default function ClientPage() {
             >
               Pick Again
             </button>
+            {session?.user && (
+              <button
+                onClick={handleBackToGenres}
+                className="text-gray-400 hover:text-white text-sm transition"
+              >
+                Back to My Genres
+              </button>
+            )}
             {guestMode && !session?.user && (
               <button
                 onClick={() => signIn("google")}

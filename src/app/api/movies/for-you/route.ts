@@ -6,7 +6,7 @@ import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
 
 export async function POST(req: NextRequest) {
-  const { movieTitles, memberId } = await req.json();
+  const { movieTitles, memberId, category = "for-you" } = await req.json();
 
   if (!Array.isArray(movieTitles) || movieTitles.length < 3) {
     return NextResponse.json({ error: "Need at least 3 movie titles" }, { status: 400 });
@@ -55,21 +55,21 @@ export async function POST(req: NextRequest) {
   if (memberId) {
     for (const title of movieTitles) {
       await db.execute({
-        sql: "INSERT INTO liked_movies (member_id, title, category) VALUES (?, ?, 'for-you')",
-        args: [memberId, title],
+        sql: "INSERT INTO liked_movies (member_id, title, category) VALUES (?, ?, ?)",
+        args: [memberId, title, category],
       });
     }
 
     await db.execute({
-      sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND category = 'for-you'",
-      args: [memberId],
+      sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND category = ?",
+      args: [memberId, category],
     });
 
     for (const movie of movies) {
       await db.execute({
         sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, release_date, category)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'for-you')`,
-        args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification, movie.overview, movie.release_date || null],
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification, movie.overview, movie.release_date || null, category],
       });
     }
   }
