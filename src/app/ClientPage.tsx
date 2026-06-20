@@ -538,7 +538,7 @@ export default function ClientPage() {
               </div>
               <div className="w-px h-6 bg-gray-700" />
               <div className="flex items-center gap-2">
-                <span className="text-green-400 font-bold text-sm">Seen it</span>
+                <span className="text-green-400 font-bold text-sm">Liked it</span>
                 <span className="text-2xl">👉</span>
               </div>
             </div>
@@ -786,7 +786,7 @@ function SwipeableCard({
       {showLabel && offset > 0 && (
         <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
           <span className="text-green-400 font-bold text-lg bg-green-900/60 px-4 py-2 rounded-xl border-2 border-green-400 rotate-12">
-            Seen it
+            Liked it
           </span>
         </div>
       )}
