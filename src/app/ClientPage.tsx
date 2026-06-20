@@ -103,11 +103,32 @@ export default function ClientPage() {
     loadGrid(1, false, genreId);
   };
 
-  const handleSelectMember = (member: Member) => {
+  const handleSelectMember = async (member: Member) => {
     setSelectedMember(member);
-    setStep("pick");
     setSelectedIds(new Set());
     setRecommendations([]);
+    setRecBuffer([]);
+
+    try {
+      const res = await fetch(`/api/session?memberId=${member.id}&category=for-you`);
+      const data = await res.json();
+      if (data.activeRecommendations && data.activeRecommendations.length > 0) {
+        const saved = data.activeRecommendations.map((r: Record<string, unknown>) => ({
+          id: Number(r.tmdb_id),
+          title: String(r.title),
+          poster_path: r.poster_path ? String(r.poster_path) : null,
+          vote_average: Number(r.vote_average || 0),
+          certification: r.certification ? String(r.certification) : undefined,
+          overview: r.overview ? String(r.overview) : undefined,
+          release_date: r.release_date ? String(r.release_date) : undefined,
+        }));
+        setRecommendations(saved);
+        setStep("results");
+        return;
+      }
+    } catch {}
+
+    setStep("pick");
     loadGrid();
   };
 
@@ -626,13 +647,21 @@ export default function ClientPage() {
             </div>
           )}
 
-          <div className="mt-8 text-center">
+          <div className="mt-8 flex flex-col items-center gap-4">
             <button
               onClick={handleStartOver}
               className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold px-8 py-3 rounded-full hover:from-purple-500 hover:to-pink-500 transition shadow-lg shadow-purple-500/25"
             >
               Pick Again
             </button>
+            {guestMode && !session?.user && (
+              <button
+                onClick={() => signIn("google")}
+                className="text-gray-400 hover:text-white text-sm transition flex items-center gap-2"
+              >
+                <span>🔒</span> Sign in to save your picks &amp; build your taste
+              </button>
+            )}
           </div>
         </div>
       </div>

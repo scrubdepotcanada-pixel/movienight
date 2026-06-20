@@ -17,19 +17,29 @@ export async function POST(req: NextRequest) {
   let maxRating = null;
   let watchedTitles: string[] = [];
   let dislikedTitles: string[] = [];
+  let allLikedTitles: string[] = [...movieTitles];
 
   if (memberId) {
-    const [restrictions, watchedRows, dislikedRows] = await Promise.all([
+    const [restrictions, watchedRows, dislikedRows, likedRows] = await Promise.all([
       getMemberRestrictions(memberId),
       db.execute({ sql: "SELECT title FROM watched_movies WHERE member_id = ?", args: [memberId] }),
       db.execute({ sql: "SELECT title FROM disliked_movies WHERE member_id = ?", args: [memberId] }),
+      db.execute({ sql: "SELECT DISTINCT title FROM liked_movies WHERE member_id = ? ORDER BY created_at DESC", args: [memberId] }),
     ]);
     maxRating = restrictions.maxRating;
     watchedTitles = watchedRows.rows.map((r) => String(r.title));
     dislikedTitles = dislikedRows.rows.map((r) => String(r.title));
+    const previousLiked = likedRows.rows.map((r) => String(r.title));
+    const seen = new Set(movieTitles.map((t: string) => t.toLowerCase()));
+    for (const t of previousLiked) {
+      if (!seen.has(t.toLowerCase())) {
+        allLikedTitles.push(t);
+        seen.add(t.toLowerCase());
+      }
+    }
   }
 
-  const suggestions = await getForYouAI(movieTitles, watchedTitles, dislikedTitles, maxRating);
+  const suggestions = await getForYouAI(allLikedTitles, watchedTitles, dislikedTitles, maxRating);
   const allMovies = await resolveAISuggestions(suggestions, locale);
   const movies = allMovies
     .filter((m) => isMovieAllowed(m.certification, maxRating))
