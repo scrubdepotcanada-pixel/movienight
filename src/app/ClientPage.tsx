@@ -223,6 +223,7 @@ export default function ClientPage() {
           movieTitles: titles,
           memberId: selectedMember?.id,
           category,
+          genreName: activeGenre ? GENRE_MAP[activeGenre] : undefined,
         }),
       });
       const data = await res.json();

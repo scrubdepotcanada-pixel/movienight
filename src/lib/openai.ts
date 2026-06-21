@@ -334,7 +334,8 @@ export async function getForYouAI(
   likedMovies: string[],
   watchedTitles: string[] = [],
   dislikedTitles: string[] = [],
-  maxRating: MaxRating | null = null
+  maxRating: MaxRating | null = null,
+  genreName?: string | null
 ): Promise<MovieSuggestion[]> {
   const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
   const ratingBlock = ratingRestrictionPrompt(maxRating);
@@ -342,16 +343,19 @@ export async function getForYouAI(
 
   const movieList = likedMovies.map((t) => `"${t}"`).join(", ");
 
-  return askForMovies(
-    `The user picked these 5 movies as ones they love: ${movieList}.
+  const genreRule = genreName
+    ? `- IMPORTANT: ALL recommendations MUST be ${genreName} movies. Do not recommend movies outside the ${genreName} genre.\n`
+    : `- Cover a range of genres that match their taste (don't just pick one genre)\n`;
 
-Analyze their taste — what genres, themes, tones, eras, and styles do they gravitate toward? Then recommend ${count} movies they should watch next.
+  return askForMovies(
+    `The user picked these movies as ones they love: ${movieList}.
+
+Analyze their taste — what themes, tones, eras, and styles do they gravitate toward? Then recommend ${count} movies they should watch next.
 
 Rules:
-- Mix well-known crowd-pleasers with hidden gems they probably missed
-- Cover a range of genres that match their taste (don't just pick one genre)
+${genreRule}- Mix well-known crowd-pleasers with hidden gems they probably missed
 - Include movies from different decades
-- Do NOT include any of the 5 movies listed above
+- Do NOT include any of the movies listed above
 ${excludeBlock}${ratingBlock}
 
 Return exactly ${count} movies.`,
