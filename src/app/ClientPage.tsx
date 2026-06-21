@@ -716,7 +716,7 @@ export default function ClientPage() {
             <div className="text-red-400 text-center mb-6">{error}</div>
           )}
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {recommendations.map((movie: Movie, i: number) => (
               <SwipeableCard
                 key={movie.id}
@@ -724,69 +724,63 @@ export default function ClientPage() {
                 onSwipeRight={() => handleSwipe(movie, "right")}
                 isSwiping={swipingId === movie.id}
               >
-                <div className="bg-gray-900/80 rounded-3xl overflow-hidden border border-gray-800/50 shadow-xl">
-                  {/* Large poster */}
-                  <div className="relative">
+                <div className="bg-gray-900/80 rounded-2xl overflow-hidden border border-gray-800/50 shadow-lg flex h-[42vh] min-h-[260px] max-h-[340px]">
+                  {/* Poster left */}
+                  <div className="relative w-[40%] shrink-0">
                     {movie.poster_path ? (
                       <img
-                        src={posterUrl(movie.poster_path, "w500")}
+                        src={posterUrl(movie.poster_path, "w342")}
                         alt={movie.title}
-                        className="w-full aspect-[2/3] object-cover"
+                        className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full aspect-[2/3] bg-gray-800 flex items-center justify-center text-gray-600">
+                      <div className="w-full h-full bg-gray-800 flex items-center justify-center text-gray-600 text-xs">
                         No poster
                       </div>
                     )}
-
-                    {/* Gradient overlay with title */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-
                     {i === 0 && (
-                      <div className="absolute top-3 left-3 bg-amber-500 text-gray-900 text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                        #1 Top Pick
+                      <div className="absolute top-2 left-2 bg-amber-500 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                        #1 Pick
                       </div>
                     )}
-
-                    <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                      <span className="bg-black/70 backdrop-blur-sm text-amber-400 font-bold text-sm px-2.5 py-1 rounded-lg">
+                    <div className="absolute bottom-2 left-2 flex items-center gap-1">
+                      <span className="bg-black/80 text-amber-400 font-bold text-xs px-1.5 py-0.5 rounded">
                         ★ {movie.vote_average?.toFixed(1)}
                       </span>
                       {movie.certification && movie.certification !== "NR" && (
-                        <span className="bg-black/70 backdrop-blur-sm text-gray-300 font-medium text-sm px-2.5 py-1 rounded-lg">
+                        <span className="bg-black/80 text-gray-300 text-xs px-1.5 py-0.5 rounded">
                           {movie.certification}
                         </span>
                       )}
                     </div>
-
-                    <div className="absolute bottom-0 left-0 right-0 p-5">
-                      <h3 className="text-white font-bold text-2xl leading-tight mb-1">
-                        {movie.title}
-                      </h3>
-                      <span className="text-gray-300 text-sm">
-                        {movie.release_date?.slice(0, 4)}
-                      </span>
-                    </div>
                   </div>
 
-                  {/* Info section below poster */}
-                  <div className="px-5 py-4">
-                    {movie.overview && (
-                      <p className="text-gray-400 text-sm leading-relaxed line-clamp-3 mb-3">
-                        {movie.overview}
+                  {/* Info right */}
+                  <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+                    <div>
+                      <h3 className="text-white font-bold text-lg leading-snug line-clamp-2">
+                        {movie.title}
+                      </h3>
+                      <p className="text-gray-500 text-sm mt-0.5">
+                        {movie.release_date?.slice(0, 4)}
                       </p>
-                    )}
+                      {movie.overview && (
+                        <p className="text-gray-400 text-sm mt-2 leading-relaxed line-clamp-4">
+                          {movie.overview}
+                        </p>
+                      )}
+                    </div>
 
                     {movie.providers?.flatrate && movie.providers.flatrate.length > 0 && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-600 text-xs font-medium">Stream on</span>
-                        {movie.providers.flatrate.slice(0, 5).map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
+                      <div className="flex items-center gap-1.5 mt-3">
+                        <span className="text-gray-600 text-[10px]">Stream</span>
+                        {movie.providers.flatrate.slice(0, 4).map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
                           <img
                             key={p.provider_id}
                             src={`${TMDB_IMG}/w45${p.logo_path}`}
                             alt={p.provider_name}
                             title={p.provider_name}
-                            className="w-7 h-7 rounded-lg"
+                            className="w-6 h-6 rounded"
                           />
                         ))}
                       </div>
