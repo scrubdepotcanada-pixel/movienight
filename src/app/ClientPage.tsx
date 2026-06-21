@@ -225,16 +225,10 @@ export default function ClientPage() {
     if (fetchingMore || !selectedMember) return;
     setFetchingMore(true);
     try {
-      const likedRes = await fetch(`/api/session?memberId=${selectedMember.id}&category=${encodeURIComponent(activeCategory)}`);
-      const likedData = await likedRes.json();
-      const likedTitles = (likedData.likedInCategory || []).map((r: Record<string, unknown>) => String(r.title));
-      if (likedTitles.length === 0) { setFetchingMore(false); return; }
-
-      const res = await fetch("/api/movies/for-you", {
+      const res = await fetch("/api/movies/more-like", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          movieTitles: likedTitles.slice(0, 10),
           memberId: selectedMember.id,
           category: activeCategory,
         }),
