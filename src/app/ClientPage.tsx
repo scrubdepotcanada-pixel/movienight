@@ -977,12 +977,12 @@ function FlippableCard({ movie, index }: { movie: Movie; index: number }) {
                 #1 Pick
               </div>
             )}
-            <div className="absolute bottom-2 left-2 flex items-center gap-1">
-              <span className="bg-black/80 text-amber-400 font-bold text-xs px-1.5 py-0.5 rounded">
+            <div className="absolute bottom-2 left-2 flex items-center gap-1.5">
+              <span className="bg-black/80 text-amber-400 font-bold text-sm px-2 py-1 rounded-lg">
                 ★ {movie.vote_average?.toFixed(1)}
               </span>
               {movie.certification && movie.certification !== "NR" && (
-                <span className="bg-black/80 text-gray-300 text-xs px-1.5 py-0.5 rounded">
+                <span className="bg-black/80 text-gray-300 font-medium text-sm px-2 py-1 rounded-lg">
                   {movie.certification}
                 </span>
               )}
@@ -991,34 +991,34 @@ function FlippableCard({ movie, index }: { movie: Movie; index: number }) {
 
           <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
             <div>
-              <h3 className="text-white font-bold text-lg leading-snug line-clamp-2">
+              <h3 className="text-white font-bold text-xl leading-snug line-clamp-2">
                 {movie.title}
               </h3>
-              <p className="text-gray-500 text-sm mt-0.5">
+              <p className="text-gray-500 mt-0.5">
                 {movie.release_date?.slice(0, 4)}
               </p>
               {movie.overview && (
-                <p className="text-gray-400 text-sm mt-2 leading-relaxed line-clamp-4">
+                <p className="text-gray-400 mt-2 leading-relaxed line-clamp-3">
                   {movie.overview}
                 </p>
               )}
             </div>
             <div className="flex items-center justify-between">
               {movie.providers?.flatrate && movie.providers.flatrate.length > 0 ? (
-                <div className="flex items-center gap-1.5">
-                  <span className="text-gray-600 text-[10px]">Stream</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-gray-500 text-xs">Stream</span>
                   {movie.providers.flatrate.slice(0, 4).map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
                     <img
                       key={p.provider_id}
                       src={`${TMDB_IMG}/w45${p.logo_path}`}
                       alt={p.provider_name}
                       title={p.provider_name}
-                      className="w-6 h-6 rounded"
+                      className="w-7 h-7 rounded"
                     />
                   ))}
                 </div>
               ) : <div />}
-              <span className="text-gray-600 text-[10px]">Tap for more →</span>
+              <span className="text-purple-400 text-xs font-medium">Tap for more →</span>
             </div>
           </div>
         </div>
@@ -1033,11 +1033,11 @@ function FlippableCard({ movie, index }: { movie: Movie; index: number }) {
               <h3 className="text-white font-bold text-xl leading-snug">
                 {movie.title}
               </h3>
-              <div className="flex items-center gap-2 mt-1">
-                <span className="text-gray-400 text-sm">{movie.release_date?.slice(0, 4)}</span>
-                <span className="text-amber-400 font-bold text-sm">★ {movie.vote_average?.toFixed(1)}</span>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="text-gray-400">{movie.release_date?.slice(0, 4)}</span>
+                <span className="text-amber-400 font-bold">★ {movie.vote_average?.toFixed(1)}</span>
                 {movie.certification && movie.certification !== "NR" && (
-                  <span className="text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded text-xs">{movie.certification}</span>
+                  <span className="text-gray-400 bg-gray-800 px-2 py-0.5 rounded text-sm">{movie.certification}</span>
                 )}
               </div>
             </div>
@@ -1045,14 +1045,14 @@ function FlippableCard({ movie, index }: { movie: Movie; index: number }) {
               <img
                 src={posterUrl(movie.poster_path, "w92")}
                 alt=""
-                className="w-12 h-18 rounded-lg shrink-0 ml-3"
+                className="w-14 rounded-lg shrink-0 ml-3"
               />
             )}
           </div>
 
           <div className="flex-1 overflow-y-auto">
             {movie.overview && (
-              <p className="text-gray-300 text-sm leading-relaxed">
+              <p className="text-gray-300 leading-relaxed">
                 {movie.overview}
               </p>
             )}
@@ -1060,23 +1060,23 @@ function FlippableCard({ movie, index }: { movie: Movie; index: number }) {
 
           {movie.providers?.flatrate && movie.providers.flatrate.length > 0 && (
             <div className="mt-3 pt-3 border-t border-gray-800">
-              <p className="text-gray-500 text-xs font-medium mb-2">Where to stream</p>
+              <p className="text-gray-500 text-sm font-medium mb-2">Where to stream</p>
               <div className="flex items-center gap-2 flex-wrap">
                 {movie.providers.flatrate.map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
-                  <div key={p.provider_id} className="flex items-center gap-1.5 bg-gray-800/60 rounded-lg px-2 py-1">
+                  <div key={p.provider_id} className="flex items-center gap-2 bg-gray-800/60 rounded-lg px-2.5 py-1.5">
                     <img
                       src={`${TMDB_IMG}/w45${p.logo_path}`}
                       alt={p.provider_name}
-                      className="w-5 h-5 rounded"
+                      className="w-6 h-6 rounded"
                     />
-                    <span className="text-gray-300 text-xs">{p.provider_name}</span>
+                    <span className="text-gray-300 text-sm">{p.provider_name}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <p className="text-gray-600 text-[10px] text-center mt-3">Tap to flip back</p>
+          <p className="text-purple-400 text-xs text-center mt-3 font-medium">Tap to flip back</p>
         </div>
       </div>
     </div>
