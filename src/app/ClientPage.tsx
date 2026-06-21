@@ -160,6 +160,21 @@ export default function ClientPage() {
         setStep("results");
         return;
       }
+
+      // No active recs but user has history — fetch more via TMDB (free)
+      const moreRes = await fetch("/api/movies/more-like", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: selectedMember.id, category }),
+      });
+      const moreData = await moreRes.json();
+      const fresh: Movie[] = moreData.movies || [];
+      if (fresh.length > 0) {
+        setRecommendations(fresh.slice(0, 5));
+        setRecBuffer(fresh.slice(5));
+        setStep("results");
+        return;
+      }
     } catch {}
 
     setStep("pick");
