@@ -1049,85 +1049,70 @@ function FlippableCard({ movie, index }: { movie: Movie; index: number }) {
 
         {/* ── Back ── */}
         <div
-          className="absolute inset-0 rounded-2xl overflow-hidden border border-gray-800/50 shadow-lg bg-gray-900 p-5 flex flex-col"
+          className="absolute inset-0 rounded-2xl overflow-hidden border border-gray-800/50 shadow-lg bg-gray-900 flex flex-col"
           style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
         >
-          {/* Title row */}
-          <div className="flex items-start justify-between mb-2">
-            <div className="min-w-0">
-              <h3 className="text-white font-bold text-xl leading-snug">
+          {/* Compact header */}
+          <div className="px-4 pt-4 pb-2 border-b border-gray-800/50">
+            <div className="flex items-center justify-between mb-1.5">
+              <h3 className="text-white font-bold text-lg leading-tight line-clamp-1 flex-1 mr-2">
                 {movie.title}
               </h3>
-              {details?.tagline && (
-                <p className="text-purple-400 text-sm italic mt-0.5 line-clamp-1">{details.tagline}</p>
-              )}
-            </div>
-            {movie.poster_path && (
-              <img src={posterUrl(movie.poster_path, "w92")} alt="" className="w-14 rounded-lg shrink-0 ml-3" />
-            )}
-          </div>
-
-          {/* Meta row */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm mb-3">
-            <span className="text-gray-400">{movie.release_date?.slice(0, 4)}</span>
-            <span className="text-amber-400 font-bold">★ {movie.vote_average?.toFixed(1)}</span>
-            {movie.certification && movie.certification !== "NR" && (
-              <span className="text-gray-400 bg-gray-800 px-2 py-0.5 rounded">{movie.certification}</span>
-            )}
-            {details?.runtime && (
-              <span className="text-gray-400">{formatRuntime(details.runtime)}</span>
-            )}
-          </div>
-
-          {/* Genres */}
-          {details?.genres && details.genres.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mb-3">
-              {details.genres.map((g: string) => (
-                <span key={g} className="bg-purple-900/40 text-purple-300 text-xs font-medium px-2.5 py-1 rounded-full border border-purple-800/30">
-                  {g}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Director */}
-          {details?.director && (
-            <p className="text-sm mb-2">
-              <span className="text-gray-500">Director </span>
-              <span className="text-white font-medium">{details.director}</span>
-            </p>
-          )}
-
-          {/* Cast */}
-          {details?.cast && details.cast.length > 0 && (
-            <p className="text-sm mb-3 line-clamp-2">
-              <span className="text-gray-500">Cast </span>
-              <span className="text-gray-300">{details.cast.map((c: { name: string }) => c.name).join(", ")}</span>
-            </p>
-          )}
-
-          {/* Streaming */}
-          {movie.providers?.flatrate && movie.providers.flatrate.length > 0 && (
-            <div className="mt-auto pt-2 border-t border-gray-800">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-gray-500 text-xs">Stream on</span>
-                {movie.providers.flatrate.map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
-                  <div key={p.provider_id} className="flex items-center gap-1.5 bg-gray-800/60 rounded-lg px-2 py-1">
-                    <img src={`${TMDB_IMG}/w45${p.logo_path}`} alt={p.provider_name} className="w-5 h-5 rounded" />
-                    <span className="text-gray-300 text-sm">{p.provider_name}</span>
-                  </div>
-                ))}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className="text-amber-400 font-bold text-sm">★ {movie.vote_average?.toFixed(1)}</span>
+                {movie.certification && movie.certification !== "NR" && (
+                  <span className="text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded text-xs">{movie.certification}</span>
+                )}
               </div>
             </div>
-          )}
-
-          {!details && (
-            <div className="flex-1 flex items-center justify-center">
-              <span className="text-gray-500 text-sm">Loading details...</span>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-400">
+              <span>{movie.release_date?.slice(0, 4)}</span>
+              {details?.runtime && <><span>·</span><span>{formatRuntime(details.runtime)}</span></>}
+              {details?.director && <><span>·</span><span>Dir. {details.director}</span></>}
+              {details?.genres && details.genres.length > 0 && (
+                <><span>·</span><span>{details.genres.join(", ")}</span></>
+              )}
             </div>
-          )}
+            {details?.cast && details.cast.length > 0 && (
+              <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                {details.cast.map((c: { name: string }) => c.name).join(", ")}
+              </p>
+            )}
+          </div>
 
-          <p className="text-purple-400 text-xs text-center mt-2 font-medium">Tap to flip back</p>
+          {/* Full synopsis — main content */}
+          <div className="flex-1 overflow-y-auto px-4 py-4">
+            {!details ? (
+              <div className="flex items-center justify-center h-full">
+                <span className="text-gray-500">Loading details...</span>
+              </div>
+            ) : movie.overview ? (
+              <p className="text-gray-200 text-base leading-relaxed">
+                {movie.overview}
+              </p>
+            ) : (
+              <p className="text-gray-500 text-center">No description available</p>
+            )}
+          </div>
+
+          {/* Compact footer */}
+          <div className="px-4 py-2.5 border-t border-gray-800/50 flex items-center justify-between">
+            {movie.providers?.flatrate && movie.providers.flatrate.length > 0 ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-gray-600 text-xs">Stream</span>
+                {movie.providers.flatrate.slice(0, 4).map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
+                  <img
+                    key={p.provider_id}
+                    src={`${TMDB_IMG}/w45${p.logo_path}`}
+                    alt={p.provider_name}
+                    title={p.provider_name}
+                    className="w-6 h-6 rounded"
+                  />
+                ))}
+              </div>
+            ) : <div />}
+            <span className="text-purple-400 text-xs font-medium">← Tap to flip back</span>
+          </div>
         </div>
       </div>
     </div>
