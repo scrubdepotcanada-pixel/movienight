@@ -693,24 +693,22 @@ export default function ClientPage() {
           memberName={selectedMember?.name}
         />
 
-        <div className="flex-1 px-4 pt-4 pb-8 max-w-2xl mx-auto w-full">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-1">
-              Your Next Watch
-            </h2>
-            {activeCategory && activeCategory !== "for-you" && (
-              <p className="text-purple-400 text-sm font-medium mb-2">{genreLabel(activeCategory)}</p>
-            )}
-            <div className="flex items-center justify-center gap-6">
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">👈</span>
-                <span className="text-red-400 font-bold text-sm">Not interested</span>
-              </div>
-              <div className="w-px h-6 bg-gray-700" />
-              <div className="flex items-center gap-2">
-                <span className="text-green-400 font-bold text-sm">Liked it</span>
-                <span className="text-2xl">👉</span>
-              </div>
+        <div className="flex-1 px-4 pt-4 pb-8 max-w-xl mx-auto w-full">
+          {/* Swipe legend */}
+          <div className="flex items-center justify-between mb-5 px-2">
+            <div className="flex items-center gap-2">
+              <span className="text-3xl">👈</span>
+              <span className="text-red-400 font-bold">Nope</span>
+            </div>
+            <div className="text-center">
+              <h2 className="text-xl font-bold text-white">Your Next Watch</h2>
+              {activeCategory && activeCategory !== "for-you" && (
+                <p className="text-purple-400 text-xs font-medium">{genreLabel(activeCategory)}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-green-400 font-bold">Liked</span>
+              <span className="text-3xl">👉</span>
             </div>
           </div>
 
@@ -718,7 +716,7 @@ export default function ClientPage() {
             <div className="text-red-400 text-center mb-6">{error}</div>
           )}
 
-          <div className="space-y-3">
+          <div className="space-y-6">
             {recommendations.map((movie: Movie, i: number) => (
               <SwipeableCard
                 key={movie.id}
@@ -726,60 +724,69 @@ export default function ClientPage() {
                 onSwipeRight={() => handleSwipe(movie, "right")}
                 isSwiping={swipingId === movie.id}
               >
-                <div className="flex gap-4 bg-gray-900/60 rounded-2xl p-4 border border-gray-800/50">
-                  <div className="relative shrink-0">
-                    {i === 0 && (
-                      <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-amber-500 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-full z-10 whitespace-nowrap">
-                        #1 Pick
-                      </div>
-                    )}
+                <div className="bg-gray-900/80 rounded-3xl overflow-hidden border border-gray-800/50 shadow-xl">
+                  {/* Large poster */}
+                  <div className="relative">
                     {movie.poster_path ? (
                       <img
-                        src={posterUrl(movie.poster_path, "w185")}
+                        src={posterUrl(movie.poster_path, "w500")}
                         alt={movie.title}
-                        className="w-24 sm:w-28 rounded-xl"
+                        className="w-full aspect-[2/3] object-cover"
                       />
                     ) : (
-                      <div className="w-24 sm:w-28 aspect-[2/3] bg-gray-800 rounded-xl flex items-center justify-center text-gray-600 text-xs">
+                      <div className="w-full aspect-[2/3] bg-gray-800 flex items-center justify-center text-gray-600">
                         No poster
                       </div>
                     )}
-                  </div>
 
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-white font-semibold text-lg leading-tight">
-                      {movie.title}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-1 text-sm">
-                      <span className="text-gray-500">
-                        {movie.release_date?.slice(0, 4)}
+                    {/* Gradient overlay with title */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+
+                    {i === 0 && (
+                      <div className="absolute top-3 left-3 bg-amber-500 text-gray-900 text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                        #1 Top Pick
+                      </div>
+                    )}
+
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5">
+                      <span className="bg-black/70 backdrop-blur-sm text-amber-400 font-bold text-sm px-2.5 py-1 rounded-lg">
+                        ★ {movie.vote_average?.toFixed(1)}
                       </span>
                       {movie.certification && movie.certification !== "NR" && (
-                        <span className="text-gray-500 bg-gray-800 px-1.5 py-0.5 rounded text-xs">
+                        <span className="bg-black/70 backdrop-blur-sm text-gray-300 font-medium text-sm px-2.5 py-1 rounded-lg">
                           {movie.certification}
                         </span>
                       )}
-                      <span className="text-amber-400 font-medium">
-                        {movie.vote_average?.toFixed(1)}
-                      </span>
                     </div>
 
+                    <div className="absolute bottom-0 left-0 right-0 p-5">
+                      <h3 className="text-white font-bold text-2xl leading-tight mb-1">
+                        {movie.title}
+                      </h3>
+                      <span className="text-gray-300 text-sm">
+                        {movie.release_date?.slice(0, 4)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Info section below poster */}
+                  <div className="px-5 py-4">
                     {movie.overview && (
-                      <p className="text-gray-400 text-sm mt-2 line-clamp-3 leading-relaxed">
+                      <p className="text-gray-400 text-sm leading-relaxed line-clamp-3 mb-3">
                         {movie.overview}
                       </p>
                     )}
 
                     {movie.providers?.flatrate && movie.providers.flatrate.length > 0 && (
-                      <div className="flex items-center gap-1.5 mt-3">
-                        <span className="text-gray-600 text-xs">Stream on</span>
-                        {movie.providers.flatrate.slice(0, 4).map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-600 text-xs font-medium">Stream on</span>
+                        {movie.providers.flatrate.slice(0, 5).map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
                           <img
                             key={p.provider_id}
                             src={`${TMDB_IMG}/w45${p.logo_path}`}
                             alt={p.provider_name}
                             title={p.provider_name}
-                            className="w-6 h-6 rounded"
+                            className="w-7 h-7 rounded-lg"
                           />
                         ))}
                       </div>
