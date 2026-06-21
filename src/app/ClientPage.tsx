@@ -724,69 +724,7 @@ export default function ClientPage() {
                 onSwipeRight={() => handleSwipe(movie, "right")}
                 isSwiping={swipingId === movie.id}
               >
-                <div className="bg-gray-900/80 rounded-2xl overflow-hidden border border-gray-800/50 shadow-lg flex h-[42vh] min-h-[260px] max-h-[340px]">
-                  {/* Poster left */}
-                  <div className="relative w-[40%] shrink-0">
-                    {movie.poster_path ? (
-                      <img
-                        src={posterUrl(movie.poster_path, "w342")}
-                        alt={movie.title}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-800 flex items-center justify-center text-gray-600 text-xs">
-                        No poster
-                      </div>
-                    )}
-                    {i === 0 && (
-                      <div className="absolute top-2 left-2 bg-amber-500 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
-                        #1 Pick
-                      </div>
-                    )}
-                    <div className="absolute bottom-2 left-2 flex items-center gap-1">
-                      <span className="bg-black/80 text-amber-400 font-bold text-xs px-1.5 py-0.5 rounded">
-                        ★ {movie.vote_average?.toFixed(1)}
-                      </span>
-                      {movie.certification && movie.certification !== "NR" && (
-                        <span className="bg-black/80 text-gray-300 text-xs px-1.5 py-0.5 rounded">
-                          {movie.certification}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Info right */}
-                  <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
-                    <div>
-                      <h3 className="text-white font-bold text-lg leading-snug line-clamp-2">
-                        {movie.title}
-                      </h3>
-                      <p className="text-gray-500 text-sm mt-0.5">
-                        {movie.release_date?.slice(0, 4)}
-                      </p>
-                      {movie.overview && (
-                        <p className="text-gray-400 text-sm mt-2 leading-relaxed line-clamp-4">
-                          {movie.overview}
-                        </p>
-                      )}
-                    </div>
-
-                    {movie.providers?.flatrate && movie.providers.flatrate.length > 0 && (
-                      <div className="flex items-center gap-1.5 mt-3">
-                        <span className="text-gray-600 text-[10px]">Stream</span>
-                        {movie.providers.flatrate.slice(0, 4).map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
-                          <img
-                            key={p.provider_id}
-                            src={`${TMDB_IMG}/w45${p.logo_path}`}
-                            alt={p.provider_name}
-                            title={p.provider_name}
-                            className="w-6 h-6 rounded"
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <FlippableCard movie={movie} index={i} />
               </SwipeableCard>
             ))}
           </div>
@@ -990,6 +928,157 @@ function SwipeableCard({
         </div>
       )}
       {children}
+    </div>
+  );
+}
+
+// ── Flippable Card ──
+
+function FlippableCard({ movie, index }: { movie: Movie; index: number }) {
+  const [flipped, setFlipped] = useState(false);
+
+  const handleTap = (e: React.MouseEvent | React.TouchEvent) => {
+    if ("button" in e && e.button !== 0) return;
+    setFlipped((f) => !f);
+  };
+
+  return (
+    <div
+      className="h-[42vh] min-h-[260px] max-h-[340px] cursor-pointer"
+      style={{ perspective: "1000px" }}
+      onClick={handleTap}
+    >
+      <div
+        className="relative w-full h-full transition-transform duration-500"
+        style={{
+          transformStyle: "preserve-3d",
+          transform: flipped ? "rotateY(180deg)" : "rotateY(0deg)",
+        }}
+      >
+        {/* ── Front ── */}
+        <div
+          className="absolute inset-0 rounded-2xl overflow-hidden border border-gray-800/50 shadow-lg flex bg-gray-900/80"
+          style={{ backfaceVisibility: "hidden" }}
+        >
+          <div className="relative w-[40%] shrink-0">
+            {movie.poster_path ? (
+              <img
+                src={posterUrl(movie.poster_path, "w342")}
+                alt={movie.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-800 flex items-center justify-center text-gray-600 text-xs">
+                No poster
+              </div>
+            )}
+            {index === 0 && (
+              <div className="absolute top-2 left-2 bg-amber-500 text-gray-900 text-[10px] font-bold px-2 py-0.5 rounded-full shadow">
+                #1 Pick
+              </div>
+            )}
+            <div className="absolute bottom-2 left-2 flex items-center gap-1">
+              <span className="bg-black/80 text-amber-400 font-bold text-xs px-1.5 py-0.5 rounded">
+                ★ {movie.vote_average?.toFixed(1)}
+              </span>
+              {movie.certification && movie.certification !== "NR" && (
+                <span className="bg-black/80 text-gray-300 text-xs px-1.5 py-0.5 rounded">
+                  {movie.certification}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+            <div>
+              <h3 className="text-white font-bold text-lg leading-snug line-clamp-2">
+                {movie.title}
+              </h3>
+              <p className="text-gray-500 text-sm mt-0.5">
+                {movie.release_date?.slice(0, 4)}
+              </p>
+              {movie.overview && (
+                <p className="text-gray-400 text-sm mt-2 leading-relaxed line-clamp-4">
+                  {movie.overview}
+                </p>
+              )}
+            </div>
+            <div className="flex items-center justify-between">
+              {movie.providers?.flatrate && movie.providers.flatrate.length > 0 ? (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-gray-600 text-[10px]">Stream</span>
+                  {movie.providers.flatrate.slice(0, 4).map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
+                    <img
+                      key={p.provider_id}
+                      src={`${TMDB_IMG}/w45${p.logo_path}`}
+                      alt={p.provider_name}
+                      title={p.provider_name}
+                      className="w-6 h-6 rounded"
+                    />
+                  ))}
+                </div>
+              ) : <div />}
+              <span className="text-gray-600 text-[10px]">Tap for more →</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Back ── */}
+        <div
+          className="absolute inset-0 rounded-2xl overflow-hidden border border-gray-800/50 shadow-lg bg-gray-900 p-5 flex flex-col"
+          style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+        >
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <h3 className="text-white font-bold text-xl leading-snug">
+                {movie.title}
+              </h3>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-gray-400 text-sm">{movie.release_date?.slice(0, 4)}</span>
+                <span className="text-amber-400 font-bold text-sm">★ {movie.vote_average?.toFixed(1)}</span>
+                {movie.certification && movie.certification !== "NR" && (
+                  <span className="text-gray-400 bg-gray-800 px-1.5 py-0.5 rounded text-xs">{movie.certification}</span>
+                )}
+              </div>
+            </div>
+            {movie.poster_path && (
+              <img
+                src={posterUrl(movie.poster_path, "w92")}
+                alt=""
+                className="w-12 h-18 rounded-lg shrink-0 ml-3"
+              />
+            )}
+          </div>
+
+          <div className="flex-1 overflow-y-auto">
+            {movie.overview && (
+              <p className="text-gray-300 text-sm leading-relaxed">
+                {movie.overview}
+              </p>
+            )}
+          </div>
+
+          {movie.providers?.flatrate && movie.providers.flatrate.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-gray-800">
+              <p className="text-gray-500 text-xs font-medium mb-2">Where to stream</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                {movie.providers.flatrate.map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
+                  <div key={p.provider_id} className="flex items-center gap-1.5 bg-gray-800/60 rounded-lg px-2 py-1">
+                    <img
+                      src={`${TMDB_IMG}/w45${p.logo_path}`}
+                      alt={p.provider_name}
+                      className="w-5 h-5 rounded"
+                    />
+                    <span className="text-gray-300 text-xs">{p.provider_name}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <p className="text-gray-600 text-[10px] text-center mt-3">Tap to flip back</p>
+        </div>
+      </div>
     </div>
   );
 }
