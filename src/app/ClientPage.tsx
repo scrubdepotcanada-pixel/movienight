@@ -66,6 +66,7 @@ export default function ClientPage() {
   const [savedCategories, setSavedCategories] = useState<{ category: string; count: number }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [swipingId, setSwipingId] = useState<number | null>(null);
+  const [fetchingMore, setFetchingMore] = useState(false);
 
   useEffect(() => {
     if (status !== "authenticated" && !guestMode) return;
@@ -220,6 +221,40 @@ export default function ClientPage() {
     }
   };
 
+  const fetchMoreRecs = useCallback(async () => {
+    if (fetchingMore || !selectedMember) return;
+    setFetchingMore(true);
+    try {
+      const likedRes = await fetch(`/api/session?memberId=${selectedMember.id}&category=${encodeURIComponent(activeCategory)}`);
+      const likedData = await likedRes.json();
+      const likedTitles = (likedData.likedInCategory || []).map((r: Record<string, unknown>) => String(r.title));
+      if (likedTitles.length === 0) { setFetchingMore(false); return; }
+
+      const res = await fetch("/api/movies/for-you", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          movieTitles: likedTitles.slice(0, 10),
+          memberId: selectedMember.id,
+          category: activeCategory,
+        }),
+      });
+      const data = await res.json();
+      const fresh: Movie[] = data.movies || [];
+      setRecommendations((prev: Movie[]) => {
+        const existingIds = new Set(prev.map((m: Movie) => m.id));
+        const newOnes = fresh.filter((m: Movie) => !existingIds.has(m.id));
+        return [...prev, ...newOnes.slice(0, 5)];
+      });
+      setRecBuffer((prev: Movie[]) => {
+        const allIds = new Set(prev.map((m: Movie) => m.id));
+        const extra = fresh.filter((m: Movie) => !allIds.has(m.id)).slice(5);
+        return [...prev, ...extra];
+      });
+    } catch {}
+    setFetchingMore(false);
+  }, [selectedMember, activeCategory, fetchingMore]);
+
   const handleSwipe = useCallback((movie: Movie, direction: "left" | "right") => {
     setSwipingId(movie.id);
 
@@ -233,9 +268,13 @@ export default function ClientPage() {
       });
 
       setRecBuffer((prev: Movie[]) => {
-        if (prev.length === 0) return prev;
+        if (prev.length === 0) {
+          fetchMoreRecs();
+          return prev;
+        }
         const [replacement, ...rest] = prev;
         setRecommendations((recs: Movie[]) => [...recs, replacement]);
+        if (rest.length <= 2) fetchMoreRecs();
         return rest;
       });
 
@@ -247,17 +286,17 @@ export default function ClientPage() {
         fetch("/api/movies/watched", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ memberId: selectedMember.id, movie, category: "for-you" }),
+          body: JSON.stringify({ memberId: selectedMember.id, movie, category: activeCategory }),
         }).catch(() => {});
       } else {
         fetch("/api/movies/dislike", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ memberId: selectedMember.id, movie, category: "for-you" }),
+          body: JSON.stringify({ memberId: selectedMember.id, movie, category: activeCategory }),
         }).catch(() => {});
       }
     }
-  }, [selectedMember]);
+  }, [selectedMember, activeCategory, fetchMoreRecs]);
 
   const handleStartOver = () => {
     setSelectedIds(new Set());
@@ -743,8 +782,20 @@ export default function ClientPage() {
           </div>
 
           {recommendations.length === 0 && !error && (
-            <div className="text-center text-gray-500 py-12">
-              No more recommendations. Try picking different movies!
+            <div className="text-center py-12">
+              {fetchingMore ? (
+                <>
+                  <div className="text-3xl mb-3 animate-bounce">🍿</div>
+                  <p className="text-gray-400">Finding more movies for you...</p>
+                </>
+              ) : (
+                <button
+                  onClick={fetchMoreRecs}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold px-8 py-3 rounded-full hover:from-purple-500 hover:to-pink-500 transition shadow-lg shadow-purple-500/25"
+                >
+                  Load More Recommendations
+                </button>
+              )}
             </div>
           )}
 
