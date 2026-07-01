@@ -67,6 +67,8 @@ export default function ClientPage() {
   const [error, setError] = useState<string | null>(null);
   const [swipingId, setSwipingId] = useState<number | null>(null);
   const [fetchingMore, setFetchingMore] = useState(false);
+  const [likedStreak, setLikedStreak] = useState<string[]>([]);
+  const [refining, setRefining] = useState(false);
 
   useEffect(() => {
     if (status !== "authenticated" && !guestMode) return;
@@ -140,6 +142,7 @@ export default function ClientPage() {
   const loadSavedGenre = async (category: string) => {
     if (!selectedMember) return;
     setActiveCategory(category);
+    setLikedStreak([]);
     setStep("loading");
 
     try {
@@ -214,6 +217,7 @@ export default function ClientPage() {
 
     const category = activeGenre || "for-you";
     setActiveCategory(category);
+    setLikedStreak([]);
 
     try {
       const res = await fetch("/api/movies/for-you", {
@@ -265,6 +269,35 @@ export default function ClientPage() {
     setFetchingMore(false);
   }, [selectedMember, activeCategory, fetchingMore]);
 
+  const LIKE_STREAK_THRESHOLD = 5;
+
+  const regenerateFromLikes = useCallback(async (titles: string[]) => {
+    if (!selectedMember) return;
+    setRefining(true);
+    try {
+      const res = await fetch("/api/movies/for-you", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          movieTitles: titles,
+          memberId: selectedMember.id,
+          category: activeCategory,
+          genreName: activeGenre ? GENRE_MAP[activeGenre] : undefined,
+        }),
+      });
+      const data = await res.json();
+      const fresh: Movie[] = data.movies || [];
+      if (fresh.length > 0) {
+        setRecommendations((currentRecs: Movie[]) => {
+          const visibleIds = new Set(currentRecs.map((m: Movie) => m.id));
+          setRecBuffer(fresh.filter((m: Movie) => !visibleIds.has(m.id)));
+          return currentRecs;
+        });
+      }
+    } catch {}
+    setRefining(false);
+  }, [selectedMember, activeCategory, activeGenre]);
+
   const handleSwipe = useCallback((movie: Movie, direction: "left" | "right") => {
     setSwipingId(movie.id);
 
@@ -298,6 +331,15 @@ export default function ClientPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ memberId: selectedMember.id, movie, category: activeCategory }),
         }).catch(() => {});
+
+        setLikedStreak((prev: string[]) => {
+          const next = [...prev, movie.title];
+          if (next.length >= LIKE_STREAK_THRESHOLD) {
+            regenerateFromLikes(next);
+            return [];
+          }
+          return next;
+        });
       } else {
         fetch("/api/movies/dislike", {
           method: "POST",
@@ -306,13 +348,14 @@ export default function ClientPage() {
         }).catch(() => {});
       }
     }
-  }, [selectedMember, activeCategory, fetchMoreRecs]);
+  }, [selectedMember, activeCategory, fetchMoreRecs, regenerateFromLikes]);
 
   const handleStartOver = () => {
     setSelectedIds(new Set());
     setRecommendations([]);
     setRecBuffer([]);
     setShowMoreCount(0);
+    setLikedStreak([]);
     setStep("pick");
     loadGrid(1, false, activeGenre);
   };
@@ -712,6 +755,12 @@ export default function ClientPage() {
               <span className="text-3xl">👉</span>
             </div>
           </div>
+
+          {refining && (
+            <div className="flex items-center justify-center gap-2 bg-purple-900/30 border border-purple-700/40 text-purple-300 text-sm font-medium rounded-full py-2 px-4 mb-4 mx-auto w-fit">
+              <span className="animate-pulse">✨</span> Refining your picks based on what you liked...
+            </div>
+          )}
 
           {error && (
             <div className="text-red-400 text-center mb-6">{error}</div>
