@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSimilarMovies, getRecommendedMovies, getMovieCertification, getWatchProviders } from "@/lib/tmdb";
+import { getSimilarMovies, getRecommendedMovies, getMovieCertification, getWatchProviders, discoverMovies } from "@/lib/tmdb";
 import { getMemberRestrictions } from "@/lib/member";
 import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
@@ -44,15 +44,31 @@ export async function POST(req: NextRequest) {
   );
 
   const seen = new Set<number>();
-  const candidates = allResults
+  const genreId = /^\d+$/.test(category) ? Number(category) : null;
+  let candidates = allResults
     .flat()
     .filter((m) => {
       if (!m.poster_path || excludeIds.has(m.id) || seen.has(m.id)) return false;
+      if (genreId && !(m.genre_ids || []).includes(genreId)) return false;
       seen.add(m.id);
       return true;
     })
     .sort((a, b) => b.vote_average - a.vote_average)
     .slice(0, 15);
+
+  // Similar/recommended came up short on genre matches — backfill from discover
+  if (genreId && candidates.length < 8) {
+    const backfill = await discoverMovies(
+      { genre: genreId, sortBy: "popularity.desc", minVoteCount: 500 },
+      locale
+    );
+    for (const m of backfill) {
+      if (candidates.length >= 15) break;
+      if (!m.poster_path || excludeIds.has(m.id) || seen.has(m.id)) continue;
+      seen.add(m.id);
+      candidates.push(m);
+    }
+  }
 
   const movies = await Promise.all(
     candidates.map(async (m) => {
