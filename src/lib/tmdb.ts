@@ -289,6 +289,7 @@ export interface DiscoverFilters {
   minYear?: number;
   maxRuntime?: number;
   genre?: number;
+  excludeGenre?: number;
   sortBy?: string;
   providerId?: number;
   watchRegion?: string;
@@ -306,6 +307,16 @@ export function getGenreId(name: string): number | undefined {
   return GENRE_IDS[name.toLowerCase()];
 }
 
+export const ANIMATION_GENRE_ID = 16;
+
+// Animated movies are frequently co-tagged with other genres (e.g. an animated
+// sci-fi film), which lets cartoons leak into non-animation genre buckets.
+// Cartoons should only ever surface when Animation itself is the selected genre.
+export function conflictsWithAnimation(genreIds: number[] | undefined, targetGenreId: number | null): boolean {
+  if (!targetGenreId || targetGenreId === ANIMATION_GENRE_ID) return false;
+  return (genreIds || []).includes(ANIMATION_GENRE_ID);
+}
+
 export async function discoverMovies(filters: DiscoverFilters, locale?: string, page = 1): Promise<Movie[]> {
   const params = new URLSearchParams({
     include_adult: "false",
@@ -317,6 +328,7 @@ export async function discoverMovies(filters: DiscoverFilters, locale?: string, 
   if (filters.minRating) params.set("vote_average.gte", String(filters.minRating));
   if (filters.maxRuntime) params.set("with_runtime.lte", String(filters.maxRuntime));
   if (filters.genre) params.set("with_genres", String(filters.genre));
+  if (filters.excludeGenre) params.set("without_genres", String(filters.excludeGenre));
   if (filters.providerId) {
     params.set("with_watch_providers", String(filters.providerId));
     params.set("watch_region", filters.watchRegion || "US");

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSimilarMovies, getRecommendedMovies, getMovieCertification, getWatchProviders, discoverMovies } from "@/lib/tmdb";
+import { getSimilarMovies, getRecommendedMovies, getMovieCertification, getWatchProviders, discoverMovies, conflictsWithAnimation, ANIMATION_GENRE_ID } from "@/lib/tmdb";
 import { getMemberRestrictions } from "@/lib/member";
 import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
@@ -50,6 +50,7 @@ export async function POST(req: NextRequest) {
   const passesFilters = (m: { poster_path: string | null; id: number; genre_ids?: number[]; release_date?: string }) => {
     if (!m.poster_path || excludeIds.has(m.id) || seen.has(m.id)) return false;
     if (genreId && !(m.genre_ids || []).includes(genreId)) return false;
+    if (conflictsWithAnimation(m.genre_ids, genreId)) return false;
     if (minYear) {
       const year = m.release_date ? parseInt(m.release_date.slice(0, 4)) : 0;
       if (!year || year < minYear) return false;
@@ -70,7 +71,13 @@ export async function POST(req: NextRequest) {
   // Similar/recommended came up short on genre/decade matches — backfill from discover
   if ((genreId || minYear) && candidates.length < 8) {
     const backfill = await discoverMovies(
-      { genre: genreId || undefined, minYear: minYear || undefined, sortBy: "popularity.desc", minVoteCount: 500 },
+      {
+        genre: genreId || undefined,
+        excludeGenre: genreId && genreId !== ANIMATION_GENRE_ID ? ANIMATION_GENRE_ID : undefined,
+        minYear: minYear || undefined,
+        sortBy: "popularity.desc",
+        minVoteCount: 500,
+      },
       locale
     );
     for (const m of backfill) {

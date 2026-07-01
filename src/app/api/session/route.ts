@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getMemberRestrictions } from "@/lib/member";
 import { isMovieAllowed } from "@/lib/ageRating";
-import { getMovieGenreIds } from "@/lib/tmdb";
+import { getMovieGenreIds, conflictsWithAnimation } from "@/lib/tmdb";
 
 async function filterAndPruneRecs(
   memberId: string,
@@ -63,7 +63,11 @@ async function filterAndPruneRecs(
     const genreValidated: Record<string, unknown>[] = [];
     for (const { rec, genreIds } of genreChecks) {
       // If the lookup fails, keep the row rather than punish the user for a flaky API call
-      if (genreIds !== null && !genreIds.includes(genreId)) {
+      if (genreIds === null) {
+        genreValidated.push(rec);
+        continue;
+      }
+      if (!genreIds.includes(genreId) || conflictsWithAnimation(genreIds, genreId)) {
         toDeactivate.push(Number(rec.id));
       } else {
         genreValidated.push(rec);

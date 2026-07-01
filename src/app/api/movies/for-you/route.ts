@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveAISuggestions, getWatchProviders, discoverMovies, getMovieCertification, type WatchProviders } from "@/lib/tmdb";
+import { resolveAISuggestions, getWatchProviders, discoverMovies, getMovieCertification, conflictsWithAnimation, ANIMATION_GENRE_ID, type WatchProviders } from "@/lib/tmdb";
 import { getForYouAI } from "@/lib/openai";
 import { getMemberRestrictions } from "@/lib/member";
 import { isMovieAllowed } from "@/lib/ageRating";
@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
   let movies = allMovies
     .filter((m) => isMovieAllowed(m.certification, maxRating))
     .filter((m) => !minYear || (m.release_date && parseInt(m.release_date.slice(0, 4)) >= minYear))
-    .filter((m) => !genreId || (m.genre_ids || []).includes(genreId));
+    .filter((m) => !genreId || (m.genre_ids || []).includes(genreId))
+    .filter((m) => !conflictsWithAnimation(m.genre_ids, genreId));
 
   // AI ignored the genre/decade instructions and left us short — backfill from TMDB discover
   if ((genreId || minYear) && movies.length < 12) {
@@ -56,7 +57,13 @@ export async function POST(req: NextRequest) {
     );
     const seenIds = new Set(movies.map((m) => m.id));
     const backfill = await discoverMovies(
-      { genre: genreId || undefined, minYear: minYear || undefined, sortBy: "popularity.desc", minVoteCount: 500 },
+      {
+        genre: genreId || undefined,
+        excludeGenre: genreId && genreId !== ANIMATION_GENRE_ID ? ANIMATION_GENRE_ID : undefined,
+        minYear: minYear || undefined,
+        sortBy: "popularity.desc",
+        minVoteCount: 500,
+      },
       locale
     );
     for (const m of backfill) {

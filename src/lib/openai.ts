@@ -345,7 +345,11 @@ export async function getForYouAI(
   const movieList = likedMovies.map((t) => `"${t}"`).join(", ");
 
   const genreRule = genreName
-    ? `- IMPORTANT: ALL recommendations MUST be ${genreName} movies. Do not recommend movies outside the ${genreName} genre.\n`
+    ? `- IMPORTANT: ALL recommendations MUST be ${genreName} movies. Do not recommend movies outside the ${genreName} genre.\n${
+        genreName.toLowerCase() !== "animation"
+          ? `- IMPORTANT: Do NOT recommend animated movies or cartoons unless the genre itself is Animation.\n`
+          : ""
+      }`
     : `- Cover a range of genres that match their taste (don't just pick one genre)\n`;
 
   const decadeRule = minDecade
