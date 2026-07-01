@@ -61,6 +61,12 @@ export async function getMovieCertification(movieId: number, _locale?: string): 
   return "NR";
 }
 
+export async function getMovieGenreIds(movieId: number): Promise<number[]> {
+  const res = await fetch(`${TMDB_BASE}/movie/${movieId}?language=en-US`, { headers: headers() });
+  const data = await res.json();
+  return Array.isArray(data.genres) ? data.genres.map((g: { id: number }) => Number(g.id)) : [];
+}
+
 export async function getMovieDetails(movieId: number, locale?: string): Promise<Movie & { certification: string }> {
   const [movieRes, cert] = await Promise.all([
     fetch(`${TMDB_BASE}/movie/${movieId}?language=${tmdbLanguage(locale)}`, { headers: headers() }),

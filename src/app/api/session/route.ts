@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getMemberRestrictions } from "@/lib/member";
 import { isMovieAllowed } from "@/lib/ageRating";
+import { getMovieGenreIds } from "@/lib/tmdb";
 
 async function filterAndPruneRecs(
   memberId: string,
   rows: Record<string, unknown>[],
   maxRating: string | null,
   likedTitles: Set<string>,
-  watchedIds: Set<number>
+  watchedIds: Set<number>,
+  genreId: number | null = null
 ) {
   const allowed: Record<string, unknown>[] = [];
   const toDeactivate: number[] = [];
@@ -47,6 +49,28 @@ async function filterAndPruneRecs(
     }
 
     allowed.push(rec);
+  }
+
+  // Re-validate genre against TMDB — catches stale rows saved before genre
+  // enforcement existed, or rows saved without genre metadata (for-you/more-like)
+  if (genreId && allowed.length > 0) {
+    const genreChecks = await Promise.all(
+      allowed.map(async (rec) => ({
+        rec,
+        genreIds: await getMovieGenreIds(Number(rec.tmdb_id)).catch(() => null),
+      }))
+    );
+    const genreValidated: Record<string, unknown>[] = [];
+    for (const { rec, genreIds } of genreChecks) {
+      // If the lookup fails, keep the row rather than punish the user for a flaky API call
+      if (genreIds !== null && !genreIds.includes(genreId)) {
+        toDeactivate.push(Number(rec.id));
+      } else {
+        genreValidated.push(rec);
+      }
+    }
+    allowed.length = 0;
+    allowed.push(...genreValidated);
   }
 
   for (const id of toDeactivate) {
@@ -92,7 +116,8 @@ export async function GET(req: NextRequest) {
     ]);
 
     const likedTitles = new Set(likedRows.rows.map((r) => String(r.title)));
-    const filteredRecs = await filterAndPruneRecs(memberId, activeRecs.rows, maxRating, likedTitles, watchedIds);
+    const genreId = /^\d+$/.test(category) ? Number(category) : null;
+    const filteredRecs = await filterAndPruneRecs(memberId, activeRecs.rows, maxRating, likedTitles, watchedIds, genreId);
 
     return NextResponse.json({
       hasHistory: filteredRecs.length > 0 || likedRows.rows.length > 0 || dislikedRows.rows.length > 0,
