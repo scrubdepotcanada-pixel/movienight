@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveAISuggestions, getWatchProviders, type WatchProviders } from "@/lib/tmdb";
+import { resolveAISuggestions, getWatchProviders, discoverMovies, getMovieCertification, type WatchProviders } from "@/lib/tmdb";
 import { getForYouAI } from "@/lib/openai";
 import { getMemberRestrictions } from "@/lib/member";
 import { isMovieAllowed } from "@/lib/ageRating";
@@ -42,10 +42,34 @@ export async function POST(req: NextRequest) {
   const suggestions = await getForYouAI(allLikedTitles, watchedTitles, dislikedTitles, maxRating, genreName, minDecade);
   const allMovies = await resolveAISuggestions(suggestions, locale);
   const minYear = minDecade ? Number(minDecade) : null;
-  const movies = allMovies
+  const genreId = /^\d+$/.test(category) ? Number(category) : null;
+
+  let movies = allMovies
     .filter((m) => isMovieAllowed(m.certification, maxRating))
     .filter((m) => !minYear || (m.release_date && parseInt(m.release_date.slice(0, 4)) >= minYear))
-    .slice(0, 20);
+    .filter((m) => !genreId || (m.genre_ids || []).includes(genreId));
+
+  // AI ignored the genre/decade instructions and left us short — backfill from TMDB discover
+  if ((genreId || minYear) && movies.length < 12) {
+    const excludeTitles = new Set(
+      [...allLikedTitles, ...watchedTitles, ...dislikedTitles].map((t) => t.toLowerCase())
+    );
+    const seenIds = new Set(movies.map((m) => m.id));
+    const backfill = await discoverMovies(
+      { genre: genreId || undefined, minYear: minYear || undefined, sortBy: "popularity.desc", minVoteCount: 500 },
+      locale
+    );
+    for (const m of backfill) {
+      if (movies.length >= 20) break;
+      if (!m.poster_path || seenIds.has(m.id) || excludeTitles.has(m.title.toLowerCase())) continue;
+      const cert = await getMovieCertification(m.id, locale);
+      if (!isMovieAllowed(cert, maxRating)) continue;
+      seenIds.add(m.id);
+      movies.push({ ...m, certification: cert });
+    }
+  }
+
+  movies = movies.slice(0, 20);
 
   const providers: Record<number, WatchProviders> = {};
   await Promise.all(
