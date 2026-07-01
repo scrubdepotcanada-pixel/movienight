@@ -335,7 +335,8 @@ export async function getForYouAI(
   watchedTitles: string[] = [],
   dislikedTitles: string[] = [],
   maxRating: MaxRating | null = null,
-  genreName?: string | null
+  genreName?: string | null,
+  minDecade?: string | null
 ): Promise<MovieSuggestion[]> {
   const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
   const ratingBlock = ratingRestrictionPrompt(maxRating);
@@ -347,6 +348,10 @@ export async function getForYouAI(
     ? `- IMPORTANT: ALL recommendations MUST be ${genreName} movies. Do not recommend movies outside the ${genreName} genre.\n`
     : `- Cover a range of genres that match their taste (don't just pick one genre)\n`;
 
+  const decadeRule = minDecade
+    ? `- IMPORTANT: Only recommend movies released in ${minDecade} or later. Do not recommend anything older.\n`
+    : `- Include movies from different decades\n`;
+
   return askForMovies(
     `The user picked these movies as ones they love: ${movieList}.
 
@@ -354,8 +359,7 @@ Analyze their taste — what themes, tones, eras, and styles do they gravitate t
 
 Rules:
 ${genreRule}- Mix well-known crowd-pleasers with hidden gems they probably missed
-- Include movies from different decades
-- Do NOT include any of the movies listed above
+${decadeRule}- Do NOT include any of the movies listed above
 ${excludeBlock}${ratingBlock}
 
 Return exactly ${count} movies.`,

@@ -6,7 +6,7 @@ import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
 
 export async function POST(req: NextRequest) {
-  const { movieTitles, memberId, category = "for-you", genreName } = await req.json();
+  const { movieTitles, memberId, category = "for-you", genreName, minDecade } = await req.json();
 
   if (!Array.isArray(movieTitles) || movieTitles.length < 3) {
     return NextResponse.json({ error: "Need at least 3 movie titles" }, { status: 400 });
@@ -39,10 +39,12 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  const suggestions = await getForYouAI(allLikedTitles, watchedTitles, dislikedTitles, maxRating, genreName);
+  const suggestions = await getForYouAI(allLikedTitles, watchedTitles, dislikedTitles, maxRating, genreName, minDecade);
   const allMovies = await resolveAISuggestions(suggestions, locale);
+  const minYear = minDecade ? Number(minDecade) : null;
   const movies = allMovies
     .filter((m) => isMovieAllowed(m.certification, maxRating))
+    .filter((m) => !minYear || (m.release_date && parseInt(m.release_date.slice(0, 4)) >= minYear))
     .slice(0, 20);
 
   const providers: Record<number, WatchProviders> = {};

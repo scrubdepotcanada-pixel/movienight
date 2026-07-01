@@ -280,6 +280,7 @@ export interface DiscoverFilters {
   minRating?: number;
   minVoteCount?: number;
   decade?: string;
+  minYear?: number;
   maxRuntime?: number;
   genre?: number;
   sortBy?: string;
@@ -320,6 +321,9 @@ export async function discoverMovies(filters: DiscoverFilters, locale?: string, 
     const startYear = parseInt(filters.decade);
     params.set("primary_release_date.gte", `${startYear}-01-01`);
     params.set("primary_release_date.lte", `${startYear + 9}-12-31`);
+  }
+  if (filters.minYear) {
+    params.set("primary_release_date.gte", `${filters.minYear}-01-01`);
   }
 
   const res = await fetch(`${TMDB_BASE}/discover/movie?${params}`, { headers: headers() });

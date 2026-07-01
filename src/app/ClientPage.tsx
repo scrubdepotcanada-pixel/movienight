@@ -44,6 +44,23 @@ function posterUrl(path: string | null, size = "w342") {
   return `${TMDB_IMG}/${size}${path}`;
 }
 
+const DECADE_FILTERS: { value: string; label: string }[] = [
+  { value: "2020", label: "2020s+" },
+  { value: "2010", label: "2010s+" },
+  { value: "2000", label: "2000s+" },
+  { value: "1990", label: "1990s+" },
+];
+
+function passesDecade(movie: Movie, minDecade: string | null): boolean {
+  if (!minDecade) return true;
+  const year = movie.release_date ? parseInt(movie.release_date.slice(0, 4)) : 0;
+  return year >= Number(minDecade);
+}
+
+function sortByRating(movies: Movie[]): Movie[] {
+  return [...movies].sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+}
+
 export default function ClientPage() {
   const { data: session, status } = useSession();
 
@@ -69,6 +86,7 @@ export default function ClientPage() {
   const [fetchingMore, setFetchingMore] = useState(false);
   const [likedStreak, setLikedStreak] = useState<string[]>([]);
   const [refining, setRefining] = useState(false);
+  const [minDecade, setMinDecade] = useState<string | null>(null);
 
   useEffect(() => {
     if (status !== "authenticated" && !guestMode) return;
@@ -168,10 +186,10 @@ export default function ClientPage() {
       const moreRes = await fetch("/api/movies/more-like", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ memberId: selectedMember.id, category }),
+        body: JSON.stringify({ memberId: selectedMember.id, category, minDecade }),
       });
       const moreData = await moreRes.json();
-      const fresh: Movie[] = moreData.movies || [];
+      const fresh: Movie[] = sortByRating(moreData.movies || []);
       if (fresh.length > 0) {
         setRecommendations(fresh.slice(0, 5));
         setRecBuffer(fresh.slice(5));
@@ -228,10 +246,11 @@ export default function ClientPage() {
           memberId: selectedMember?.id,
           category,
           genreName: activeGenre ? GENRE_MAP[activeGenre] : undefined,
+          minDecade,
         }),
       });
       const data = await res.json();
-      const all = data.movies || [];
+      const all = sortByRating(data.movies || []);
       setRecommendations(all.slice(0, 10));
       setRecBuffer(all.slice(10));
       setStep("results");
@@ -241,7 +260,7 @@ export default function ClientPage() {
     }
   };
 
-  const fetchMoreRecs = useCallback(async () => {
+  const fetchMoreRecs = useCallback(async (decadeOverride?: string | null) => {
     if (fetchingMore || !selectedMember) return;
     setFetchingMore(true);
     try {
@@ -251,10 +270,11 @@ export default function ClientPage() {
         body: JSON.stringify({
           memberId: selectedMember.id,
           category: activeCategory,
+          minDecade: decadeOverride !== undefined ? decadeOverride : minDecade,
         }),
       });
       const data = await res.json();
-      const fresh: Movie[] = data.movies || [];
+      const fresh: Movie[] = sortByRating(data.movies || []);
       setRecommendations((prev: Movie[]) => {
         const existingIds = new Set(prev.map((m: Movie) => m.id));
         const newOnes = fresh.filter((m: Movie) => !existingIds.has(m.id));
@@ -267,7 +287,7 @@ export default function ClientPage() {
       });
     } catch {}
     setFetchingMore(false);
-  }, [selectedMember, activeCategory, fetchingMore]);
+  }, [selectedMember, activeCategory, fetchingMore, minDecade]);
 
   const LIKE_STREAK_THRESHOLD = 5;
 
@@ -283,10 +303,11 @@ export default function ClientPage() {
           memberId: selectedMember.id,
           category: activeCategory,
           genreName: activeGenre ? GENRE_MAP[activeGenre] : undefined,
+          minDecade,
         }),
       });
       const data = await res.json();
-      const fresh: Movie[] = data.movies || [];
+      const fresh: Movie[] = sortByRating(data.movies || []);
       if (fresh.length > 0) {
         setRecommendations((currentRecs: Movie[]) => {
           const visibleIds = new Set(currentRecs.map((m: Movie) => m.id));
@@ -296,7 +317,7 @@ export default function ClientPage() {
       }
     } catch {}
     setRefining(false);
-  }, [selectedMember, activeCategory, activeGenre]);
+  }, [selectedMember, activeCategory, activeGenre, minDecade]);
 
   const handleSwipe = useCallback((movie: Movie, direction: "left" | "right") => {
     setSwipingId(movie.id);
@@ -315,7 +336,11 @@ export default function ClientPage() {
           fetchMoreRecs();
           return prev;
         }
-        const [replacement, ...rest] = prev;
+        // Promote the highest-rated buffer movie that fits the decade filter (fall back to best overall)
+        const passing = prev.filter((m: Movie) => passesDecade(m, minDecade));
+        const pool = passing.length > 0 ? passing : prev;
+        const replacement = sortByRating(pool)[0];
+        const rest = prev.filter((m: Movie) => m.id !== replacement.id);
         setRecommendations((recs: Movie[]) => [...recs, replacement]);
         if (rest.length <= 2) fetchMoreRecs();
         return rest;
@@ -348,7 +373,7 @@ export default function ClientPage() {
         }).catch(() => {});
       }
     }
-  }, [selectedMember, activeCategory, fetchMoreRecs, regenerateFromLikes]);
+  }, [selectedMember, activeCategory, fetchMoreRecs, regenerateFromLikes, minDecade]);
 
   const handleStartOver = () => {
     setSelectedIds(new Set());
@@ -366,6 +391,13 @@ export default function ClientPage() {
     } else {
       handleStartOver();
     }
+  };
+
+  const handleDecadeChange = (decade: string | null) => {
+    const next = decade === minDecade ? null : decade;
+    setMinDecade(next);
+    const remaining = recommendations.filter((m: Movie) => passesDecade(m, next));
+    if (remaining.length < 3) fetchMoreRecs(next);
   };
 
   const handleAddMember = async (name: string, avatar: string, age: number | null, maxRating: string) => {
@@ -728,6 +760,11 @@ export default function ClientPage() {
 
   // ── Results ──
   if (step === "results") {
+    const displayedRecommendations = sortByRating(
+      recommendations.filter((m: Movie) => passesDecade(m, minDecade))
+    );
+    const hiddenByDecade = recommendations.length > 0 && displayedRecommendations.length === 0;
+
     return (
       <div className="min-h-screen bg-[#0a0a1a] flex flex-col">
         <Header
@@ -739,7 +776,7 @@ export default function ClientPage() {
 
         <div className="flex-1 px-4 pt-4 pb-8 max-w-xl mx-auto w-full">
           {/* Swipe legend */}
-          <div className="flex items-center justify-between mb-5 px-2">
+          <div className="flex items-center justify-between mb-4 px-2">
             <div className="flex items-center gap-2">
               <span className="text-3xl">👈</span>
               <span className="text-red-400 font-bold">Nope</span>
@@ -756,6 +793,34 @@ export default function ClientPage() {
             </div>
           </div>
 
+          {/* Decade filter */}
+          <div className="flex items-center justify-center gap-2 flex-wrap mb-4">
+            <span className="text-gray-500 text-xs font-medium mr-1">Era</span>
+            <button
+              onClick={() => handleDecadeChange(null)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                !minDecade
+                  ? "bg-purple-600 text-white"
+                  : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+              }`}
+            >
+              All
+            </button>
+            {DECADE_FILTERS.map((d) => (
+              <button
+                key={d.value}
+                onClick={() => handleDecadeChange(d.value)}
+                className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                  minDecade === d.value
+                    ? "bg-purple-600 text-white"
+                    : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                }`}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+
           {refining && (
             <div className="flex items-center justify-center gap-2 bg-purple-900/30 border border-purple-700/40 text-purple-300 text-sm font-medium rounded-full py-2 px-4 mb-4 mx-auto w-fit">
               <span className="animate-pulse">✨</span> Refining your picks based on what you liked...
@@ -767,7 +832,7 @@ export default function ClientPage() {
           )}
 
           <div className="space-y-4">
-            {recommendations.map((movie: Movie, i: number) => (
+            {displayedRecommendations.map((movie: Movie, i: number) => (
               <SwipeableCard
                 key={movie.id}
                 onSwipeLeft={() => handleSwipe(movie, "left")}
@@ -779,16 +844,26 @@ export default function ClientPage() {
             ))}
           </div>
 
-          {recommendations.length === 0 && !error && (
+          {displayedRecommendations.length === 0 && !error && (
             <div className="text-center py-12">
               {fetchingMore ? (
                 <>
                   <div className="text-3xl mb-3 animate-bounce">🍿</div>
                   <p className="text-gray-400">Finding more movies for you...</p>
                 </>
+              ) : hiddenByDecade ? (
+                <>
+                  <p className="text-gray-400 mb-4">No movies from that era in your current picks yet.</p>
+                  <button
+                    onClick={() => fetchMoreRecs()}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold px-8 py-3 rounded-full hover:from-purple-500 hover:to-pink-500 transition shadow-lg shadow-purple-500/25"
+                  >
+                    Find More {minDecade ? `${minDecade}s+` : ""} Movies
+                  </button>
+                </>
               ) : (
                 <button
-                  onClick={fetchMoreRecs}
+                  onClick={() => fetchMoreRecs()}
                   className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold px-8 py-3 rounded-full hover:from-purple-500 hover:to-pink-500 transition shadow-lg shadow-purple-500/25"
                 >
                   Load More Recommendations

@@ -5,7 +5,7 @@ import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
 
 export async function POST(req: NextRequest) {
-  const { memberId, category = "for-you" } = await req.json();
+  const { memberId, category = "for-you", minDecade } = await req.json();
 
   if (!memberId) {
     return NextResponse.json({ error: "Missing memberId" }, { status: 400 });
@@ -45,26 +45,37 @@ export async function POST(req: NextRequest) {
 
   const seen = new Set<number>();
   const genreId = /^\d+$/.test(category) ? Number(category) : null;
+  const minYear: number | null = minDecade ? Number(minDecade) : null;
+
+  const passesFilters = (m: { poster_path: string | null; id: number; genre_ids?: number[]; release_date?: string }) => {
+    if (!m.poster_path || excludeIds.has(m.id) || seen.has(m.id)) return false;
+    if (genreId && !(m.genre_ids || []).includes(genreId)) return false;
+    if (minYear) {
+      const year = m.release_date ? parseInt(m.release_date.slice(0, 4)) : 0;
+      if (!year || year < minYear) return false;
+    }
+    return true;
+  };
+
   let candidates = allResults
     .flat()
     .filter((m) => {
-      if (!m.poster_path || excludeIds.has(m.id) || seen.has(m.id)) return false;
-      if (genreId && !(m.genre_ids || []).includes(genreId)) return false;
+      if (!passesFilters(m)) return false;
       seen.add(m.id);
       return true;
     })
     .sort((a, b) => b.vote_average - a.vote_average)
     .slice(0, 15);
 
-  // Similar/recommended came up short on genre matches — backfill from discover
-  if (genreId && candidates.length < 8) {
+  // Similar/recommended came up short on genre/decade matches — backfill from discover
+  if ((genreId || minYear) && candidates.length < 8) {
     const backfill = await discoverMovies(
-      { genre: genreId, sortBy: "popularity.desc", minVoteCount: 500 },
+      { genre: genreId || undefined, minYear: minYear || undefined, sortBy: "popularity.desc", minVoteCount: 500 },
       locale
     );
     for (const m of backfill) {
       if (candidates.length >= 15) break;
-      if (!m.poster_path || excludeIds.has(m.id) || seen.has(m.id)) continue;
+      if (!passesFilters(m)) continue;
       seen.add(m.id);
       candidates.push(m);
     }
