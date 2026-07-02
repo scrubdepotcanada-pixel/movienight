@@ -87,6 +87,9 @@ export default function ClientPage() {
   const [likedStreak, setLikedStreak] = useState<string[]>([]);
   const [refining, setRefining] = useState(false);
   const [minDecade, setMinDecade] = useState<string | null>(null);
+  const seedTitlesRef = useRef<string[]>([]);
+  const shownIdsRef = useRef<Set<number>>(new Set());
+  const guestLikedTitlesRef = useRef<string[]>([]);
 
   useEffect(() => {
     if (status !== "authenticated" && !guestMode) return;
@@ -236,6 +239,7 @@ export default function ClientPage() {
     const category = activeGenre || "for-you";
     setActiveCategory(category);
     setLikedStreak([]);
+    seedTitlesRef.current = titles;
 
     try {
       const res = await fetch("/api/movies/for-you", {
@@ -251,6 +255,7 @@ export default function ClientPage() {
       });
       const data = await res.json();
       const all = sortByRating(data.movies || []);
+      shownIdsRef.current = new Set(all.map((m: Movie) => m.id));
       setRecommendations(all.slice(0, 10));
       setRecBuffer(all.slice(10));
       setStep("results");
@@ -261,20 +266,47 @@ export default function ClientPage() {
   };
 
   const fetchMoreRecs = useCallback(async (decadeOverride?: string | null) => {
-    if (fetchingMore || !selectedMember) return;
+    if (fetchingMore) return;
+    const effectiveDecade = decadeOverride !== undefined ? decadeOverride : minDecade;
+
+    if (!selectedMember && seedTitlesRef.current.length === 0) return;
+
     setFetchingMore(true);
     try {
-      const res = await fetch("/api/movies/more-like", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          memberId: selectedMember.id,
-          category: activeCategory,
-          minDecade: decadeOverride !== undefined ? decadeOverride : minDecade,
-        }),
-      });
-      const data = await res.json();
-      const fresh: Movie[] = sortByRating(data.movies || []);
+      let fresh: Movie[] = [];
+
+      if (selectedMember) {
+        const res = await fetch("/api/movies/more-like", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            memberId: selectedMember.id,
+            category: activeCategory,
+            minDecade: effectiveDecade,
+          }),
+        });
+        const data = await res.json();
+        fresh = sortByRating(data.movies || []);
+      } else {
+        // Guests have no saved history for more-like to query — reuse the
+        // original picks (+ anything liked this session) as fresh AI seeds
+        const combinedSeeds = [...new Set([...seedTitlesRef.current, ...guestLikedTitlesRef.current])];
+        const res = await fetch("/api/movies/for-you", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            movieTitles: combinedSeeds,
+            category: activeCategory,
+            genreName: activeGenre ? GENRE_MAP[activeGenre] : undefined,
+            minDecade: effectiveDecade,
+          }),
+        });
+        const data = await res.json();
+        fresh = sortByRating(data.movies || []).filter((m: Movie) => !shownIdsRef.current.has(m.id));
+      }
+
+      fresh.forEach((m: Movie) => shownIdsRef.current.add(m.id));
+
       setRecommendations((prev: Movie[]) => {
         const existingIds = new Set(prev.map((m: Movie) => m.id));
         const newOnes = fresh.filter((m: Movie) => !existingIds.has(m.id));
@@ -287,7 +319,7 @@ export default function ClientPage() {
       });
     } catch {}
     setFetchingMore(false);
-  }, [selectedMember, activeCategory, fetchingMore, minDecade]);
+  }, [selectedMember, activeCategory, activeGenre, fetchingMore, minDecade]);
 
   const LIKE_STREAK_THRESHOLD = 5;
 
@@ -372,6 +404,9 @@ export default function ClientPage() {
           body: JSON.stringify({ memberId: selectedMember.id, movie, category: activeCategory }),
         }).catch(() => {});
       }
+    } else if (direction === "right") {
+      // Guests have no DB — just remember this for seeding future "Load More" fetches
+      guestLikedTitlesRef.current = [...guestLikedTitlesRef.current, movie.title].slice(-10);
     }
   }, [selectedMember, activeCategory, fetchMoreRecs, regenerateFromLikes, minDecade]);
 
@@ -381,6 +416,9 @@ export default function ClientPage() {
     setRecBuffer([]);
     setShowMoreCount(0);
     setLikedStreak([]);
+    seedTitlesRef.current = [];
+    shownIdsRef.current = new Set();
+    guestLikedTitlesRef.current = [];
     setStep("pick");
     loadGrid(1, false, activeGenre);
   };
