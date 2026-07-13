@@ -577,9 +577,10 @@ export default function AdminPage() {
             {/* Guest Sessions — grouped by IP */}
             {(() => {
               const active = stats.guestDetails.filter(g => g.liked + g.disliked + g.recs > 0);
-              const grouped = active.reduce<Record<string, { ip: string; sessions: number; members: string[]; liked: number; disliked: number; recs: number; categories: string[]; lastActive: string | null }>>((acc, g) => {
+              const grouped = active.reduce<Record<string, { ip: string; ids: string[]; sessions: number; members: string[]; liked: number; disliked: number; recs: number; categories: string[]; lastActive: string | null }>>((acc, g) => {
                 const key = g.ip || "Unknown IP";
-                if (!acc[key]) acc[key] = { ip: key, sessions: 0, members: [], liked: 0, disliked: 0, recs: 0, categories: [], lastActive: null };
+                if (!acc[key]) acc[key] = { ip: key, ids: [], sessions: 0, members: [], liked: 0, disliked: 0, recs: 0, categories: [], lastActive: null };
+                acc[key].ids.push(g.id);
                 acc[key].sessions++;
                 acc[key].liked += g.liked;
                 acc[key].disliked += g.disliked;
@@ -592,6 +593,33 @@ export default function AdminPage() {
                 return acc;
               }, {});
               const rows = Object.values(grouped).sort((a, b) => (b.lastActive || "").localeCompare(a.lastActive || ""));
+
+              const assignToUser = async (ids: string[]) => {
+                const email = window.prompt("Assign this guest's picks to which signed-in email?");
+                if (!email) return;
+                let totalMoved = 0;
+                let failed = 0;
+                for (const guestId of ids) {
+                  try {
+                    const res = await fetch("/api/admin/merge-guest", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ guestId, targetEmail: email.trim() }),
+                    });
+                    const data = await res.json();
+                    if (res.ok) totalMoved += data.membersMoved || 0;
+                    else failed++;
+                  } catch {
+                    failed++;
+                  }
+                }
+                if (totalMoved > 0) {
+                  alert(`Moved ${totalMoved} member(s) to ${email}.${failed > 0 ? ` (${failed} session(s) failed — may already be merged.)` : ""}`);
+                } else {
+                  alert(`Nothing moved. Check the email is correct and has signed in at least once.${failed > 0 ? ` (${failed} error(s).)` : ""}`);
+                }
+                loadAll(true);
+              };
               return (
                 <div className="bg-gray-900 border border-gray-700/50 rounded-2xl overflow-hidden">
                   <div className="px-6 py-4 border-b border-gray-800">
@@ -611,6 +639,7 @@ export default function AdminPage() {
                             <th className="text-left px-3 py-3">Searched</th>
                             <th className="text-center px-2 py-3">Activity</th>
                             <th className="text-left px-3 py-3">Last Active</th>
+                            <th className="text-left px-3 py-3">Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -656,6 +685,14 @@ export default function AdminPage() {
                                 ) : (
                                   <span className="text-gray-600">Never</span>
                                 )}
+                              </td>
+                              <td className="px-3 py-3">
+                                <button
+                                  onClick={() => assignToUser(row.ids)}
+                                  className="text-purple-400 hover:text-purple-300 text-xs font-medium bg-purple-900/30 hover:bg-purple-900/50 px-2.5 py-1 rounded-lg transition-colors whitespace-nowrap"
+                                >
+                                  Assign to user
+                                </button>
                               </td>
                             </tr>
                           ))}

@@ -15,7 +15,7 @@ export function isAdminEmail(email: string | null | undefined): boolean {
 // Reassign every row belonging to a guest family over to a real family,
 // preserving member ids (and therefore all their liked/disliked/watched/
 // recommendation history, which is keyed by member_id, not family_id).
-async function mergeGuestIntoFamily(guestId: string, familyId: string) {
+export async function mergeGuestIntoFamily(guestId: string, familyId: string) {
   await db.execute({
     sql: "UPDATE members SET family_id = ? WHERE family_id = ?",
     args: [familyId, guestId],
