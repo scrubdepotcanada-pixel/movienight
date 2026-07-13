@@ -12,6 +12,28 @@ export function isAdminEmail(email: string | null | undefined): boolean {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
+// Reassign every row belonging to a guest family over to a real family,
+// preserving member ids (and therefore all their liked/disliked/watched/
+// recommendation history, which is keyed by member_id, not family_id).
+async function mergeGuestIntoFamily(guestId: string, familyId: string) {
+  await db.execute({
+    sql: "UPDATE members SET family_id = ? WHERE family_id = ?",
+    args: [familyId, guestId],
+  });
+  await db.execute({
+    sql: "UPDATE swipe_sessions SET family_id = ? WHERE family_id = ?",
+    args: [familyId, guestId],
+  });
+  await db.execute({
+    sql: "UPDATE filter_events SET family_id = ? WHERE family_id = ?",
+    args: [familyId, guestId],
+  });
+  await db.execute({
+    sql: "DELETE FROM families WHERE id = ?",
+    args: [guestId],
+  });
+}
+
 export async function getOrCreateFamily(): Promise<string | null> {
   await initDB();
 
@@ -30,13 +52,38 @@ export async function getOrCreateFamily(): Promise<string | null> {
     });
 
     if (byId.rows.length > 0) {
+      const familyId = String(byId.rows[0].id);
+
       if (isAdminEmail(email)) {
         await db.execute({
           sql: "UPDATE families SET premium_until = ?, subscription_plan = ? WHERE id = ?",
-          args: ["2099-12-31T23:59:59Z", "admin", String(byId.rows[0].id)],
+          args: ["2099-12-31T23:59:59Z", "admin", familyId],
         });
       }
-      return String(byId.rows[0].id);
+
+      // Catch-up for accounts created before guest migration existed: if this
+      // account has no members yet and a guest session cookie is still
+      // sitting in the browser, pull that guest's data in now.
+      const cookieStore = await cookies();
+      const guestId = cookieStore.get("guest_family_id")?.value;
+      if (guestId && guestId !== familyId) {
+        const memberCount = await db.execute({
+          sql: "SELECT COUNT(*) as count FROM members WHERE family_id = ?",
+          args: [familyId],
+        });
+        if (Number(memberCount.rows[0].count) === 0) {
+          const guestFamily = await db.execute({
+            sql: "SELECT id FROM families WHERE id = ? AND google_id IS NULL",
+            args: [guestId],
+          });
+          if (guestFamily.rows.length > 0) {
+            await mergeGuestIntoFamily(guestId, familyId);
+            cookieStore.delete("guest_family_id");
+          }
+        }
+      }
+
+      return familyId;
     }
 
     if (email) {
@@ -51,6 +98,32 @@ export async function getOrCreateFamily(): Promise<string | null> {
           args: [userId, name, image, email],
         });
         return String(byEmail.rows[0].id);
+      }
+    }
+
+    // First-ever sign-in for this account. If they were already using the
+    // app as a guest, upgrade that guest family in place instead of starting
+    // from scratch — this keeps the same family id, so every member/like/
+    // dislike/recommendation row already tied to it carries over untouched.
+    const cookieStore = await cookies();
+    const guestId = cookieStore.get("guest_family_id")?.value;
+    if (guestId) {
+      const guestFamily = await db.execute({
+        sql: "SELECT id FROM families WHERE id = ? AND google_id IS NULL",
+        args: [guestId],
+      });
+      if (guestFamily.rows.length > 0) {
+        const premiumUntil = isAdminEmail(email) ? "2099-12-31T23:59:59Z" : null;
+        const plan = isAdminEmail(email) ? "admin" : null;
+        await db.execute({
+          sql: `UPDATE families
+                SET google_id = ?, email = ?, name = ?, avatar = ?, ip_address = NULL,
+                    premium_until = COALESCE(premium_until, ?), subscription_plan = COALESCE(subscription_plan, ?)
+                WHERE id = ?`,
+          args: [userId, email, name, image, premiumUntil, plan, guestId],
+        });
+        cookieStore.delete("guest_family_id");
+        return guestId;
       }
     }
 
