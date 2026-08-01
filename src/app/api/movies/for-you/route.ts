@@ -1,14 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveAISuggestions, getWatchProviders, discoverMovies, getMovieCertification, conflictsWithAnimation, ANIMATION_GENRE_ID, type WatchProviders } from "@/lib/tmdb";
-import { getForYouAI } from "@/lib/openai";
+import { getForYouAI, type RatedMovie } from "@/lib/openai";
 import { getMemberRestrictions } from "@/lib/member";
 import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
 
-export async function POST(req: NextRequest) {
-  const { movieTitles, memberId, category = "for-you", genreName, minDecade } = await req.json();
+const DEFAULT_RATING = 5; // explicit picks with no star rating supplied are assumed loved
 
-  if (!Array.isArray(movieTitles) || movieTitles.length < 3) {
+export async function POST(req: NextRequest) {
+  const { movieTitles, moviePicks, memberId, category = "for-you", genreName, minDecade } = await req.json();
+
+  const picks: RatedMovie[] = Array.isArray(moviePicks) && moviePicks.length > 0
+    ? moviePicks.map((p: { title: string; rating?: number }) => ({
+        title: String(p.title),
+        rating: Math.min(5, Math.max(1, Number(p.rating) || DEFAULT_RATING)),
+      }))
+    : Array.isArray(movieTitles)
+      ? movieTitles.map((t: string) => ({ title: t, rating: DEFAULT_RATING }))
+      : [];
+
+  if (picks.length < 3) {
     return NextResponse.json({ error: "Need at least 3 movie titles" }, { status: 400 });
   }
 
@@ -17,29 +28,28 @@ export async function POST(req: NextRequest) {
   let maxRating = null;
   let watchedTitles: string[] = [];
   let dislikedTitles: string[] = [];
-  let allLikedTitles: string[] = [...movieTitles];
+  const allLikedMovies: RatedMovie[] = [...picks];
 
   if (memberId) {
     const [restrictions, watchedRows, dislikedRows, likedRows] = await Promise.all([
       getMemberRestrictions(memberId),
       db.execute({ sql: "SELECT title FROM watched_movies WHERE member_id = ?", args: [memberId] }),
       db.execute({ sql: "SELECT title FROM disliked_movies WHERE member_id = ?", args: [memberId] }),
-      db.execute({ sql: "SELECT DISTINCT title FROM liked_movies WHERE member_id = ? ORDER BY created_at DESC", args: [memberId] }),
+      db.execute({ sql: "SELECT DISTINCT title, rating FROM liked_movies WHERE member_id = ? ORDER BY created_at DESC", args: [memberId] }),
     ]);
     maxRating = restrictions.maxRating;
     watchedTitles = watchedRows.rows.map((r) => String(r.title));
     dislikedTitles = dislikedRows.rows.map((r) => String(r.title));
-    const previousLiked = likedRows.rows.map((r) => String(r.title));
-    const seen = new Set(movieTitles.map((t: string) => t.toLowerCase()));
-    for (const t of previousLiked) {
-      if (!seen.has(t.toLowerCase())) {
-        allLikedTitles.push(t);
-        seen.add(t.toLowerCase());
-      }
+    const seen = new Set(picks.map((p) => p.title.toLowerCase()));
+    for (const row of likedRows.rows) {
+      const title = String(row.title);
+      if (seen.has(title.toLowerCase())) continue;
+      seen.add(title.toLowerCase());
+      allLikedMovies.push({ title, rating: row.rating != null ? Number(row.rating) : 4 });
     }
   }
 
-  const suggestions = await getForYouAI(allLikedTitles, watchedTitles, dislikedTitles, maxRating, genreName, minDecade);
+  const suggestions = await getForYouAI(allLikedMovies, watchedTitles, dislikedTitles, maxRating, genreName, minDecade);
   const allMovies = await resolveAISuggestions(suggestions, locale);
   const minYear = minDecade ? Number(minDecade) : null;
   const genreId = /^\d+$/.test(category) ? Number(category) : null;
@@ -53,7 +63,7 @@ export async function POST(req: NextRequest) {
   // AI ignored the genre/decade instructions and left us short — backfill from TMDB discover
   if ((genreId || minYear) && movies.length < 12) {
     const excludeTitles = new Set(
-      [...allLikedTitles, ...watchedTitles, ...dislikedTitles].map((t) => t.toLowerCase())
+      [...allLikedMovies.map((m) => m.title), ...watchedTitles, ...dislikedTitles].map((t) => t.toLowerCase())
     );
     const seenIds = new Set(movies.map((m) => m.id));
     const backfill = await discoverMovies(
@@ -86,10 +96,10 @@ export async function POST(req: NextRequest) {
   );
 
   if (memberId) {
-    for (const title of movieTitles) {
+    for (const pick of picks) {
       await db.execute({
-        sql: "INSERT INTO liked_movies (member_id, title, category) VALUES (?, ?, ?)",
-        args: [memberId, title, category],
+        sql: "INSERT INTO liked_movies (member_id, title, category, rating) VALUES (?, ?, ?, ?)",
+        args: [memberId, pick.title, category, pick.rating],
       });
     }
 

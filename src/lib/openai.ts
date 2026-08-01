@@ -330,8 +330,13 @@ export async function getReplacementShowsAI(
   );
 }
 
+export interface RatedMovie {
+  title: string;
+  rating: number; // 1-5 stars
+}
+
 export async function getForYouAI(
-  likedMovies: string[],
+  likedMovies: RatedMovie[],
   watchedTitles: string[] = [],
   dislikedTitles: string[] = [],
   maxRating: MaxRating | null = null,
@@ -342,7 +347,11 @@ export async function getForYouAI(
   const ratingBlock = ratingRestrictionPrompt(maxRating);
   const count = 20 + bonusCount(maxRating);
 
-  const movieList = likedMovies.map((t) => `"${t}"`).join(", ");
+  const movieList = likedMovies.map((m) => `"${m.title}" (rated ${m.rating}/5)`).join(", ");
+  const topRated = likedMovies.filter((m) => m.rating >= 4).map((m) => m.title);
+  const lowerRated = likedMovies.filter((m) => m.rating <= 3);
+
+  const weightRule = `- IMPORTANT: Each movie has a 1-5 star rating showing how much the user loved it. Weigh their ratings when analyzing taste — a 5-star pick is a strong signal of exactly what they want more of, while a 2-3 star pick means they liked it but it's a weaker, less central signal. Prioritize matching the style, tone, and genre of their highest-rated (4-5 star) picks${topRated.length > 0 ? ` (especially: ${topRated.map((t) => `"${t}"`).join(", ")})` : ""}.\n${lowerRated.length > 0 ? `- Don't ignore the lower-rated picks entirely — they're still liked, just less strongly than the top picks.\n` : ""}`;
 
   const genreRule = genreName
     ? `- IMPORTANT: ALL recommendations MUST be ${genreName} movies. Do not recommend movies outside the ${genreName} genre.\n${
@@ -357,12 +366,12 @@ export async function getForYouAI(
     : `- Include movies from different decades\n`;
 
   return askForMovies(
-    `The user picked these movies as ones they love: ${movieList}.
+    `The user picked these movies and rated each one out of 5 stars: ${movieList}.
 
-Analyze their taste — what themes, tones, eras, and styles do they gravitate toward? Then recommend ${count} movies they should watch next.
+Analyze their taste — what themes, tones, eras, and styles do they gravitate toward, weighted by how highly they rated each pick? Then recommend ${count} movies they should watch next.
 
 Rules:
-${genreRule}- Mix well-known crowd-pleasers with hidden gems they probably missed
+${weightRule}${genreRule}- Mix well-known crowd-pleasers with hidden gems they probably missed
 ${decadeRule}- Do NOT include any of the movies listed above
 ${excludeBlock}${ratingBlock}
 

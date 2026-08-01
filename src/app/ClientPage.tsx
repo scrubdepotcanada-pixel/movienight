@@ -72,6 +72,7 @@ export default function ClientPage() {
   const [step, setStep] = useState<"select-member" | "saved-genres" | "pick" | "loading" | "results">("select-member");
   const [gridMovies, setGridMovies] = useState<Movie[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [selectedRatings, setSelectedRatings] = useState<Record<number, number>>({});
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [recBuffer, setRecBuffer] = useState<Movie[]>([]);
   const [loadingGrid, setLoadingGrid] = useState(false);
@@ -143,6 +144,7 @@ export default function ClientPage() {
   const handleSelectMember = async (member: Member) => {
     setSelectedMember(member);
     setSelectedIds(new Set());
+    setSelectedRatings({});
     setRecommendations([]);
     setRecBuffer([]);
 
@@ -210,6 +212,7 @@ export default function ClientPage() {
     setGuestMode(true);
     setStep("pick");
     setSelectedIds(new Set());
+    setSelectedRatings({});
     setRecommendations([]);
     loadGrid();
   };
@@ -219,17 +222,27 @@ export default function ClientPage() {
       const next = new Set(prev);
       if (next.has(id)) {
         next.delete(id);
+        setSelectedRatings((r: Record<number, number>) => {
+          const nr = { ...r };
+          delete nr[id];
+          return nr;
+        });
       } else if (next.size < 5) {
         next.add(id);
+        setSelectedRatings((r: Record<number, number>) => ({ ...r, [id]: 5 }));
       }
       return next;
     });
   };
 
+  const setMovieRating = (id: number, rating: number) => {
+    setSelectedRatings((r: Record<number, number>) => ({ ...r, [id]: rating }));
+  };
+
   const handleGetRecommendations = async () => {
-    const titles = gridMovies
-      .filter((m: Movie) => selectedIds.has(m.id))
-      .map((m: Movie) => m.title);
+    const picked = gridMovies.filter((m: Movie) => selectedIds.has(m.id));
+    const moviePicks = picked.map((m: Movie) => ({ title: m.title, rating: selectedRatings[m.id] || 5 }));
+    const titles = picked.map((m: Movie) => m.title);
 
     if (titles.length < 5) return;
 
@@ -247,6 +260,7 @@ export default function ClientPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           movieTitles: titles,
+          moviePicks,
           memberId: selectedMember?.id,
           category,
           genreName: activeGenre ? GENRE_MAP[activeGenre] : undefined,
@@ -412,6 +426,7 @@ export default function ClientPage() {
 
   const handleStartOver = () => {
     setSelectedIds(new Set());
+    setSelectedRatings({});
     setRecommendations([]);
     setRecBuffer([]);
     setShowMoreCount(0);
@@ -622,6 +637,9 @@ export default function ClientPage() {
             <p className="text-gray-500 text-sm">
               We&apos;ll figure out what you should watch next
             </p>
+            <p className="text-gray-600 text-xs mt-1">
+              ⭐ Tap the stars on a pick to rate it — higher ratings shape your recommendations more
+            </p>
           </div>
 
           {/* Genre filter chips */}
@@ -661,12 +679,18 @@ export default function ClientPage() {
                 {gridMovies.map((movie: Movie) => {
                   const isSelected = selectedIds.has(movie.id);
                   const isFull = count >= 5 && !isSelected;
+                  const rating = selectedRatings[movie.id] || 5;
                   return (
-                    <button
+                    <div
                       key={movie.id}
-                      onClick={() => toggleMovie(movie.id)}
-                      disabled={isFull}
-                      className={`relative group rounded-xl overflow-hidden transition-all duration-200 ${
+                      role="button"
+                      tabIndex={isFull ? -1 : 0}
+                      onClick={() => !isFull && toggleMovie(movie.id)}
+                      onKeyDown={(e) => {
+                        if (!isFull && (e.key === "Enter" || e.key === " ")) toggleMovie(movie.id);
+                      }}
+                      aria-disabled={isFull}
+                      className={`relative group rounded-xl overflow-hidden transition-all duration-200 cursor-pointer ${
                         isSelected
                           ? "ring-3 ring-amber-400 scale-[1.03] shadow-lg shadow-amber-400/20"
                           : isFull
@@ -688,13 +712,36 @@ export default function ClientPage() {
                       )}
 
                       {isSelected && (
-                        <div className="absolute inset-0 bg-amber-400/20 flex items-center justify-center">
-                          <div className="w-10 h-10 rounded-full bg-amber-400 flex items-center justify-center shadow-lg">
-                            <svg className="w-6 h-6 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <>
+                          <div className="absolute inset-0 bg-amber-400/10" />
+                          <div className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center shadow-lg">
+                            <svg className="w-4 h-4 text-gray-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
                           </div>
-                        </div>
+                          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center gap-0.5 bg-black/70 py-1.5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setMovieRating(movie.id, star);
+                                }}
+                                className="p-0.5"
+                                aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                              >
+                                <svg
+                                  className={`w-4 h-4 ${star <= rating ? "text-amber-400" : "text-gray-600"}`}
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path d="M10 15.27L16.18 19l-1.64-7.03L20 7.24l-7.19-.61L10 0 7.19 6.63 0 7.24l5.46 4.73L3.82 19z" />
+                                </svg>
+                              </button>
+                            ))}
+                          </div>
+                        </>
                       )}
 
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-2 pt-8">
@@ -711,7 +758,7 @@ export default function ClientPage() {
                           {movie.vote_average.toFixed(1)}
                         </span>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
