@@ -28,18 +28,23 @@ export async function POST(req: NextRequest) {
   let maxRating = null;
   let watchedTitles: string[] = [];
   let dislikedTitles: string[] = [];
+  let excludeIds = new Set<number>();
   const allLikedMovies: RatedMovie[] = [...picks];
 
   if (memberId) {
     const [restrictions, watchedRows, dislikedRows, likedRows] = await Promise.all([
       getMemberRestrictions(memberId),
-      db.execute({ sql: "SELECT title FROM watched_movies WHERE member_id = ?", args: [memberId] }),
-      db.execute({ sql: "SELECT title FROM disliked_movies WHERE member_id = ?", args: [memberId] }),
+      db.execute({ sql: "SELECT tmdb_id, title FROM watched_movies WHERE member_id = ?", args: [memberId] }),
+      db.execute({ sql: "SELECT tmdb_id, title FROM disliked_movies WHERE member_id = ?", args: [memberId] }),
       db.execute({ sql: "SELECT DISTINCT title, rating FROM liked_movies WHERE member_id = ? ORDER BY created_at DESC", args: [memberId] }),
     ]);
     maxRating = restrictions.maxRating;
     watchedTitles = watchedRows.rows.map((r) => String(r.title));
     dislikedTitles = dislikedRows.rows.map((r) => String(r.title));
+    excludeIds = new Set([
+      ...watchedRows.rows.map((r) => Number(r.tmdb_id)),
+      ...dislikedRows.rows.map((r) => Number(r.tmdb_id)),
+    ]);
     const seen = new Set(picks.map((p) => p.title.toLowerCase()));
     for (const row of likedRows.rows) {
       const title = String(row.title);
@@ -54,31 +59,37 @@ export async function POST(req: NextRequest) {
   const minYear = minDecade ? Number(minDecade) : null;
   const genreId = /^\d+$/.test(category) ? Number(category) : null;
 
+  // Hard exclusion backstop — the AI prompt asks it not to repeat watched/
+  // disliked/already-picked titles, but that's a soft instruction it can
+  // (and over a long session, will) eventually ignore. Enforce it for real.
+  const excludeTitles = new Set(
+    [...allLikedMovies.map((m) => m.title), ...watchedTitles, ...dislikedTitles].map((t) => t.toLowerCase())
+  );
+
   let movies = allMovies
+    .filter((m) => !excludeIds.has(m.id) && !excludeTitles.has(m.title.toLowerCase()))
     .filter((m) => isMovieAllowed(m.certification, maxRating))
     .filter((m) => !minYear || (m.release_date && parseInt(m.release_date.slice(0, 4)) >= minYear))
     .filter((m) => !genreId || (m.genre_ids || []).includes(genreId))
     .filter((m) => !conflictsWithAnimation(m.genre_ids, genreId));
 
-  // AI ignored the genre/decade instructions and left us short — backfill from TMDB discover
-  if ((genreId || minYear) && movies.length < 12) {
-    const excludeTitles = new Set(
-      [...allLikedMovies.map((m) => m.title), ...watchedTitles, ...dislikedTitles].map((t) => t.toLowerCase())
-    );
+  // AI ignored the genre/decade instructions (or ran out of fresh ideas after
+  // exclusion) and left us short — backfill from TMDB discover
+  if (movies.length < 12) {
     const seenIds = new Set(movies.map((m) => m.id));
     const backfill = await discoverMovies(
       {
         genre: genreId || undefined,
         excludeGenre: genreId && genreId !== ANIMATION_GENRE_ID ? ANIMATION_GENRE_ID : undefined,
         minYear: minYear || undefined,
-        sortBy: "popularity.desc",
+        sortBy: genreId || minYear ? "popularity.desc" : "vote_average.desc",
         minVoteCount: 500,
       },
       locale
     );
     for (const m of backfill) {
       if (movies.length >= 20) break;
-      if (!m.poster_path || seenIds.has(m.id) || excludeTitles.has(m.title.toLowerCase())) continue;
+      if (!m.poster_path || seenIds.has(m.id) || excludeIds.has(m.id) || excludeTitles.has(m.title.toLowerCase())) continue;
       const cert = await getMovieCertification(m.id, locale);
       if (!isMovieAllowed(cert, maxRating)) continue;
       seenIds.add(m.id);
