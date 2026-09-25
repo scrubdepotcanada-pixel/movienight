@@ -34,9 +34,19 @@ const GENRE_MAP: Record<string, string> = {
   "14": "Fantasy", "99": "Documentary", "9648": "Mystery", "12": "Adventure",
 };
 
-function genreLabel(category: string): string {
+const TV_GENRE_MAP: Record<string, string> = {
+  "10759": "Action & Adventure", "35": "Comedy", "18": "Drama", "80": "Crime",
+  "10765": "Sci-Fi & Fantasy", "9648": "Mystery", "16": "Animation",
+  "10751": "Family", "99": "Documentary", "10764": "Reality",
+};
+
+function genreMapFor(contentType: "movie" | "show"): Record<string, string> {
+  return contentType === "show" ? TV_GENRE_MAP : GENRE_MAP;
+}
+
+function genreLabel(category: string, contentType: "movie" | "show" = "movie"): string {
   if (category === "for-you" || category === "all") return "All Genres";
-  return GENRE_MAP[category] || category;
+  return genreMapFor(contentType)[category] || category;
 }
 
 function posterUrl(path: string | null, size = "w342") {
@@ -70,6 +80,8 @@ export default function ClientPage() {
   const isLoggedIn = status === "authenticated" || guestMode;
 
   const [step, setStep] = useState<"select-member" | "saved-genres" | "pick" | "loading" | "results">("select-member");
+  const [contentType, setContentType] = useState<"movie" | "show">("movie");
+  const apiBase = contentType === "show" ? "/api/shows" : "/api/movies";
   const [gridMovies, setGridMovies] = useState<Movie[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [selectedRatings, setSelectedRatings] = useState<Record<number, number>>({});
@@ -81,7 +93,7 @@ export default function ClientPage() {
   const [showMoreCount, setShowMoreCount] = useState(0);
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("for-you");
-  const [savedCategories, setSavedCategories] = useState<{ category: string; count: number }[]>([]);
+  const [savedCategories, setSavedCategories] = useState<{ category: string; content_type: "movie" | "show"; count: number }[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [swipingId, setSwipingId] = useState<number | null>(null);
   const [fetchingMore, setFetchingMore] = useState(false);
@@ -101,13 +113,14 @@ export default function ClientPage() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [step]);
 
-  const loadGrid = async (page = 1, append = false, genreId?: string | null) => {
+  const loadGrid = async (page = 1, append = false, genreId?: string | null, typeOverride?: "movie" | "show") => {
     if (page === 1) setLoadingGrid(true);
     else setLoadingMore(true);
     try {
+      const base = (typeOverride || contentType) === "show" ? "/api/shows" : "/api/movies";
       const params = new URLSearchParams({ page: String(page) });
       if (genreId) params.set("genre", genreId);
-      const res = await fetch(`/api/movies/popular-grid?${params}`);
+      const res = await fetch(`${base}/popular-grid?${params}`);
       const data = await res.json();
       const newMovies: Movie[] = data.movies || [];
       if (append) {
@@ -141,6 +154,17 @@ export default function ClientPage() {
     loadGrid(1, false, genreId);
   };
 
+  const handleContentTypeChange = (type: "movie" | "show") => {
+    if (type === contentType) return;
+    setContentType(type);
+    setActiveGenre(null);
+    setGridPage(1);
+    setShowMoreCount(0);
+    setSelectedIds(new Set());
+    setSelectedRatings({});
+    loadGrid(1, false, null, type);
+  };
+
   const handleSelectMember = async (member: Member) => {
     setSelectedMember(member);
     setSelectedIds(new Set());
@@ -150,7 +174,7 @@ export default function ClientPage() {
 
     try {
       const res = await fetch(`/api/session/categories?memberId=${member.id}`);
-      const cats: { category: string; count: number }[] = await res.json();
+      const cats: { category: string; content_type: "movie" | "show"; count: number }[] = await res.json();
       if (Array.isArray(cats) && cats.length > 0) {
         setSavedCategories(cats);
         setStep("saved-genres");
@@ -162,14 +186,16 @@ export default function ClientPage() {
     loadGrid();
   };
 
-  const loadSavedGenre = async (category: string) => {
+  const loadSavedGenre = async (category: string, savedType: "movie" | "show" = "movie") => {
     if (!selectedMember) return;
+    setContentType(savedType);
     setActiveCategory(category);
     setLikedStreak([]);
     setStep("loading");
+    const base = savedType === "show" ? "/api/shows" : "/api/movies";
 
     try {
-      const res = await fetch(`/api/session?memberId=${selectedMember.id}&category=${encodeURIComponent(category)}`);
+      const res = await fetch(`/api/session?memberId=${selectedMember.id}&category=${encodeURIComponent(category)}&contentType=${savedType}`);
       const data = await res.json();
       if (data.activeRecommendations && data.activeRecommendations.length > 0) {
         const saved = data.activeRecommendations.map((r: Record<string, unknown>) => ({
@@ -188,7 +214,7 @@ export default function ClientPage() {
       }
 
       // No active recs but user has history — fetch more via TMDB (free)
-      const moreRes = await fetch("/api/movies/more-like", {
+      const moreRes = await fetch(`${base}/more-like`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ memberId: selectedMember.id, category, minDecade }),
@@ -205,7 +231,7 @@ export default function ClientPage() {
 
     setStep("pick");
     setActiveGenre(category === "for-you" ? null : category);
-    loadGrid(1, false, category === "for-you" ? null : category);
+    loadGrid(1, false, category === "for-you" ? null : category, savedType);
   };
 
   const handleGuestStart = () => {
@@ -255,7 +281,7 @@ export default function ClientPage() {
     seedTitlesRef.current = titles;
 
     try {
-      const res = await fetch("/api/movies/for-you", {
+      const res = await fetch(`${apiBase}/for-you`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -263,7 +289,7 @@ export default function ClientPage() {
           moviePicks,
           memberId: selectedMember?.id,
           category,
-          genreName: activeGenre ? GENRE_MAP[activeGenre] : undefined,
+          genreName: activeGenre ? genreMapFor(contentType)[activeGenre] : undefined,
           minDecade,
         }),
       });
@@ -290,7 +316,7 @@ export default function ClientPage() {
       let fresh: Movie[] = [];
 
       if (selectedMember) {
-        const res = await fetch("/api/movies/more-like", {
+        const res = await fetch(`${apiBase}/more-like`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -305,13 +331,13 @@ export default function ClientPage() {
         // Guests have no saved history for more-like to query — reuse the
         // original picks (+ anything liked this session) as fresh AI seeds
         const combinedSeeds = [...new Set([...seedTitlesRef.current, ...guestLikedTitlesRef.current])];
-        const res = await fetch("/api/movies/for-you", {
+        const res = await fetch(`${apiBase}/for-you`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             movieTitles: combinedSeeds,
             category: activeCategory,
-            genreName: activeGenre ? GENRE_MAP[activeGenre] : undefined,
+            genreName: activeGenre ? genreMapFor(contentType)[activeGenre] : undefined,
             minDecade: effectiveDecade,
           }),
         });
@@ -333,7 +359,7 @@ export default function ClientPage() {
       });
     } catch {}
     setFetchingMore(false);
-  }, [selectedMember, activeCategory, activeGenre, fetchingMore, minDecade]);
+  }, [selectedMember, activeCategory, activeGenre, fetchingMore, minDecade, apiBase, contentType]);
 
   const LIKE_STREAK_THRESHOLD = 5;
 
@@ -341,14 +367,14 @@ export default function ClientPage() {
     if (!selectedMember) return;
     setRefining(true);
     try {
-      const res = await fetch("/api/movies/for-you", {
+      const res = await fetch(`${apiBase}/for-you`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           movieTitles: titles,
           memberId: selectedMember.id,
           category: activeCategory,
-          genreName: activeGenre ? GENRE_MAP[activeGenre] : undefined,
+          genreName: activeGenre ? genreMapFor(contentType)[activeGenre] : undefined,
           minDecade,
         }),
       });
@@ -363,7 +389,7 @@ export default function ClientPage() {
       }
     } catch {}
     setRefining(false);
-  }, [selectedMember, activeCategory, activeGenre, minDecade]);
+  }, [selectedMember, activeCategory, activeGenre, minDecade, apiBase, contentType]);
 
   const handleSwipe = useCallback((movie: Movie, direction: "left" | "right") => {
     setSwipingId(movie.id);
@@ -400,7 +426,7 @@ export default function ClientPage() {
         fetch("/api/movies/watched", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ memberId: selectedMember.id, movie, category: activeCategory }),
+          body: JSON.stringify({ memberId: selectedMember.id, movie, category: activeCategory, contentType }),
         }).catch(() => {});
 
         setLikedStreak((prev: string[]) => {
@@ -415,14 +441,14 @@ export default function ClientPage() {
         fetch("/api/movies/dislike", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ memberId: selectedMember.id, movie, category: activeCategory }),
+          body: JSON.stringify({ memberId: selectedMember.id, movie, category: activeCategory, contentType }),
         }).catch(() => {});
       }
     } else if (direction === "right") {
       // Guests have no DB — just remember this for seeding future "Load More" fetches
       guestLikedTitlesRef.current = [...guestLikedTitlesRef.current, movie.title].slice(-10);
     }
-  }, [selectedMember, activeCategory, fetchMoreRecs, regenerateFromLikes, minDecade]);
+  }, [selectedMember, activeCategory, fetchMoreRecs, regenerateFromLikes, minDecade, contentType]);
 
   const handleStartOver = () => {
     setSelectedIds(new Set());
@@ -572,15 +598,15 @@ export default function ClientPage() {
           <div className="space-y-3 mb-8">
             {savedCategories.map((cat) => (
               <button
-                key={cat.category}
-                onClick={() => loadSavedGenre(cat.category)}
+                key={`${cat.content_type}-${cat.category}`}
+                onClick={() => loadSavedGenre(cat.category, cat.content_type)}
                 className="w-full flex items-center justify-between bg-gray-900/60 hover:bg-gray-800/80 border border-gray-800/50 rounded-2xl px-5 py-4 transition-all group"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">🎬</span>
+                  <span className="text-2xl">{cat.content_type === "show" ? "📺" : "🎬"}</span>
                   <div className="text-left">
-                    <p className="text-white font-semibold">{genreLabel(cat.category)}</p>
-                    <p className="text-gray-500 text-xs">{cat.count} movies rated</p>
+                    <p className="text-white font-semibold">{genreLabel(cat.category, cat.content_type)}</p>
+                    <p className="text-gray-500 text-xs">{cat.count} {cat.content_type === "show" ? "shows" : "movies"} rated</p>
                   </div>
                 </div>
                 <svg className="w-5 h-5 text-gray-600 group-hover:text-white transition" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -603,11 +629,12 @@ export default function ClientPage() {
     );
   }
 
-  // ── Pick 5 movies ──
+  // ── Pick 5 ──
   if (step === "pick") {
     const count = selectedIds.size;
+    const label = contentType === "show" ? "shows" : "movies";
 
-    const GENRE_FILTERS: { id: number; label: string }[] = [
+    const MOVIE_GENRE_FILTERS: { id: number; label: string }[] = [
       { id: 28, label: "Action" },
       { id: 35, label: "Comedy" },
       { id: 18, label: "Drama" },
@@ -619,6 +646,21 @@ export default function ClientPage() {
       { id: 14, label: "Fantasy" },
       { id: 99, label: "Documentary" },
     ];
+
+    const SHOW_GENRE_FILTERS: { id: number; label: string }[] = [
+      { id: 10759, label: "Action & Adventure" },
+      { id: 35, label: "Comedy" },
+      { id: 18, label: "Drama" },
+      { id: 80, label: "Crime" },
+      { id: 10765, label: "Sci-Fi & Fantasy" },
+      { id: 9648, label: "Mystery" },
+      { id: 16, label: "Animation" },
+      { id: 10751, label: "Family" },
+      { id: 99, label: "Documentary" },
+      { id: 10764, label: "Reality" },
+    ];
+
+    const GENRE_FILTERS = contentType === "show" ? SHOW_GENRE_FILTERS : MOVIE_GENRE_FILTERS;
 
     return (
       <div className="min-h-screen bg-[#0a0a1a] flex flex-col">
@@ -632,7 +674,7 @@ export default function ClientPage() {
         <div className="flex-1 px-4 pt-4 pb-32 max-w-4xl mx-auto w-full">
           <div className="text-center mb-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-              Pick 5 movies you love
+              Pick 5 {label} you love
             </h2>
             <p className="text-gray-500 text-sm">
               We&apos;ll figure out what you should watch next
@@ -640,6 +682,32 @@ export default function ClientPage() {
             <p className="text-gray-600 text-xs mt-1">
               ⭐ Tap the stars on a pick to rate it — higher ratings shape your recommendations more
             </p>
+          </div>
+
+          {/* Movies vs Shows toggle */}
+          <div className="flex justify-center mb-4">
+            <div className="inline-flex bg-gray-800/60 border border-gray-700/50 rounded-full p-1">
+              <button
+                onClick={() => handleContentTypeChange("movie")}
+                className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                  contentType === "movie"
+                    ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                Movies
+              </button>
+              <button
+                onClick={() => handleContentTypeChange("show")}
+                className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
+                  contentType === "show"
+                    ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30"
+                    : "text-gray-400 hover:text-white"
+                }`}
+              >
+                Shows
+              </button>
+            </div>
           </div>
 
           {/* Genre filter chips */}
@@ -671,7 +739,7 @@ export default function ClientPage() {
 
           {loadingGrid ? (
             <div className="flex items-center justify-center py-20">
-              <div className="text-gray-400">Loading movies...</div>
+              <div className="text-gray-400">Loading {label}...</div>
             </div>
           ) : (
             <>
@@ -765,7 +833,7 @@ export default function ClientPage() {
 
               {gridMovies.length === 0 && (
                 <div className="text-center text-gray-500 py-12">
-                  No movies in this genre yet. Try &quot;Show More&quot; to load more.
+                  No {label} in this genre yet. Try &quot;Show More&quot; to load more.
                 </div>
               )}
 
@@ -777,7 +845,7 @@ export default function ClientPage() {
                     disabled={loadingMore}
                     className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white font-medium px-6 py-2.5 rounded-full text-sm transition-all disabled:opacity-50"
                   >
-                    {loadingMore ? "Loading..." : `Show More Movies (${MAX_SHOW_MORE - showMoreCount} left)`}
+                    {loadingMore ? "Loading..." : `Show More ${contentType === "show" ? "Shows" : "Movies"} (${MAX_SHOW_MORE - showMoreCount} left)`}
                   </button>
                 ) : (
                   <p className="text-gray-600 text-sm">You&apos;ve loaded all available batches</p>
@@ -813,7 +881,7 @@ export default function ClientPage() {
                   : "bg-gray-800 text-gray-600 cursor-not-allowed"
               }`}
             >
-              Find My Movies
+              Find My {contentType === "show" ? "Shows" : "Movies"}
             </button>
           </div>
         </div>
@@ -826,9 +894,9 @@ export default function ClientPage() {
     return (
       <div className="min-h-screen bg-[#0a0a1a] flex flex-col items-center justify-center px-6">
         <div className="text-6xl mb-6 animate-bounce">🍿</div>
-        <h2 className="text-xl font-bold text-white mb-2">Finding your perfect movies...</h2>
+        <h2 className="text-xl font-bold text-white mb-2">Finding your perfect {contentType === "show" ? "shows" : "movies"}...</h2>
         <p className="text-gray-500 text-sm text-center max-w-sm">
-          Analyzing your taste across {selectedIds.size} picks to find movies you&apos;ll love
+          Analyzing your taste across {selectedIds.size} picks to find {contentType === "show" ? "shows" : "movies"} you&apos;ll love
         </p>
         <div className="mt-8 flex gap-1">
           {[0, 1, 2].map((i) => (
@@ -845,6 +913,7 @@ export default function ClientPage() {
 
   // ── Results ──
   if (step === "results") {
+    const label = contentType === "show" ? "shows" : "movies";
     const displayedRecommendations = sortByRating(
       recommendations.filter((m: Movie) => passesDecade(m, minDecade))
     );
@@ -869,7 +938,7 @@ export default function ClientPage() {
             <div className="text-center">
               <h2 className="text-xl font-bold text-white">Your Next Watch</h2>
               {activeCategory && activeCategory !== "for-you" && (
-                <p className="text-purple-400 text-xs font-medium">{genreLabel(activeCategory)}</p>
+                <p className="text-purple-400 text-xs font-medium">{genreLabel(activeCategory, contentType)}</p>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -924,7 +993,7 @@ export default function ClientPage() {
                 onSwipeRight={() => handleSwipe(movie, "right")}
                 isSwiping={swipingId === movie.id}
               >
-                <FlippableCard movie={movie} index={i} />
+                <FlippableCard movie={movie} index={i} contentType={contentType} />
               </SwipeableCard>
             ))}
           </div>
@@ -934,16 +1003,16 @@ export default function ClientPage() {
               {fetchingMore ? (
                 <>
                   <div className="text-3xl mb-3 animate-bounce">🍿</div>
-                  <p className="text-gray-400">Finding more movies for you...</p>
+                  <p className="text-gray-400">Finding more {label} for you...</p>
                 </>
               ) : hiddenByDecade ? (
                 <>
-                  <p className="text-gray-400 mb-4">No movies from that era in your current picks yet.</p>
+                  <p className="text-gray-400 mb-4">No {label} from that era in your current picks yet.</p>
                   <button
                     onClick={() => fetchMoreRecs()}
                     className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold px-8 py-3 rounded-full hover:from-purple-500 hover:to-pink-500 transition shadow-lg shadow-purple-500/25"
                   >
-                    Find More {minDecade ? `${minDecade}s+` : ""} Movies
+                    Find More {minDecade ? `${minDecade}s+ ` : ""}{contentType === "show" ? "Shows" : "Movies"}
                   </button>
                 </>
               ) : (
@@ -1152,7 +1221,7 @@ interface MovieDetails {
   tagline: string | null;
 }
 
-function FlippableCard({ movie, index }: { movie: Movie; index: number }) {
+function FlippableCard({ movie, index, contentType = "movie" }: { movie: Movie; index: number; contentType?: "movie" | "show" }) {
   const [flipped, setFlipped] = useState(false);
   const [details, setDetails] = useState<MovieDetails | null>(null);
   const fetchedRef = useRef(false);
@@ -1163,7 +1232,10 @@ function FlippableCard({ movie, index }: { movie: Movie; index: number }) {
 
     if (!fetchedRef.current) {
       fetchedRef.current = true;
-      fetch(`/api/movies/details?movieId=${movie.id}`)
+      const url = contentType === "show"
+        ? `/api/shows/details?showId=${movie.id}`
+        : `/api/movies/details?movieId=${movie.id}`;
+      fetch(url)
         .then((r) => r.json())
         .then(setDetails)
         .catch(() => {});
@@ -1278,7 +1350,7 @@ function FlippableCard({ movie, index }: { movie: Movie; index: number }) {
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-400">
               <span>{movie.release_date?.slice(0, 4)}</span>
               {details?.runtime && <><span>·</span><span>{formatRuntime(details.runtime)}</span></>}
-              {details?.director && <><span>·</span><span>Dir. {details.director}</span></>}
+              {details?.director && <><span>·</span><span>{contentType === "show" ? "Creator" : "Dir."} {details.director}</span></>}
               {details?.genres && details.genres.length > 0 && (
                 <><span>·</span><span>{details.genres.join(", ")}</span></>
               )}

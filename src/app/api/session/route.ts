@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getMemberRestrictions } from "@/lib/member";
 import { isMovieAllowed } from "@/lib/ageRating";
-import { getMovieGenreIds, conflictsWithAnimation } from "@/lib/tmdb";
+import { getMovieGenreIds, getShowGenreIds, conflictsWithAnimation } from "@/lib/tmdb";
 
 async function filterAndPruneRecs(
   memberId: string,
@@ -10,7 +10,8 @@ async function filterAndPruneRecs(
   maxRating: string | null,
   likedTitles: Set<string>,
   watchedIds: Set<number>,
-  genreId: number | null = null
+  genreId: number | null = null,
+  contentType: "movie" | "show" = "movie"
 ) {
   const allowed: Record<string, unknown>[] = [];
   const toDeactivate: number[] = [];
@@ -54,10 +55,11 @@ async function filterAndPruneRecs(
   // Re-validate genre against TMDB — catches stale rows saved before genre
   // enforcement existed, or rows saved without genre metadata (for-you/more-like)
   if (genreId && allowed.length > 0) {
+    const getGenreIds = contentType === "show" ? getShowGenreIds : getMovieGenreIds;
     const genreChecks = await Promise.all(
       allowed.map(async (rec) => ({
         rec,
-        genreIds: await getMovieGenreIds(Number(rec.tmdb_id)).catch(() => null),
+        genreIds: await getGenreIds(Number(rec.tmdb_id)).catch(() => null),
       }))
     );
     const genreValidated: Record<string, unknown>[] = [];
@@ -90,38 +92,39 @@ async function filterAndPruneRecs(
 export async function GET(req: NextRequest) {
   const memberId = req.nextUrl.searchParams.get("memberId");
   const category = req.nextUrl.searchParams.get("category");
+  const contentType = req.nextUrl.searchParams.get("contentType") === "show" ? "show" : "movie";
   if (!memberId) {
     return NextResponse.json({ error: "Missing memberId" }, { status: 400 });
   }
 
   const { maxRating } = await getMemberRestrictions(memberId);
 
-  // Get watched movies (shared across all categories)
+  // Get watched movies/shows (shared across all categories, scoped by content type)
   const watchedRows = await db.execute({
-    sql: "SELECT tmdb_id FROM watched_movies WHERE member_id = ?",
-    args: [memberId],
+    sql: "SELECT tmdb_id FROM watched_movies WHERE member_id = ? AND content_type = ?",
+    args: [memberId, contentType],
   });
   const watchedIds = new Set(watchedRows.rows.map((r) => Number(r.tmdb_id)));
 
   if (category) {
     const [activeRecs, dislikedRows, likedRows] = await Promise.all([
       db.execute({
-        sql: "SELECT * FROM recommendations WHERE member_id = ? AND is_active = 1 AND category = ? ORDER BY created_at DESC",
-        args: [memberId, category],
+        sql: "SELECT * FROM recommendations WHERE member_id = ? AND is_active = 1 AND category = ? AND content_type = ? ORDER BY created_at DESC",
+        args: [memberId, category, contentType],
       }),
       db.execute({
-        sql: "SELECT tmdb_id, title FROM disliked_movies WHERE member_id = ? AND category = ? ORDER BY created_at DESC",
-        args: [memberId, category],
+        sql: "SELECT tmdb_id, title FROM disliked_movies WHERE member_id = ? AND category = ? AND content_type = ? ORDER BY created_at DESC",
+        args: [memberId, category, contentType],
       }),
       db.execute({
-        sql: "SELECT DISTINCT title FROM liked_movies WHERE member_id = ? AND category = ? ORDER BY created_at DESC",
-        args: [memberId, category],
+        sql: "SELECT DISTINCT title FROM liked_movies WHERE member_id = ? AND category = ? AND content_type = ? ORDER BY created_at DESC",
+        args: [memberId, category, contentType],
       }),
     ]);
 
     const likedTitles = new Set(likedRows.rows.map((r) => String(r.title)));
     const genreId = /^\d+$/.test(category) ? Number(category) : null;
-    const filteredRecs = await filterAndPruneRecs(memberId, activeRecs.rows, maxRating, likedTitles, watchedIds, genreId);
+    const filteredRecs = await filterAndPruneRecs(memberId, activeRecs.rows, maxRating, likedTitles, watchedIds, genreId, contentType);
 
     return NextResponse.json({
       hasHistory: filteredRecs.length > 0 || likedRows.rows.length > 0 || dislikedRows.rows.length > 0,
@@ -134,21 +137,21 @@ export async function GET(req: NextRequest) {
   // General session state
   const [activeRecs, likedRows, watchedCount] = await Promise.all([
     db.execute({
-      sql: "SELECT * FROM recommendations WHERE member_id = ? AND is_active = 1 AND category = 'general' ORDER BY created_at DESC",
-      args: [memberId],
+      sql: "SELECT * FROM recommendations WHERE member_id = ? AND is_active = 1 AND category = 'general' AND content_type = ? ORDER BY created_at DESC",
+      args: [memberId, contentType],
     }),
     db.execute({
-      sql: "SELECT DISTINCT title FROM liked_movies WHERE member_id = ? AND category = 'general'",
-      args: [memberId],
+      sql: "SELECT DISTINCT title FROM liked_movies WHERE member_id = ? AND category = 'general' AND content_type = ?",
+      args: [memberId, contentType],
     }),
     db.execute({
-      sql: "SELECT COUNT(*) as count FROM watched_movies WHERE member_id = ?",
-      args: [memberId],
+      sql: "SELECT COUNT(*) as count FROM watched_movies WHERE member_id = ? AND content_type = ?",
+      args: [memberId, contentType],
     }),
   ]);
 
   const likedTitles = new Set(likedRows.rows.map((r) => String(r.title)));
-  const filteredRecs = await filterAndPruneRecs(memberId, activeRecs.rows, maxRating, likedTitles, watchedIds);
+  const filteredRecs = await filterAndPruneRecs(memberId, activeRecs.rows, maxRating, likedTitles, watchedIds, null, contentType);
 
   return NextResponse.json({
     hasHistory: filteredRecs.length > 0 || Number(watchedCount.rows[0].count) > 0,

@@ -401,6 +401,7 @@ export interface TVShow {
   overview: string;
   first_air_date: string;
   certification?: string;
+  genre_ids?: number[];
 }
 
 /** Unified interface for both movies and shows */
@@ -446,6 +447,7 @@ function normalizeTVShow(show: TVShow, certification: string): Movie & { certifi
     overview: show.overview,
     release_date: show.first_air_date,
     certification,
+    genre_ids: show.genre_ids || [],
   };
 }
 
@@ -511,4 +513,70 @@ export async function getTVWatchProviders(showId: number, region: string = "CA")
     buy: countryData.buy || [],
     link: countryData.link,
   };
+}
+
+function normalizeTVResults(results: Record<string, unknown>[]): Movie[] {
+  return results.map((s) => ({
+    id: Number(s.id),
+    title: String(s.name || ""),
+    poster_path: s.poster_path ? String(s.poster_path) : null,
+    vote_average: Number(s.vote_average || 0),
+    overview: String(s.overview || ""),
+    release_date: String(s.first_air_date || ""),
+    genre_ids: Array.isArray(s.genre_ids) ? s.genre_ids.map(Number) : [],
+  }));
+}
+
+export async function discoverTVShows(filters: DiscoverFilters, locale?: string, page = 1): Promise<Movie[]> {
+  const params = new URLSearchParams({
+    include_adult: "false",
+    language: tmdbLanguage(locale),
+    sort_by: filters.sortBy || "vote_average.desc",
+    "vote_count.gte": String(filters.minVoteCount || 100),
+    page: String(page),
+  });
+  if (filters.minRating) params.set("vote_average.gte", String(filters.minRating));
+  if (filters.genre) params.set("with_genres", String(filters.genre));
+  if (filters.excludeGenre) params.set("without_genres", String(filters.excludeGenre));
+  if (filters.providerId) {
+    params.set("with_watch_providers", String(filters.providerId));
+    params.set("watch_region", filters.watchRegion || "US");
+  }
+  if (filters.language) params.set("with_original_language", filters.language);
+  if (filters.decade) {
+    const startYear = parseInt(filters.decade);
+    params.set("first_air_date.gte", `${startYear}-01-01`);
+    params.set("first_air_date.lte", `${startYear + 9}-12-31`);
+  }
+  if (filters.minYear) {
+    params.set("first_air_date.gte", `${filters.minYear}-01-01`);
+  }
+
+  const res = await fetch(`${TMDB_BASE}/discover/tv?${params}`, { headers: headers() });
+  const data = await res.json();
+  return normalizeTVResults((data.results || []).slice(0, 20));
+}
+
+export async function getSimilarTVShows(showId: number, locale?: string): Promise<Movie[]> {
+  const res = await fetch(
+    `${TMDB_BASE}/tv/${showId}/similar?language=${tmdbLanguage(locale)}&page=1`,
+    { headers: headers() }
+  );
+  const data = await res.json();
+  return normalizeTVResults(data.results || []);
+}
+
+export async function getRecommendedTVShows(showId: number, locale?: string): Promise<Movie[]> {
+  const res = await fetch(
+    `${TMDB_BASE}/tv/${showId}/recommendations?language=${tmdbLanguage(locale)}&page=1`,
+    { headers: headers() }
+  );
+  const data = await res.json();
+  return normalizeTVResults(data.results || []);
+}
+
+export async function getShowGenreIds(showId: number): Promise<number[]> {
+  const res = await fetch(`${TMDB_BASE}/tv/${showId}?language=en-US`, { headers: headers() });
+  const data = await res.json();
+  return Array.isArray(data.genres) ? data.genres.map((g: { id: number }) => Number(g.id)) : [];
 }

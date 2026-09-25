@@ -379,3 +379,48 @@ Return exactly ${count} movies.`,
     count
   );
 }
+
+export async function getForYouShowsAI(
+  likedShows: RatedMovie[],
+  watchedTitles: string[] = [],
+  dislikedTitles: string[] = [],
+  maxRating: MaxRating | null = null,
+  genreName?: string | null,
+  minDecade?: string | null
+): Promise<ShowSuggestion[]> {
+  const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
+  const ratingBlock = ratingRestrictionPrompt(maxRating);
+  const count = 20 + bonusCount(maxRating);
+
+  const showList = likedShows.map((m) => `"${m.title}" (rated ${m.rating}/5)`).join(", ");
+  const topRated = likedShows.filter((m) => m.rating >= 4).map((m) => m.title);
+  const lowerRated = likedShows.filter((m) => m.rating <= 3);
+
+  const weightRule = `- IMPORTANT: Each show has a 1-5 star rating showing how much the user loved it. Weigh their ratings when analyzing taste — a 5-star pick is a strong signal of exactly what they want more of, while a 2-3 star pick means they liked it but it's a weaker, less central signal. Prioritize matching the style, tone, and genre of their highest-rated (4-5 star) picks${topRated.length > 0 ? ` (especially: ${topRated.map((t) => `"${t}"`).join(", ")})` : ""}.\n${lowerRated.length > 0 ? `- Don't ignore the lower-rated picks entirely — they're still liked, just less strongly than the top picks.\n` : ""}`;
+
+  const genreRule = genreName
+    ? `- IMPORTANT: ALL recommendations MUST be ${genreName} TV shows. Do not recommend shows outside the ${genreName} genre.\n${
+        genreName.toLowerCase() !== "animation"
+          ? `- IMPORTANT: Do NOT recommend animated shows or cartoons unless the genre itself is Animation.\n`
+          : ""
+      }`
+    : `- Cover a range of genres that match their taste (don't just pick one genre)\n`;
+
+  const decadeRule = minDecade
+    ? `- IMPORTANT: Only recommend shows that first aired in ${minDecade} or later. Do not recommend anything older.\n`
+    : `- Include shows from different eras\n`;
+
+  return askForShows(
+    `The user picked these TV shows and rated each one out of 5 stars: ${showList}.
+
+Analyze their taste — what themes, tones, eras, and styles do they gravitate toward, weighted by how highly they rated each pick? Then recommend ${count} TV shows they should watch next.
+
+Rules:
+${weightRule}${genreRule}- Mix well-known crowd-pleasers with hidden gems they probably missed
+${decadeRule}- Do NOT include any of the shows listed above
+${excludeBlock}${ratingBlock}
+
+Return exactly ${count} TV shows.`,
+    count
+  );
+}

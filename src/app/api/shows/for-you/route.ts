@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { resolveAISuggestions, getWatchProviders, discoverMovies, getMovieCertification, conflictsWithAnimation, ANIMATION_GENRE_ID, type WatchProviders } from "@/lib/tmdb";
-import { getForYouAI, type RatedMovie } from "@/lib/openai";
+import { resolveAIShowSuggestions, getTVWatchProviders, discoverTVShows, getTVShowCertification, conflictsWithAnimation, ANIMATION_GENRE_ID, type WatchProviders } from "@/lib/tmdb";
+import { getForYouShowsAI, type RatedMovie } from "@/lib/openai";
 import { getMemberRestrictions } from "@/lib/member";
 import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       : [];
 
   if (picks.length < 3) {
-    return NextResponse.json({ error: "Need at least 3 movie titles" }, { status: 400 });
+    return NextResponse.json({ error: "Need at least 3 show titles" }, { status: 400 });
   }
 
   const locale = req.cookies.get("locale")?.value;
@@ -29,14 +29,14 @@ export async function POST(req: NextRequest) {
   let watchedTitles: string[] = [];
   let dislikedTitles: string[] = [];
   let excludeIds = new Set<number>();
-  const allLikedMovies: RatedMovie[] = [...picks];
+  const allLikedShows: RatedMovie[] = [...picks];
 
   if (memberId) {
     const [restrictions, watchedRows, dislikedRows, likedRows] = await Promise.all([
       getMemberRestrictions(memberId),
-      db.execute({ sql: "SELECT tmdb_id, title FROM watched_movies WHERE member_id = ? AND content_type = 'movie'", args: [memberId] }),
-      db.execute({ sql: "SELECT tmdb_id, title FROM disliked_movies WHERE member_id = ? AND content_type = 'movie'", args: [memberId] }),
-      db.execute({ sql: "SELECT DISTINCT title, rating FROM liked_movies WHERE member_id = ? AND content_type = 'movie' ORDER BY created_at DESC", args: [memberId] }),
+      db.execute({ sql: "SELECT tmdb_id, title FROM watched_movies WHERE member_id = ? AND content_type = 'show'", args: [memberId] }),
+      db.execute({ sql: "SELECT tmdb_id, title FROM disliked_movies WHERE member_id = ? AND content_type = 'show'", args: [memberId] }),
+      db.execute({ sql: "SELECT DISTINCT title, rating FROM liked_movies WHERE member_id = ? AND content_type = 'show' ORDER BY created_at DESC", args: [memberId] }),
     ]);
     maxRating = restrictions.maxRating;
     watchedTitles = watchedRows.rows.map((r) => String(r.title));
@@ -50,12 +50,12 @@ export async function POST(req: NextRequest) {
       const title = String(row.title);
       if (seen.has(title.toLowerCase())) continue;
       seen.add(title.toLowerCase());
-      allLikedMovies.push({ title, rating: row.rating != null ? Number(row.rating) : 4 });
+      allLikedShows.push({ title, rating: row.rating != null ? Number(row.rating) : 4 });
     }
   }
 
-  const suggestions = await getForYouAI(allLikedMovies, watchedTitles, dislikedTitles, maxRating, genreName, minDecade);
-  const allMovies = await resolveAISuggestions(suggestions, locale);
+  const suggestions = await getForYouShowsAI(allLikedShows, watchedTitles, dislikedTitles, maxRating, genreName, minDecade);
+  const allShows = await resolveAIShowSuggestions(suggestions, locale);
   const minYear = minDecade ? Number(minDecade) : null;
   const genreId = /^\d+$/.test(category) ? Number(category) : null;
 
@@ -63,10 +63,10 @@ export async function POST(req: NextRequest) {
   // disliked/already-picked titles, but that's a soft instruction it can
   // (and over a long session, will) eventually ignore. Enforce it for real.
   const excludeTitles = new Set(
-    [...allLikedMovies.map((m) => m.title), ...watchedTitles, ...dislikedTitles].map((t) => t.toLowerCase())
+    [...allLikedShows.map((m) => m.title), ...watchedTitles, ...dislikedTitles].map((t) => t.toLowerCase())
   );
 
-  let movies = allMovies
+  let shows = allShows
     .filter((m) => !excludeIds.has(m.id) && !excludeTitles.has(m.title.toLowerCase()))
     .filter((m) => isMovieAllowed(m.certification, maxRating))
     .filter((m) => !minYear || (m.release_date && parseInt(m.release_date.slice(0, 4)) >= minYear))
@@ -75,9 +75,9 @@ export async function POST(req: NextRequest) {
 
   // AI ignored the genre/decade instructions (or ran out of fresh ideas after
   // exclusion) and left us short — backfill from TMDB discover
-  if (movies.length < 12) {
-    const seenIds = new Set(movies.map((m) => m.id));
-    const backfill = await discoverMovies(
+  if (shows.length < 12) {
+    const seenIds = new Set(shows.map((m) => m.id));
+    const backfill = await discoverTVShows(
       {
         genre: genreId || undefined,
         excludeGenre: genreId && genreId !== ANIMATION_GENRE_ID ? ANIMATION_GENRE_ID : undefined,
@@ -88,48 +88,48 @@ export async function POST(req: NextRequest) {
       locale
     );
     for (const m of backfill) {
-      if (movies.length >= 20) break;
+      if (shows.length >= 20) break;
       if (!m.poster_path || seenIds.has(m.id) || excludeIds.has(m.id) || excludeTitles.has(m.title.toLowerCase())) continue;
-      const cert = await getMovieCertification(m.id, locale);
+      const cert = await getTVShowCertification(m.id);
       if (!isMovieAllowed(cert, maxRating)) continue;
       seenIds.add(m.id);
-      movies.push({ ...m, certification: cert });
+      shows.push({ ...m, certification: cert });
     }
   }
 
-  movies = movies.slice(0, 20);
+  shows = shows.slice(0, 20);
 
   const providers: Record<number, WatchProviders> = {};
   await Promise.all(
-    movies.map(async (m) => {
-      providers[m.id] = await getWatchProviders(m.id, "CA");
+    shows.map(async (m) => {
+      providers[m.id] = await getTVWatchProviders(m.id, "CA");
     })
   );
 
   if (memberId) {
     for (const pick of picks) {
       await db.execute({
-        sql: "INSERT INTO liked_movies (member_id, title, category, rating, content_type) VALUES (?, ?, ?, ?, 'movie')",
+        sql: "INSERT INTO liked_movies (member_id, title, category, rating, content_type) VALUES (?, ?, ?, ?, 'show')",
         args: [memberId, pick.title, category, pick.rating],
       });
     }
 
     await db.execute({
-      sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND category = ? AND content_type = 'movie'",
+      sql: "UPDATE recommendations SET is_active = 0 WHERE member_id = ? AND category = ? AND content_type = 'show'",
       args: [memberId, category],
     });
 
-    for (const movie of movies) {
+    for (const show of shows) {
       await db.execute({
         sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, release_date, category, content_type)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'movie')`,
-        args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification, movie.overview, movie.release_date || null, category],
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'show')`,
+        args: [memberId, show.id, show.title, show.poster_path, show.vote_average, show.certification, show.overview, show.release_date || null, category],
       });
     }
   }
 
   return NextResponse.json({
-    movies: movies.map((m) => ({
+    movies: shows.map((m) => ({
       ...m,
       providers: providers[m.id] || {},
     })),

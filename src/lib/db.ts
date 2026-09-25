@@ -179,6 +179,8 @@ export async function initDB() {
     "ALTER TABLE families ADD COLUMN feedback_email_sent_at TEXT",
     "ALTER TABLE families ADD COLUMN expiry_email_sent_at TEXT",
     "ALTER TABLE liked_movies ADD COLUMN rating INTEGER",
+    "ALTER TABLE liked_movies ADD COLUMN content_type TEXT DEFAULT 'movie'",
+    "ALTER TABLE disliked_movies ADD COLUMN content_type TEXT DEFAULT 'movie'",
   ];
   for (const sql of migrations) {
     try {
