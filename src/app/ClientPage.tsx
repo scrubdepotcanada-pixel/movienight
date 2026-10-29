@@ -104,6 +104,76 @@ export default function ClientPage() {
   const seedTitlesRef = useRef<string[]>([]);
   const shownIdsRef = useRef<Set<number>>(new Set());
   const guestLikedTitlesRef = useRef<string[]>([]);
+  const hasRestoredGuestRef = useRef(false);
+
+  // Guests have no DB-backed session — persist to localStorage so a refresh
+  // or accidental tab close doesn't wipe out picks/results. Signed-in users
+  // already get this for free via /api/session.
+  const GUEST_STORAGE_KEY = "nextmovie_guest_session_v1";
+  const GUEST_STORAGE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+  useEffect(() => {
+    if (hasRestoredGuestRef.current) return;
+    if (status === "loading" || status === "authenticated") return;
+    hasRestoredGuestRef.current = true;
+    try {
+      const raw = localStorage.getItem(GUEST_STORAGE_KEY);
+      if (!raw) return;
+      const snap = JSON.parse(raw);
+      if (!snap || Date.now() - (snap.savedAt || 0) > GUEST_STORAGE_MAX_AGE_MS) {
+        localStorage.removeItem(GUEST_STORAGE_KEY);
+        return;
+      }
+      if (snap.step !== "pick" && snap.step !== "results") return;
+      setGuestMode(true);
+      setGuestMaxRating(snap.guestMaxRating ?? null);
+      setContentType(snap.contentType === "show" ? "show" : "movie");
+      setActiveGenre(snap.activeGenre ?? null);
+      setActiveCategory(snap.activeCategory || "for-you");
+      setMinDecade(snap.minDecade ?? null);
+      setSelectedIds(new Set(Array.isArray(snap.selectedIds) ? snap.selectedIds : []));
+      setSelectedRatings(snap.selectedRatings || {});
+      setGridMovies(Array.isArray(snap.gridMovies) ? snap.gridMovies : []);
+      setRecommendations(Array.isArray(snap.recommendations) ? snap.recommendations : []);
+      setRecBuffer(Array.isArray(snap.recBuffer) ? snap.recBuffer : []);
+      seedTitlesRef.current = Array.isArray(snap.seedTitles) ? snap.seedTitles : [];
+      shownIdsRef.current = new Set(Array.isArray(snap.shownIds) ? snap.shownIds : []);
+      guestLikedTitlesRef.current = Array.isArray(snap.guestLikedTitles) ? snap.guestLikedTitles : [];
+      setStep(snap.step);
+    } catch {}
+  }, [status]);
+
+  useEffect(() => {
+    if (!guestMode) return;
+    if (step !== "pick" && step !== "results") return;
+    try {
+      localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify({
+        guestMaxRating,
+        contentType,
+        step,
+        activeGenre,
+        activeCategory,
+        minDecade,
+        selectedIds: Array.from(selectedIds),
+        selectedRatings,
+        gridMovies,
+        recommendations,
+        recBuffer,
+        seedTitles: seedTitlesRef.current,
+        shownIds: Array.from(shownIdsRef.current),
+        guestLikedTitles: guestLikedTitlesRef.current,
+        savedAt: Date.now(),
+      }));
+    } catch {}
+  }, [guestMode, step, guestMaxRating, contentType, activeGenre, activeCategory, minDecade, selectedIds, selectedRatings, gridMovies, recommendations, recBuffer]);
+
+  // A real sign-in supersedes any saved guest session — drop it so it can
+  // never resurface stale picks after logging out and returning as a guest.
+  useEffect(() => {
+    if (status === "authenticated") {
+      try { localStorage.removeItem(GUEST_STORAGE_KEY); } catch {}
+    }
+  }, [status]);
 
   useEffect(() => {
     if (status !== "authenticated" && !guestMode) return;
