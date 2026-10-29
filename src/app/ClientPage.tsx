@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import MemberSelector from "@/components/MemberSelector";
 import SiteFooter from "@/components/SiteFooter";
+import InlineFilters from "@/components/InlineFilters";
 
 interface WatchProvider {
   provider_id: number;
@@ -157,6 +158,12 @@ export default function ClientPage() {
   const [guestRatingTouched, setGuestRatingTouched] = useState(false);
   const [preferredProviders, setPreferredProviders] = useState<number[]>([]);
   const [showProvidersPanel, setShowProvidersPanel] = useState(false);
+  const [discoverFilters, setDiscoverFilters] = useState<{
+    providerId?: number; providerName?: string; region?: string;
+    language?: string; languageName?: string;
+    minRating?: number; maxRuntime?: number;
+  }>({});
+  const [showFilterBar, setShowFilterBar] = useState(false);
   const [gridMovies, setGridMovies] = useState<Movie[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [selectedRatings, setSelectedRatings] = useState<Record<number, number>>({});
@@ -515,6 +522,59 @@ export default function ClientPage() {
       setStep("pick");
     }
     setMoodLoading(false);
+  };
+
+  const hasActiveDiscoverFilter = !!(
+    discoverFilters.providerId || discoverFilters.language || discoverFilters.minRating || discoverFilters.maxRuntime
+  );
+
+  const handleApplyDiscoverFilters = async () => {
+    if (!hasActiveDiscoverFilter) return;
+    if (guestMode && !selectedMember && !guestRatingTouched) {
+      setError("Pick who's watching above before we show you results.");
+      return;
+    }
+    setError(null);
+    setStep("loading");
+    setActiveMood(null);
+    setActiveCategory("filtered");
+    setLikedStreak([]);
+    try {
+      const params = new URLSearchParams();
+      if (discoverFilters.providerId) {
+        params.set("providerId", String(discoverFilters.providerId));
+        if (discoverFilters.providerName) params.set("providerName", discoverFilters.providerName);
+        params.set("region", discoverFilters.region || "CA");
+      }
+      if (discoverFilters.language) {
+        params.set("language", discoverFilters.language);
+        if (discoverFilters.languageName) params.set("languageName", discoverFilters.languageName);
+      }
+      if (discoverFilters.minRating) params.set("minRating", String(discoverFilters.minRating));
+      if (discoverFilters.maxRuntime) params.set("maxRuntime", String(discoverFilters.maxRuntime));
+      if (selectedMember?.id) {
+        params.set("memberId", String(selectedMember.id));
+      } else if (guestMaxRating) {
+        params.set("guestMaxRating", guestMaxRating);
+      }
+
+      const res = await fetch(`/api/movies/discover?${params}`);
+      if (res.status === 403) {
+        setUpsellFeature("Filter by language, rating, or runtime — see exactly the movies you want");
+        setStep("pick");
+        return;
+      }
+      const data = await res.json();
+      const all = sortByRating(data.movies || []);
+      shownIdsRef.current = new Set(all.map((m: Movie) => m.id));
+      setRecommendations(all.slice(0, 10));
+      setRecBuffer(all.slice(10));
+      setStep(all.length > 0 ? "results" : "pick");
+      if (all.length === 0) setError("No matches for those filters — try loosening one.");
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setStep("pick");
+    }
   };
 
   const handleSelectMember = async (member: Member) => {
@@ -1219,6 +1279,42 @@ export default function ClientPage() {
               ? `Ranking results for your ${preferredProviders.length} streaming service${preferredProviders.length > 1 ? "s" : ""} — change`
               : "Tell us what you're subscribed to — we'll show watchable-tonight picks first"}
           </button>
+
+          {/* Filters — platform, language, rating, runtime (movies only for now) */}
+          {contentType === "movie" && (
+            <>
+              <button
+                onClick={() => setShowFilterBar((v) => !v)}
+                className="w-full flex items-center justify-center gap-1.5 text-xs font-medium text-gray-400 hover:text-white bg-gray-900/40 hover:bg-gray-800/60 border border-gray-800/50 rounded-full py-2 mb-3 transition-all"
+              >
+                ⚙️ {hasActiveDiscoverFilter ? "Filters applied — tap to edit" : "Filter by platform, language, rating, or runtime"}
+              </button>
+              {showFilterBar && (
+                <div className="mb-4">
+                  <InlineFilters
+                    filters={discoverFilters}
+                    onChange={setDiscoverFilters}
+                    onClear={() => setDiscoverFilters({})}
+                    isPremium={isPremium}
+                    isGuest={guestMode}
+                    onUpgrade={() => setUpsellFeature("Filter by language, rating, or runtime — see exactly the movies you want")}
+                    onSignIn={() => signIn("google")}
+                    fields={["provider", "language", "rating", "runtime"]}
+                  />
+                  {hasActiveDiscoverFilter && (
+                    <div className="flex justify-center mt-2">
+                      <button
+                        onClick={handleApplyDiscoverFilters}
+                        className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold px-5 py-2 rounded-full text-sm transition-all"
+                      >
+                        Show matching movies
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
 
           {/* Search */}
           <div className="relative mb-3">

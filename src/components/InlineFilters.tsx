@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect } from "react";
 
+type FilterField = "provider" | "genre" | "decade" | "rating" | "runtime" | "language" | "person";
+
 interface InlineFiltersProps {
   filters: {
     genre?: string; decade?: string; minRating?: number; maxRuntime?: number;
@@ -15,6 +17,10 @@ interface InlineFiltersProps {
   isGuest?: boolean;
   onUpgrade?: () => void;
   onSignIn?: () => void;
+  // Which controls to render — omit to show all. Callers that already have
+  // their own genre/decade/actor-director UI elsewhere should pass only the
+  // fields they actually want here, to avoid shipping a duplicate control.
+  fields?: FilterField[];
 }
 
 const PLATFORMS = [
@@ -240,8 +246,9 @@ function trackFilter(name: string, value: string) {
   }).catch(() => {});
 }
 
-export default function InlineFilters({ filters, onChange, onClear, isPremium = true, isGuest = false, onUpgrade, onSignIn }: InlineFiltersProps) {
+export default function InlineFilters({ filters, onChange, onClear, isPremium = true, isGuest = false, onUpgrade, onSignIn, fields }: InlineFiltersProps) {
   const [detectedCountry, setDetectedCountry] = useState<string>("US");
+  const show = (f: FilterField) => !fields || fields.includes(f);
 
   useEffect(() => {
     fetch("/api/geo")
@@ -276,7 +283,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
           </div>
 
           {/* Platform — free for signed-in users, sign-up prompt for guests */}
-          {!isGuest ? (
+          {show("provider") && (!isGuest ? (
             <FilterDropdown label="📺 " value={filters.providerName || "Any"} active={!!filters.providerId}>
               <DropdownItem label="Any platform" selected={!filters.providerId} onClick={() => update({ providerId: undefined, providerName: undefined })} />
               {PLATFORMS.map(p => (
@@ -293,10 +300,10 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
             <button onClick={() => { trackFilter("platform", "locked:signin"); onSignIn?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Sign up free to filter by platform">
               <span>📺</span><span>Platform</span><span className="text-blue-400 text-xs">🔓</span>
             </button>
-          )}
+          ))}
 
           {/* Genre — premium only */}
-          {isPremium ? (
+          {show("genre") && (isPremium ? (
             <FilterDropdown label="🎭 " value={filters.genre ? filters.genre.charAt(0).toUpperCase() + filters.genre.slice(1) : "Any"} active={!!filters.genre}>
               <DropdownItem label="Any genre" selected={!filters.genre} onClick={() => update({ genre: undefined })} />
               {GENRES.map(g => (
@@ -312,10 +319,10 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
             <button onClick={() => { trackFilter("genre", "locked:upgrade"); onUpgrade?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
               <span>🎭</span><span>Genre</span><span className="text-yellow-600 text-xs">⭐</span>
             </button>
-          )}
+          ))}
 
           {/* Decade — premium only */}
-          {isPremium ? (
+          {show("decade") && (isPremium ? (
             <FilterDropdown label="📅 " value={filters.decade ? `${filters.decade}s` : "Any"} active={!!filters.decade}>
               <DropdownItem label="Any decade" selected={!filters.decade} onClick={() => update({ decade: undefined })} />
               {DECADES.map(d => (
@@ -331,10 +338,10 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
             <button onClick={() => { trackFilter("decade", "locked:upgrade"); onUpgrade?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
               <span>📅</span><span>Decade</span><span className="text-yellow-600 text-xs">⭐</span>
             </button>
-          )}
+          ))}
 
           {/* Rating — premium only */}
-          {isPremium ? (
+          {show("rating") && (isPremium ? (
             <FilterDropdown label="⭐ " value={filters.minRating ? `${filters.minRating}+` : "Any"} active={!!filters.minRating}>
               {RATINGS.map(r => (
                 <DropdownItem
@@ -349,10 +356,10 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
             <button onClick={() => { trackFilter("rating", "locked:upgrade"); onUpgrade?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
               <span>⭐</span><span>Rating</span><span className="text-yellow-600 text-xs">⭐</span>
             </button>
-          )}
+          ))}
 
           {/* Runtime — premium only */}
-          {isPremium ? (
+          {show("runtime") && (isPremium ? (
             <FilterDropdown label="⏱ " value={filters.maxRuntime ? `<${filters.maxRuntime}m` : "Any"} active={!!filters.maxRuntime}>
               <DropdownItem label="Any length" selected={!filters.maxRuntime} onClick={() => update({ maxRuntime: undefined })} />
               <DropdownItem label="< 90 min" selected={filters.maxRuntime === 90} onClick={() => update({ maxRuntime: 90 })} />
@@ -363,10 +370,10 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
             <button onClick={() => { trackFilter("runtime", "locked:upgrade"); onUpgrade?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
               <span>⏱</span><span>Runtime</span><span className="text-yellow-600 text-xs">⭐</span>
             </button>
-          )}
+          ))}
 
           {/* Language — premium only */}
-          {isPremium ? (
+          {show("language") && (isPremium ? (
             <FilterDropdown label="🌍 " value={filters.languageName || "Any"} active={!!filters.language}>
               <DropdownItem label="Any language" selected={!filters.language} onClick={() => update({ language: undefined, languageName: undefined })} />
               {LANGUAGES.map(l => (
@@ -383,10 +390,10 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
               <span>Language</span>
               <span className="text-yellow-600 text-xs">⭐</span>
             </button>
-          )}
+          ))}
 
           {/* Actor / Director — premium only */}
-          {isPremium ? (
+          {show("person") && (isPremium ? (
             <PersonSearch
               value={filters.personName}
               onSelect={p => update({ personId: p.id, personName: p.name })}
@@ -402,7 +409,7 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
               <span>Actor / Director</span>
               <span className="text-yellow-600 text-xs">⭐</span>
             </button>
-          )}
+          ))}
 
           {/* Clear all */}
           {hasAny && (
