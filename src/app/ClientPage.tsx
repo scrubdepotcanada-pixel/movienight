@@ -38,6 +38,8 @@ interface Member {
 }
 
 const TMDB_IMG = "https://image.tmdb.org/t/p";
+const MAX_PICKS = 5;
+const MIN_PICKS = 3;
 
 const GENRE_MAP: Record<string, string> = {
   "28": "Action", "35": "Comedy", "18": "Drama", "27": "Horror",
@@ -124,10 +126,11 @@ export default function ClientPage() {
   const [guestMode, setGuestMode] = useState(false);
   const isLoggedIn = status === "authenticated" || guestMode;
 
-  const [step, setStep] = useState<"select-member" | "saved-genres" | "pick" | "loading" | "results" | "guest-rating">("select-member");
+  const [step, setStep] = useState<"select-member" | "saved-genres" | "pick" | "loading" | "results">("select-member");
   const [contentType, setContentType] = useState<"movie" | "show">("movie");
   const apiBase = contentType === "show" ? "/api/shows" : "/api/movies";
-  const [guestMaxRating, setGuestMaxRating] = useState<string | null>(null);
+  const [guestMaxRating, setGuestMaxRating] = useState<string | null>("PG"); // safe default until the guest actively confirms
+  const [guestRatingTouched, setGuestRatingTouched] = useState(false);
   const [gridMovies, setGridMovies] = useState<Movie[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [selectedRatings, setSelectedRatings] = useState<Record<number, number>>({});
@@ -197,7 +200,8 @@ export default function ClientPage() {
       }
       if (snap.step !== "pick" && snap.step !== "results") return;
       setGuestMode(true);
-      setGuestMaxRating(snap.guestMaxRating ?? null);
+      setGuestMaxRating(snap.guestMaxRating ?? "PG");
+      setGuestRatingTouched(Boolean(snap.guestRatingTouched));
       setContentType(snap.contentType === "show" ? "show" : "movie");
       setActiveGenre(snap.activeGenre ?? null);
       setActiveCategory(snap.activeCategory || "for-you");
@@ -220,6 +224,7 @@ export default function ClientPage() {
     try {
       localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify({
         guestMaxRating,
+        guestRatingTouched,
         contentType,
         step,
         activeGenre,
@@ -236,7 +241,7 @@ export default function ClientPage() {
         savedAt: Date.now(),
       }));
     } catch {}
-  }, [guestMode, step, guestMaxRating, contentType, activeGenre, activeCategory, minDecade, selectedIds, selectedRatings, gridMovies, recommendations, recBuffer]);
+  }, [guestMode, step, guestMaxRating, guestRatingTouched, contentType, activeGenre, activeCategory, minDecade, selectedIds, selectedRatings, gridMovies, recommendations, recBuffer]);
 
   // A real sign-in supersedes any saved guest session — drop it so it can
   // never resurface stale picks after logging out and returning as a guest.
@@ -253,7 +258,7 @@ export default function ClientPage() {
   }, [status, guestMode]);
 
   // Capture a ?genre=<id>[&type=show] link (from /genres' "Browse X" cards)
-  // into sessionStorage so it survives both the guest-rating gate and a full
+  // into sessionStorage so it survives both the guest flow and a full
   // page navigation through Google sign-in, then clean the URL.
   useEffect(() => {
     try {
@@ -424,6 +429,11 @@ export default function ClientPage() {
 
   const handleMoodSubmit = async (mood: string) => {
     if (!mood.trim()) return;
+    if (guestMode && !selectedMember && !guestRatingTouched) {
+      setShowMoodPanel(false);
+      setError("Pick who's watching above before we show you results.");
+      return;
+    }
     setMoodLoading(true);
     setError(null);
     setShowMoodPanel(false);
@@ -540,10 +550,19 @@ export default function ClientPage() {
 
   const handleGuestStart = () => {
     setGuestMode(true);
-    setStep("guest-rating");
     setSelectedIds(new Set());
     setSelectedRatings({});
     setRecommendations([]);
+    const pending = consumePendingGenre();
+    if (pending) {
+      setContentType(pending.type);
+      setActiveGenre(pending.genreId);
+      setStep("pick");
+      loadGrid(1, false, pending.genreId, pending.type, guestMaxRating);
+    } else {
+      setStep("pick");
+      loadGrid(1, false, null, undefined, guestMaxRating);
+    }
   };
 
   const GUEST_RATING_TIERS: { value: string; label: string; desc: string; icon: string }[] = [
@@ -555,16 +574,9 @@ export default function ClientPage() {
 
   const handleGuestRatingSelect = (rating: string) => {
     setGuestMaxRating(rating);
-    const pending = consumePendingGenre();
-    if (pending) {
-      setContentType(pending.type);
-      setActiveGenre(pending.genreId);
-      setStep("pick");
-      loadGrid(1, false, pending.genreId, pending.type, rating);
-    } else {
-      setStep("pick");
-      loadGrid(1, false, null, undefined, rating);
-    }
+    setGuestRatingTouched(true);
+    setError(null);
+    loadGrid(1, false, activeGenre, undefined, rating);
   };
 
   const toggleMovie = (id: number) => {
@@ -577,7 +589,7 @@ export default function ClientPage() {
           delete nr[id];
           return nr;
         });
-      } else if (next.size < 5) {
+      } else if (next.size < MAX_PICKS) {
         next.add(id);
         setSelectedRatings((r: Record<number, number>) => ({ ...r, [id]: 5 }));
       }
@@ -596,7 +608,11 @@ export default function ClientPage() {
     const moviePicks = picked.map((m: Movie) => ({ title: m.title, rating: selectedRatings[m.id] || 5 }));
     const titles = picked.map((m: Movie) => m.title);
 
-    if (titles.length < 5) return;
+    if (titles.length < MIN_PICKS) return;
+    if (guestMode && !selectedMember && !guestRatingTouched) {
+      setError("Pick who's watching above before we show you results.");
+      return;
+    }
 
     setStep("loading");
     setError(null);
@@ -913,39 +929,6 @@ export default function ClientPage() {
     );
   }
 
-  // ── Guest rating gate ──
-  if (step === "guest-rating") {
-    return (
-      <div className="min-h-screen bg-[#0a0a1a] flex flex-col">
-        <Header
-          session={session}
-          onSignOut={() => signOut()}
-          onSwitch={() => { setSelectedMember(null); setStep("select-member"); }}
-          memberName={selectedMember?.name}
-        />
-        <div className="flex-1 flex flex-col items-center justify-center px-4 py-10">
-          <span className="text-4xl mb-3">🔞</span>
-          <h2 className="text-2xl font-bold text-white mb-2 text-center">Who&apos;s watching tonight?</h2>
-          <p className="text-gray-500 text-sm mb-8 text-center max-w-sm">
-            This keeps picks age-appropriate. You can change this anytime by starting over.
-          </p>
-          <div className="w-full max-w-sm grid grid-cols-2 gap-3">
-            {GUEST_RATING_TIERS.map((tier) => (
-              <button
-                key={tier.value}
-                onClick={() => handleGuestRatingSelect(tier.value)}
-                className="flex flex-col items-center gap-1.5 bg-gray-900/60 hover:bg-gray-800/80 border border-gray-800/50 hover:border-purple-500/50 rounded-2xl px-4 py-6 transition-all"
-              >
-                <span className="text-3xl">{tier.icon}</span>
-                <span className="text-white font-semibold">{tier.label}</span>
-                <span className="text-gray-500 text-xs text-center">{tier.desc}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // ── Select member ──
   if (step === "select-member") {
@@ -1072,15 +1055,43 @@ export default function ClientPage() {
         />
 
         <div className="flex-1 px-4 pt-4 pb-32 max-w-4xl mx-auto w-full">
+          {error && (
+            <div className="text-red-400 text-center text-sm mb-4">{error}</div>
+          )}
+
+          {/* Who's watching — guests only, inline at the top, mandatory before results */}
+          {guestMode && !selectedMember && (
+            <div className="mb-4 bg-gray-900/60 border border-gray-800/50 rounded-2xl px-3 py-3">
+              <p className="text-gray-400 text-xs font-medium mb-2 text-center">
+                🔞 Who&apos;s watching? <span className="text-gray-600">(keeps picks age-appropriate)</span>
+              </p>
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                {GUEST_RATING_TIERS.map((tier) => (
+                  <button
+                    key={tier.value}
+                    onClick={() => handleGuestRatingSelect(tier.value)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                      guestRatingTouched && guestMaxRating === tier.value
+                        ? "bg-purple-600 text-white"
+                        : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                    }`}
+                  >
+                    <span>{tier.icon}</span> {tier.label}
+                  </button>
+                ))}
+              </div>
+              {!guestRatingTouched && (
+                <p className="text-amber-400/80 text-[11px] text-center mt-2">Tap one to confirm — required before you get results</p>
+              )}
+            </div>
+          )}
+
           <div className="text-center mb-4">
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-              Pick 5 {label} you love
+              Find something to watch
             </h2>
             <p className="text-gray-500 text-sm">
-              We&apos;ll figure out what you should watch next
-            </p>
-            <p className="text-gray-600 text-xs mt-1">
-              ⭐ Tap the stars on a pick to rate it — higher ratings shape your recommendations more
+              Pick a few {label} you love, or tell us the mood — either way takes seconds
             </p>
           </div>
 
@@ -1110,27 +1121,38 @@ export default function ClientPage() {
             </div>
           </div>
 
-          {/* Search + Mood */}
-          <div className="flex items-center gap-2 mb-3">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setSearchMode(e.target.value.trim().length >= 2 ? "search" : "browse");
-                }}
-                placeholder={`Search ${label} or people...`}
-                className="w-full bg-gray-800/60 border border-gray-700/50 rounded-full pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
-              />
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500">🔍</span>
+          {/* Two equal entry points: Pick 5 vs Mood */}
+          <div className="grid grid-cols-2 gap-3 mb-5">
+            <div className="bg-gradient-to-br from-purple-900/40 to-pink-900/20 border border-purple-700/40 rounded-2xl px-4 py-4 text-center">
+              <p className="text-white font-bold text-sm mb-1">🎬 Pick {count}/5 you love</p>
+              <p className="text-gray-400 text-xs">Browse below &amp; tap to select</p>
             </div>
             <button
               onClick={() => setShowMoodPanel(true)}
-              className="shrink-0 flex items-center gap-1.5 bg-gray-800/60 hover:bg-gray-700 border border-gray-700/50 rounded-full px-4 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-all"
+              className="bg-gray-900/60 hover:bg-gray-800/80 border border-gray-800/50 hover:border-purple-500/50 rounded-2xl px-4 py-4 text-center transition-all"
             >
-              ✨ Mood
+              <p className="text-white font-bold text-sm mb-1">✨ Describe a mood</p>
+              <p className="text-gray-400 text-xs">Skip picking — just tell us the vibe</p>
             </button>
+          </div>
+
+          <p className="text-gray-600 text-xs text-center mb-4">
+            ⭐ Tap the stars on a pick to rate it — higher ratings shape your recommendations more
+          </p>
+
+          {/* Search */}
+          <div className="relative mb-3">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setSearchMode(e.target.value.trim().length >= 2 ? "search" : "browse");
+              }}
+              placeholder={`Search ${label} or people...`}
+              className="w-full bg-gray-800/60 border border-gray-700/50 rounded-full pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
+            />
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500">🔍</span>
           </div>
 
           {/* Genre filter chips */}
@@ -1204,7 +1226,7 @@ export default function ClientPage() {
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
                 {displayedGridMovies.map((movie: Movie) => {
                   const isSelected = selectedIds.has(movie.id);
-                  const isFull = count >= 5 && !isSelected;
+                  const isFull = count >= MAX_PICKS && !isSelected;
                   const rating = selectedRatings[movie.id] || 5;
                   return (
                     <div
@@ -1328,8 +1350,8 @@ export default function ClientPage() {
         </div>
 
         {/* Bottom bar */}
-        <div className="fixed bottom-0 left-0 right-0 bg-[#0a0a1a]/95 backdrop-blur-md border-t border-gray-800/50 px-4 py-4 z-50">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
+        <div className="fixed bottom-0 left-0 right-0 bg-[#0a0a1a]/95 backdrop-blur-md border-t border-gray-800/50 px-4 py-3 z-50">
+          <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="flex gap-1.5">
                 {[0, 1, 2, 3, 4].map((i) => (
@@ -1341,14 +1363,20 @@ export default function ClientPage() {
                   />
                 ))}
               </div>
-              <span className="text-gray-400 text-sm">{count} of 5</span>
+              <span className="text-gray-400 text-xs sm:text-sm">
+                {count < MIN_PICKS
+                  ? `${count} of ${MIN_PICKS} picks needed`
+                  : count < MAX_PICKS
+                    ? `${count} picked — add up to ${MAX_PICKS} to sharpen results`
+                    : `${count} of ${MAX_PICKS} picks`}
+              </span>
             </div>
 
             <button
               onClick={handleGetRecommendations}
-              disabled={count < 5}
-              className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all ${
-                count >= 5
+              disabled={count < MIN_PICKS}
+              className={`px-6 py-2.5 rounded-full font-semibold text-sm transition-all shrink-0 ${
+                count >= MIN_PICKS
                   ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-500 hover:to-pink-500 shadow-lg shadow-purple-500/25"
                   : "bg-gray-800 text-gray-600 cursor-not-allowed"
               }`}
