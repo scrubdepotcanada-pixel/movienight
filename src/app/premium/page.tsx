@@ -8,7 +8,7 @@ import SiteFooter from "@/components/SiteFooter";
 export const metadata: Metadata = {
   title: "Premium Features",
   description:
-    "Next Movie Premium adds actor and director search and unlimited family members. Everything else — AI picks, mood search, and more — stays free.",
+    "Next Movie Premium adds actor and director search, language and rating/runtime filters, and unlimited family members. Everything else — AI picks, mood search, and more — stays free.",
 };
 
 const FEATURES = [
@@ -26,12 +26,23 @@ const FEATURES = [
       "Free users get 2 profiles. Premium lets the whole family join — grandparents, cousins, everyone.",
     tag: "Family",
   },
+  {
+    icon: "🌍",
+    title: "Language Filter",
+    description:
+      "Only want Korean thrillers or French dramas? Filter results to one language and the AI still learns your taste within it.",
+    tag: "Filter",
+  },
+  {
+    icon: "🎚️",
+    title: "Rating & Runtime Filters",
+    description:
+      "Narrow by minimum rating or maximum runtime. Want something under 90 minutes rated 7+? Done in two taps.",
+    tag: "Filter",
+  },
 ];
 
 const COMING_SOON = [
-  "Language filters — find movies in 20+ languages",
-  "Streaming-platform filter — show only movies on a service you pick",
-  "Rating and runtime filters",
   "Personal watchlist",
   "Taste profile & stats",
   "Family Swipe Mode — everyone swipes, we find the title you all agree on",
@@ -42,6 +53,7 @@ const FREE_FEATURES = [
   "Mood search and title search",
   "Age-safe rating caps for each family member",
   "Tell us your streaming services — picks you can watch tonight rank first",
+  "Filter by streaming platform — Netflix, Disney+, Prime, and more",
   "Decade filter, genre browsing, and a reason on every pick: why we chose it for you",
 ];
 
@@ -89,7 +101,8 @@ export default function PremiumPage() {
           </h1>
           <p className="text-gray-400 text-lg max-w-xl mx-auto">
             Everything you love about Next Movie, plus actor and director
-            search and room for the whole family.
+            search, language and rating/runtime filters, and room for the
+            whole family.
           </p>
         </div>
 
@@ -155,8 +168,9 @@ export default function PremiumPage() {
         <div className="mb-12">
           <h2 className="text-2xl font-bold text-center mb-3">Choose your plan</h2>
           <p className="text-gray-500 text-sm text-center max-w-xl mx-auto mb-8">
-            Premium today means: actor and director search, plus unlimited
-            family members. Everything in &quot;Free for everyone&quot; stays free.
+            Premium today means: actor and director search, language and
+            rating/runtime filters, plus unlimited family members.
+            Everything in &quot;Free for everyone&quot; stays free.
           </p>
           <PricingCards />
         </div>
@@ -178,17 +192,18 @@ export default function PremiumPage() {
               genre browsing, and age-safe filters. It works great for casual movie nights.
             </p>
             <p>
-              Premium adds two things today. Search by actor or director, so
-              if you love Tom Hanks or Greta Gerwig you can see only their
-              films. And unlimited family members, so grandparents, cousins,
-              and everyone else get their own profile and taste — free
-              covers 2 profiles.
+              Premium adds filters and family room today. Search by actor or
+              director, so if you love Tom Hanks or Greta Gerwig you can see
+              only their films. Filter by language, or by minimum rating and
+              maximum runtime, to narrow results exactly. And unlimited
+              family members, so grandparents, cousins, and everyone else
+              get their own profile and taste — free covers 2 profiles.
             </p>
             <p>
-              More is coming — language and streaming-platform filters, a
-              watchlist, taste stats, and Family Swipe Mode are built and on
-              the way. They are not included yet, and when they launch they
-              will be added to Premium at no extra cost.
+              More is coming — a watchlist, taste stats, and Family Swipe
+              Mode are built and on the way. They are not included yet, and
+              when they launch they will be added to Premium at no extra
+              cost.
             </p>
           </div>
         </section>

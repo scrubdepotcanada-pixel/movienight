@@ -74,6 +74,8 @@ export async function sendPremiumGiftEmail(to: string, name: string | null) {
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
       ${[
         ["🎬", "Actor & Director search", "Filter every result to one person's filmography"],
+        ["🌍", "Language filter", "Narrow results to Korean, French, Hindi, and more"],
+        ["🎚️", "Rating & runtime filters", "Minimum rating, maximum runtime, your call"],
         ["👨‍👩‍👧‍👦", "Unlimited family members", "Add the whole family — no 2-profile cap"],
       ].map(([icon, title, desc]) => `
         <tr>
@@ -115,6 +117,8 @@ We've gifted you a free month of Premium — it's already active on your account
 
 What's unlocked:
 - Actor & Director search
+- Language filter
+- Rating & runtime filters
 - Unlimited family members
 
 Start movie night: https://nextmovie.app

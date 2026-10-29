@@ -147,7 +147,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "Next Movie is a free AI movie picker built specifically for families. Each family member gets a taste profile. The AI learns your preferences across 12 genres. You can filter by age rating and decade for free, and Premium adds actor and director search. Language and streaming-platform filters, plus a Family Swipe mode for group voting, are coming soon.",
+        text: "Next Movie is a free AI movie picker built specifically for families. Each family member gets a taste profile. The AI learns your preferences across 12 genres. You can filter by age rating, decade, and streaming platform for free, and Premium adds actor and director search plus language and rating/runtime filters. A Family Swipe mode for group voting is coming soon.",
       },
       {
         type: "paragraph",
@@ -430,7 +430,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "An AI movie picker solves this. On Next Movie, search a Korean title directly or describe the mood you're after, and the AI still learns your taste — if you love thrillers but hate slow-burn dramas, it will steer you toward Korean thrillers specifically. A dedicated language filter for Premium is coming soon.",
+        text: "An AI movie picker solves this. Next Movie Premium includes a dedicated language filter for Korean, so you can narrow results to Korean-language titles directly — and the AI still learns your taste, steering you toward Korean thrillers specifically if that's what you love.",
       },
       {
         type: "h2",
@@ -562,7 +562,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "Mainstream streaming apps bury Indian-language content behind English titles. On Next Movie, search a title in Hindi, Tamil, Telugu, Malayalam, Bengali, Kannada, Marathi, or Punjabi directly, or describe the mood — the AI still personalizes to your taste, not just what is trending. A dedicated language filter for Premium is built and coming soon.",
+        text: "Mainstream streaming apps bury Indian-language content behind English titles. Next Movie Premium's language filter covers Hindi, Tamil, Telugu, Malayalam, Bengali, Kannada, Marathi, and Punjabi — select one and the AI recommends films in that language, personalized to your taste, not just what is trending.",
       },
       {
         type: "paragraph",

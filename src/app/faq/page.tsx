@@ -29,7 +29,7 @@ const FAQS = [
   {
     question: "Is Next Movie really free?",
     answer:
-      "The core experience is free — no credit card, no account required. Just open nextmovie.app, pick 3-5 movies you love, and get recommendations instantly. Premium ($4.99/month, $49.99/year, or $99.99 lifetime) adds actor and director search and unlimited family members, but everything you need to get a great recommendation is free.",
+      "The core experience is free — no credit card, no account required. Just open nextmovie.app, pick 3-5 movies you love, and get recommendations instantly. Premium ($4.99/month, $49.99/year, or $99.99 lifetime) adds actor and director search, language and rating/runtime filters, and unlimited family members, but everything you need to get a great recommendation is free.",
   },
   {
     question: "How is Next Movie different from JustWatch or IMDb?",
@@ -69,7 +69,7 @@ const FAQS = [
   {
     question: "Can I find movies in other languages like Korean or French?",
     answer:
-      "Not as a filter yet. You can search for a specific Korean or French title, or ask for one in mood search, and the AI will still learn your taste. A language filter for Premium is built and coming soon — it is not included today.",
+      "Yes. Next Movie Premium includes a language filter — narrow results to Korean, French, Spanish, Hindi, and more. You can also search for a specific title or ask for one in mood search on the free plan, and the AI still learns your taste either way.",
   },
   {
     question: "What is Family Swipe mode?",
@@ -79,7 +79,7 @@ const FAQS = [
   {
     question: "Does Next Movie have a premium version?",
     answer:
-      "Yes. Next Movie Premium adds actor and director search and unlimited family members. The free version gives you AI picks, mood and title search, genre browsing, and age-safe filters at no cost.",
+      "Yes. Next Movie Premium adds actor and director search, language and rating/runtime filters, and unlimited family members. The free version gives you AI picks, mood and title search, a streaming-platform filter, genre browsing, and age-safe filters at no cost.",
   },
 ];
 

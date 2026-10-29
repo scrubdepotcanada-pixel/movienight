@@ -47,20 +47,21 @@ export default function Home() {
           <li>Mood search — type &quot;funny but not dumb&quot; and get matches</li>
           <li>12 genres — Action, Comedy, Drama, Horror, Sci-Fi, Romance, and more</li>
           <li>Tell us your streaming services — picks you can watch tonight rank first</li>
+          <li>Filter by streaming platform — Netflix, Disney+, Prime, and more</li>
           <li>Filter by actor or director name (Premium)</li>
+          <li>Language filter — Korean, French, Hindi, Spanish, and more (Premium)</li>
+          <li>Rating and runtime filters (Premium)</li>
           <li>Stream links — see where to watch on Netflix, Disney+, Prime, Apple TV+, Crave</li>
           <li>Works in Canada, USA, UK, Australia, and 50+ countries</li>
           <li>No app to download — works on any phone, tablet, or laptop</li>
-          <li>Free to use — premium adds actor and director search and unlimited family members</li>
+          <li>Free to use — premium adds actor/director search, language and rating/runtime filters, and unlimited family members</li>
         </ul>
 
         <h2>Coming soon</h2>
         <p>
           These are built and on the way, but not included in Next Movie or
-          Premium yet: a language filter (Korean, French, Hindi, Spanish, and
-          more), a streaming-platform hard filter, rating and runtime
-          filters, a personal watchlist, taste stats, and Family Swipe mode
-          (everyone swipes, we find the title you all agree on).
+          Premium yet: a personal watchlist, taste stats, and Family Swipe
+          mode (everyone swipes, we find the title you all agree on).
         </p>
 
         <h2>Best Movie Recommendation App for Families in Canada</h2>
@@ -124,7 +125,7 @@ export default function Home() {
         <h3>Is Next Movie free?</h3>
         <p>
           The core experience is free — no credit card needed, no app to download.
-          Just go to nextmovie.app and start. Premium adds actor and director search and unlimited family members, starting at $4.99/month.
+          Just go to nextmovie.app and start. Premium adds actor and director search, language and rating/runtime filters, and unlimited family members, starting at $4.99/month.
         </p>
         <h3>Is there a Next Movie app?</h3>
         <p>
@@ -139,8 +140,9 @@ export default function Home() {
         </p>
         <h3>Can I find Korean or French movies?</h3>
         <p>
-          Looking for a Korean thriller or a French drama? Search a title or
-          describe the mood — a full language filter is coming soon to Premium.
+          Yes. Next Movie Premium includes a language filter — narrow results
+          to Korean, French, Hindi, Spanish, and more. On the free plan you
+          can also search a title directly or describe the mood.
         </p>
         <h3>How is Next Movie different from JustWatch?</h3>
         <p>
