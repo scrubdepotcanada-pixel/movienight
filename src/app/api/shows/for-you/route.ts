@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
       const cert = await getTVShowCertification(m.id);
       if (!isMovieAllowed(cert, maxRating)) continue;
       seenIds.add(m.id);
-      shows.push({ ...m, certification: cert });
+      shows.push({ ...m, certification: cert, reason: genreName ? `Popular ${genreName} pick` : "Popular and highly rated" });
     }
   }
 
@@ -122,9 +122,9 @@ export async function POST(req: NextRequest) {
 
     for (const show of shows) {
       await db.execute({
-        sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, release_date, category, content_type)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'show')`,
-        args: [memberId, show.id, show.title, show.poster_path, show.vote_average, show.certification, show.overview, show.release_date || null, category],
+        sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, release_date, category, content_type, reason)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'show', ?)`,
+        args: [memberId, show.id, show.title, show.poster_path, show.vote_average, show.certification, show.overview, show.release_date || null, category, show.reason || null],
       });
     }
   }

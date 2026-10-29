@@ -20,6 +20,7 @@ interface Movie {
   release_date?: string;
   certification?: string;
   genre_ids?: number[];
+  reason?: string;
   providers?: {
     flatrate?: WatchProvider[];
     rent?: WatchProvider[];
@@ -508,6 +509,7 @@ export default function ClientPage() {
           certification: r.certification ? String(r.certification) : undefined,
           overview: r.overview ? String(r.overview) : undefined,
           release_date: r.release_date ? String(r.release_date) : undefined,
+          reason: r.reason ? String(r.reason) : undefined,
         }));
         setRecommendations(saved);
         setRecBuffer([]);
@@ -718,7 +720,7 @@ export default function ClientPage() {
     setRefining(false);
   }, [selectedMember, activeCategory, activeGenre, minDecade, apiBase, contentType]);
 
-  const handleSwipe = useCallback((movie: Movie, direction: "left" | "right") => {
+  const handleSwipe = useCallback((movie: Movie, direction: "left" | "right", feedbackType: "disliked" | "less_like_this" = "disliked") => {
     setSwipingId(movie.id);
 
     setTimeout(() => {
@@ -772,7 +774,7 @@ export default function ClientPage() {
         fetch("/api/movies/dislike", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ memberId: selectedMember.id, movie, category: activeCategory, contentType }),
+          body: JSON.stringify({ memberId: selectedMember.id, movie, category: activeCategory, contentType, feedbackType }),
         }).catch(() => {});
       }
     } else if (direction === "right") {
@@ -780,6 +782,10 @@ export default function ClientPage() {
       guestLikedTitlesRef.current = [...guestLikedTitlesRef.current, movie.title].slice(-10);
     }
   }, [selectedMember, activeCategory, fetchMoreRecs, regenerateFromLikes, minDecade, contentType]);
+
+  const handleLessLikeThis = useCallback((movie: Movie) => {
+    handleSwipe(movie, "left", "less_like_this");
+  }, [handleSwipe]);
 
   const handleUndo = useCallback(() => {
     if (!lastSwipe) return;
@@ -1547,30 +1553,41 @@ export default function ClientPage() {
           </div>
 
           {displayedRecommendations.length > 0 && (
-            <div className="flex items-center justify-center gap-4 mt-5">
-              <button
-                onClick={() => handleSwipe(displayedRecommendations[0], "left")}
-                disabled={swipingId !== null}
-                className="flex items-center gap-2 bg-gray-900 hover:bg-red-950/60 border border-gray-800 hover:border-red-800/60 text-red-400 font-semibold px-6 py-3 rounded-full transition-all disabled:opacity-50"
-              >
-                ✕ Nope
-              </button>
-              <button
-                onClick={handleUndo}
-                disabled={!lastSwipe}
-                title="Undo last swipe"
-                className="flex items-center justify-center w-11 h-11 rounded-full bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-400 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                ↩
-              </button>
-              <button
-                onClick={() => handleSwipe(displayedRecommendations[0], "right")}
-                disabled={swipingId !== null}
-                className="flex items-center gap-2 bg-gray-900 hover:bg-green-950/60 border border-gray-800 hover:border-green-800/60 text-green-400 font-semibold px-6 py-3 rounded-full transition-all disabled:opacity-50"
-              >
-                ♥ Liked
-              </button>
-            </div>
+            <>
+              <div className="flex items-center justify-center gap-4 mt-5">
+                <button
+                  onClick={() => handleSwipe(displayedRecommendations[0], "left")}
+                  disabled={swipingId !== null}
+                  className="flex items-center gap-2 bg-gray-900 hover:bg-red-950/60 border border-gray-800 hover:border-red-800/60 text-red-400 font-semibold px-6 py-3 rounded-full transition-all disabled:opacity-50"
+                >
+                  ✕ Nope
+                </button>
+                <button
+                  onClick={handleUndo}
+                  disabled={!lastSwipe}
+                  title="Undo last swipe"
+                  className="flex items-center justify-center w-11 h-11 rounded-full bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-400 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  ↩
+                </button>
+                <button
+                  onClick={() => handleSwipe(displayedRecommendations[0], "right")}
+                  disabled={swipingId !== null}
+                  className="flex items-center gap-2 bg-gray-900 hover:bg-green-950/60 border border-gray-800 hover:border-green-800/60 text-green-400 font-semibold px-6 py-3 rounded-full transition-all disabled:opacity-50"
+                >
+                  ♥ Liked
+                </button>
+              </div>
+              <div className="text-center mt-2">
+                <button
+                  onClick={() => handleLessLikeThis(displayedRecommendations[0])}
+                  disabled={swipingId !== null}
+                  className="text-gray-500 hover:text-gray-300 text-xs font-medium transition-colors disabled:opacity-50"
+                >
+                  👎 Less like this
+                </button>
+              </div>
+            </>
           )}
 
           {displayedRecommendations.length === 0 && !error && (
@@ -1878,8 +1895,13 @@ function FlippableCard({ movie, index, contentType = "movie" }: { movie: Movie; 
               <p className="text-gray-500 mt-0.5">
                 {movie.release_date?.slice(0, 4)}
               </p>
+              {movie.reason && (
+                <p className="text-purple-400 text-sm font-medium mt-1.5 line-clamp-2">
+                  ✨ {movie.reason}
+                </p>
+              )}
               {movie.overview && (
-                <p className="text-gray-400 mt-2 leading-relaxed line-clamp-3">
+                <p className="text-gray-400 mt-2 leading-relaxed line-clamp-2">
                   {movie.overview}
                 </p>
               )}
@@ -1949,6 +1971,9 @@ function FlippableCard({ movie, index, contentType = "movie" }: { movie: Movie; 
               <p className="text-xs text-gray-500 mt-1 line-clamp-1">
                 {details.cast.map((c: { name: string }) => c.name).join(", ")}
               </p>
+            )}
+            {movie.reason && (
+              <p className="text-purple-400 text-xs font-medium mt-1.5">✨ {movie.reason}</p>
             )}
           </div>
 

@@ -1,17 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 
-// Mark a movie or show as not interested (swipe left on Your Next Watch)
+const VALID_FEEDBACK_TYPES = new Set(["disliked", "less_like_this"]);
+
+// Mark a movie or show as not interested (swipe left on Your Next Watch),
+// or a softer "Less like this" (feedbackType: "less_like_this") — same
+// exclusion effect, but tracked distinctly so negative-context prompts can
+// phrase it as a weaker style signal rather than "never show this again".
 export async function POST(req: NextRequest) {
-  const { memberId, movie, category = "general", contentType = "movie" } = await req.json();
+  const { memberId, movie, category = "general", contentType = "movie", feedbackType = "disliked" } = await req.json();
 
   if (!memberId || !movie) {
     return NextResponse.json({ error: "Missing memberId or movie" }, { status: 400 });
   }
 
+  const ft = VALID_FEEDBACK_TYPES.has(feedbackType) ? feedbackType : "disliked";
+
   await db.execute({
-    sql: "INSERT OR IGNORE INTO disliked_movies (member_id, tmdb_id, title, category, content_type) VALUES (?, ?, ?, ?, ?)",
-    args: [memberId, movie.id, movie.title, category, contentType],
+    sql: "INSERT OR IGNORE INTO disliked_movies (member_id, tmdb_id, title, category, content_type, feedback_type) VALUES (?, ?, ?, ?, ?, ?)",
+    args: [memberId, movie.id, movie.title, category, contentType, ft],
   });
 
   // Not interested = exclude from future recommendations

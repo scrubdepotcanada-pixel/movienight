@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       const cert = await getMovieCertification(m.id, locale);
       if (!isMovieAllowed(cert, maxRating)) continue;
       seenIds.add(m.id);
-      movies.push({ ...m, certification: cert });
+      movies.push({ ...m, certification: cert, reason: genreName ? `Popular ${genreName} pick` : "Popular and highly rated" });
     }
   }
 
@@ -123,9 +123,9 @@ export async function POST(req: NextRequest) {
 
     for (const movie of movies) {
       await db.execute({
-        sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, release_date, category, content_type)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'movie')`,
-        args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification, movie.overview, movie.release_date || null, category],
+        sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, release_date, category, content_type, reason)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'movie', ?)`,
+        args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification, movie.overview, movie.release_date || null, category, movie.reason || null],
       });
     }
   }

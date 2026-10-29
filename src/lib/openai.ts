@@ -12,6 +12,7 @@ function getOpenAI(): OpenAI {
 interface MovieSuggestion {
   title: string;
   year: number;
+  reason?: string;
 }
 
 async function askForMovies(prompt: string, count: number): Promise<MovieSuggestion[]> {
@@ -22,7 +23,7 @@ async function askForMovies(prompt: string, count: number): Promise<MovieSuggest
     messages: [
       {
         role: "system",
-        content: `You are a movie recommendation expert. You always respond in JSON format with a "movies" array containing objects with "title" (string) and "year" (number) fields. Only suggest real, well-known movies. Never repeat movies. Always return exactly ${count} movies. Strictly respect any content rating restrictions specified by the user.`,
+        content: `You are a movie recommendation expert. You always respond in JSON format with a "movies" array containing objects with "title" (string), "year" (number), and "reason" (string) fields. "reason" is a short, specific, first-person-addressed phrase (under 12 words, no leading "Because") explaining why THIS user would like THIS movie based on what they told you — e.g. "you loved Inception's twisty plot" or "matches your taste for dark comedy". Never write a generic reason like "it's a great movie". Only suggest real, well-known movies. Never repeat movies. Always return exactly ${count} movies. Strictly respect any content rating restrictions specified by the user.`,
       },
       {
         role: "user",
@@ -217,6 +218,7 @@ Return exactly ${count} ${contentType === "show" ? "shows" : "movies"}.`;
 interface ShowSuggestion {
   title: string;
   year: number;
+  reason?: string;
 }
 
 async function askForShows(prompt: string, count: number): Promise<ShowSuggestion[]> {
@@ -227,7 +229,7 @@ async function askForShows(prompt: string, count: number): Promise<ShowSuggestio
     messages: [
       {
         role: "system",
-        content: `You are a TV show recommendation expert. You always respond in JSON format with a "movies" array containing objects with "title" (string) and "year" (number) fields. Only suggest real, well-known TV shows (NOT movies). The "year" should be the year the show first aired. Never repeat shows. Always return exactly ${count} TV shows. Strictly respect any content rating restrictions specified by the user.`,
+        content: `You are a TV show recommendation expert. You always respond in JSON format with a "movies" array containing objects with "title" (string), "year" (number), and "reason" (string) fields. "reason" is a short, specific, first-person-addressed phrase (under 12 words, no leading "Because") explaining why THIS user would like THIS show based on what they told you — e.g. "you loved Breaking Bad's tense pacing" or "matches your taste for workplace comedy". Never write a generic reason like "it's a great show". Only suggest real, well-known TV shows (NOT movies). The "year" should be the year the show first aired. Never repeat shows. Always return exactly ${count} TV shows. Strictly respect any content rating restrictions specified by the user.`,
       },
       {
         role: "user",

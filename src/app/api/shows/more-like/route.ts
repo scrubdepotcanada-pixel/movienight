@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   const [{ maxRating }, likedRows, watchedRows, dislikedRows, activeRecs] = await Promise.all([
     getMemberRestrictions(memberId),
     db.execute({
-      sql: "SELECT DISTINCT tmdb_id FROM liked_movies lm JOIN recommendations r ON lm.member_id = r.member_id AND lm.title = r.title WHERE lm.member_id = ? AND lm.category = ? AND lm.content_type = 'show' AND r.tmdb_id IS NOT NULL AND r.content_type = 'show' ORDER BY lm.created_at DESC LIMIT 5",
+      sql: "SELECT DISTINCT lm.title as seed_title, r.tmdb_id as seed_tmdb_id FROM liked_movies lm JOIN recommendations r ON lm.member_id = r.member_id AND lm.title = r.title WHERE lm.member_id = ? AND lm.category = ? AND lm.content_type = 'show' AND r.tmdb_id IS NOT NULL AND r.content_type = 'show' ORDER BY lm.created_at DESC LIMIT 5",
       args: [memberId, category],
     }),
     db.execute({ sql: "SELECT tmdb_id FROM watched_movies WHERE member_id = ? AND content_type = 'show'", args: [memberId] }),
@@ -30,16 +30,18 @@ export async function POST(req: NextRequest) {
     ...activeRecs.rows.map((r) => Number(r.tmdb_id)),
   ]);
 
-  const seedIds = likedRows.rows.map((r) => Number(r.tmdb_id)).filter((id) => id > 0);
+  const seeds = likedRows.rows
+    .map((r) => ({ id: Number(r.seed_tmdb_id), title: String(r.seed_title) }))
+    .filter((s) => s.id > 0);
 
-  if (seedIds.length === 0) {
+  if (seeds.length === 0) {
     return NextResponse.json({ movies: [] });
   }
 
   const allResults = await Promise.all(
-    seedIds.slice(0, 3).flatMap((id) => [
-      getSimilarTVShows(id, locale),
-      getRecommendedTVShows(id, locale),
+    seeds.slice(0, 3).flatMap((seed) => [
+      getSimilarTVShows(seed.id, locale).then((rs) => rs.map((m) => ({ ...m, _seedTitle: seed.title }))),
+      getRecommendedTVShows(seed.id, locale).then((rs) => rs.map((m) => ({ ...m, _seedTitle: seed.title }))),
     ])
   );
 
@@ -58,7 +60,7 @@ export async function POST(req: NextRequest) {
     return true;
   };
 
-  let candidates = allResults
+  let candidates: ({ id: number; title: string; poster_path: string | null; vote_average: number; overview: string; release_date: string; genre_ids?: number[]; _seedTitle?: string })[] = allResults
     .flat()
     .filter((m) => {
       if (!passesFilters(m)) return false;
@@ -93,7 +95,9 @@ export async function POST(req: NextRequest) {
       const cert = await getTVShowCertification(m.id);
       if (!isMovieAllowed(cert, maxRating)) return null;
       const providers = await getTVWatchProviders(m.id, "CA");
-      return { ...m, certification: cert, providers };
+      const reason = m._seedTitle ? `Because you liked ${m._seedTitle}` : "Popular and highly rated";
+      const { _seedTitle, ...showFields } = m;
+      return { ...showFields, certification: cert, providers, reason };
     })
   );
 
@@ -101,9 +105,9 @@ export async function POST(req: NextRequest) {
 
   for (const show of filtered) {
     await db.execute({
-      sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, release_date, category, content_type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'show')`,
-      args: [memberId, show.id, show.title, show.poster_path, show.vote_average, show.certification, show.overview, show.release_date || null, category],
+      sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, release_date, category, content_type, reason)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'show', ?)`,
+      args: [memberId, show.id, show.title, show.poster_path, show.vote_average, show.certification, show.overview, show.release_date || null, category, show.reason || null],
     });
   }
 

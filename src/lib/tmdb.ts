@@ -17,6 +17,7 @@ export interface Movie {
   release_date: string;
   certification?: string;
   genre_ids?: number[];
+  reason?: string;
 }
 
 export function posterUrl(path: string | null, size: string = "w342"): string {
@@ -115,11 +116,15 @@ export async function lookupMovie(
  * to full Movie objects with posters, ratings, and certifications.
  */
 export async function resolveAISuggestions(
-  suggestions: { title: string; year: number }[],
+  suggestions: { title: string; year: number; reason?: string }[],
   locale?: string
 ): Promise<(Movie & { certification: string })[]> {
   const results = await Promise.all(
-    suggestions.map((s) => lookupMovie(s.title, s.year, locale))
+    suggestions.map(async (s) => {
+      const m = await lookupMovie(s.title, s.year, locale);
+      if (!m) return null;
+      return s.reason ? { ...m, reason: s.reason } : m;
+    })
   );
   return results.filter((m): m is Movie & { certification: string } => m !== null);
 }
@@ -495,11 +500,15 @@ export async function lookupTVShow(
  * Normalized to use `title` and `release_date` fields for consistency with movies.
  */
 export async function resolveAIShowSuggestions(
-  suggestions: { title: string; year: number }[],
+  suggestions: { title: string; year: number; reason?: string }[],
   locale?: string
 ): Promise<(Movie & { certification: string })[]> {
   const results = await Promise.all(
-    suggestions.map((s) => lookupTVShow(s.title, s.year, locale))
+    suggestions.map(async (s) => {
+      const m = await lookupTVShow(s.title, s.year, locale);
+      if (!m) return null;
+      return s.reason ? { ...m, reason: s.reason } : m;
+    })
   );
   return results.filter((m): m is Movie & { certification: string } => m !== null);
 }

@@ -50,7 +50,8 @@ export async function POST(req: NextRequest) {
   const results = allResults
     .filter((m) => !excludeIds.has(m.id) && !excludeTitles.has(m.title.toLowerCase()))
     .filter((m) => isMovieAllowed(m.certification, maxRating))
-    .slice(0, 20);
+    .slice(0, 20)
+    .map((m) => ({ ...m, reason: m.reason || `Matches your mood: "${mood}"` }));
 
   const providers: Record<number, WatchProviders> = {};
   await Promise.all(
@@ -67,9 +68,9 @@ export async function POST(req: NextRequest) {
 
     for (const movie of results) {
       await db.execute({
-        sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, release_date, category, content_type)
-              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification, movie.overview, movie.release_date || null, category, ct],
+        sql: `INSERT INTO recommendations (member_id, tmdb_id, title, poster_path, vote_average, certification, overview, release_date, category, content_type, reason)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification, movie.overview, movie.release_date || null, category, ct, movie.reason || null],
       });
     }
   }
