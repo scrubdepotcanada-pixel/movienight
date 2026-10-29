@@ -3,6 +3,7 @@ import { discoverMovies, ANIMATION_GENRE_ID, type Movie } from "@/lib/tmdb";
 
 const TOP_RATED_MIN_YEAR = 2000;
 const NEW_FILMS_MAX_AGE_YEARS = 2; // "new" = released in roughly the last 2 years
+const VALID_RATINGS = new Set(["G", "PG", "PG-13", "R", "NC-17"]);
 
 export async function GET(req: NextRequest) {
   const locale = req.cookies.get("locale")?.value;
@@ -10,6 +11,8 @@ export async function GET(req: NextRequest) {
   const genre = req.nextUrl.searchParams.get("genre");
   const genreId = genre ? Number(genre) : undefined;
   const excludeGenre = genreId && genreId !== ANIMATION_GENRE_ID ? ANIMATION_GENRE_ID : undefined;
+  const maxRatingParam = req.nextUrl.searchParams.get("maxRating");
+  const maxRating = maxRatingParam && VALID_RATINGS.has(maxRatingParam) ? maxRatingParam : undefined;
 
   const newFilmsMinYear = new Date().getFullYear() - NEW_FILMS_MAX_AGE_YEARS;
 
@@ -23,6 +26,7 @@ export async function GET(req: NextRequest) {
       sortBy: "popularity.desc",
       minVoteCount: 300,
       minYear: newFilmsMinYear,
+      maxRating,
     }, locale, page),
     discoverMovies({
       genre: genreId,
@@ -30,6 +34,7 @@ export async function GET(req: NextRequest) {
       sortBy: "vote_average.desc",
       minVoteCount: 1000,
       minYear: TOP_RATED_MIN_YEAR,
+      maxRating,
     }, locale, page),
   ]);
 

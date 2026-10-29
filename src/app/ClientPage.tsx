@@ -79,9 +79,10 @@ export default function ClientPage() {
   const [guestMode, setGuestMode] = useState(false);
   const isLoggedIn = status === "authenticated" || guestMode;
 
-  const [step, setStep] = useState<"select-member" | "saved-genres" | "pick" | "loading" | "results">("select-member");
+  const [step, setStep] = useState<"select-member" | "saved-genres" | "pick" | "loading" | "results" | "guest-rating">("select-member");
   const [contentType, setContentType] = useState<"movie" | "show">("movie");
   const apiBase = contentType === "show" ? "/api/shows" : "/api/movies";
+  const [guestMaxRating, setGuestMaxRating] = useState<string | null>(null);
   const [gridMovies, setGridMovies] = useState<Movie[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [selectedRatings, setSelectedRatings] = useState<Record<number, number>>({});
@@ -113,13 +114,15 @@ export default function ClientPage() {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [step]);
 
-  const loadGrid = async (page = 1, append = false, genreId?: string | null, typeOverride?: "movie" | "show") => {
+  const loadGrid = async (page = 1, append = false, genreId?: string | null, typeOverride?: "movie" | "show", maxRatingOverride?: string | null) => {
     if (page === 1) setLoadingGrid(true);
     else setLoadingMore(true);
     try {
       const base = (typeOverride || contentType) === "show" ? "/api/shows" : "/api/movies";
+      const effectiveMaxRating = maxRatingOverride !== undefined ? maxRatingOverride : (selectedMember?.max_rating || guestMaxRating);
       const params = new URLSearchParams({ page: String(page) });
       if (genreId) params.set("genre", genreId);
+      if (effectiveMaxRating && effectiveMaxRating !== "ALL") params.set("maxRating", effectiveMaxRating);
       const res = await fetch(`${base}/popular-grid?${params}`);
       const data = await res.json();
       const newMovies: Movie[] = data.movies || [];
@@ -236,11 +239,23 @@ export default function ClientPage() {
 
   const handleGuestStart = () => {
     setGuestMode(true);
-    setStep("pick");
+    setStep("guest-rating");
     setSelectedIds(new Set());
     setSelectedRatings({});
     setRecommendations([]);
-    loadGrid();
+  };
+
+  const GUEST_RATING_TIERS: { value: string; label: string; desc: string; icon: string }[] = [
+    { value: "G", label: "Kids", desc: "G-rated only", icon: "🧸" },
+    { value: "PG", label: "Whole Family", desc: "G & PG — safe to watch together", icon: "👨‍👩‍👧‍👦" },
+    { value: "PG-13", label: "Teens", desc: "Up to PG-13", icon: "🎒" },
+    { value: "ALL", label: "Adults", desc: "No restrictions", icon: "🔞" },
+  ];
+
+  const handleGuestRatingSelect = (rating: string) => {
+    setGuestMaxRating(rating);
+    setStep("pick");
+    loadGrid(1, false, null, undefined, rating);
   };
 
   const toggleMovie = (id: number) => {
@@ -291,6 +306,7 @@ export default function ClientPage() {
           category,
           genreName: activeGenre ? genreMapFor(contentType)[activeGenre] : undefined,
           minDecade,
+          guestMaxRating,
         }),
       });
       const data = await res.json();
@@ -339,6 +355,7 @@ export default function ClientPage() {
             category: activeCategory,
             genreName: activeGenre ? genreMapFor(contentType)[activeGenre] : undefined,
             minDecade: effectiveDecade,
+            guestMaxRating,
           }),
         });
         const data = await res.json();
@@ -359,7 +376,7 @@ export default function ClientPage() {
       });
     } catch {}
     setFetchingMore(false);
-  }, [selectedMember, activeCategory, activeGenre, fetchingMore, minDecade, apiBase, contentType]);
+  }, [selectedMember, activeCategory, activeGenre, fetchingMore, minDecade, apiBase, contentType, guestMaxRating]);
 
   const LIKE_STREAK_THRESHOLD = 5;
 
@@ -544,6 +561,40 @@ export default function ClientPage() {
           >
             Try without signing in
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Guest rating gate ──
+  if (step === "guest-rating") {
+    return (
+      <div className="min-h-screen bg-[#0a0a1a] flex flex-col">
+        <Header
+          session={session}
+          onSignOut={() => signOut()}
+          onSwitch={() => { setSelectedMember(null); setStep("select-member"); }}
+          memberName={selectedMember?.name}
+        />
+        <div className="flex-1 flex flex-col items-center justify-center px-4 py-10">
+          <span className="text-4xl mb-3">🔞</span>
+          <h2 className="text-2xl font-bold text-white mb-2 text-center">Who&apos;s watching tonight?</h2>
+          <p className="text-gray-500 text-sm mb-8 text-center max-w-sm">
+            This keeps picks age-appropriate. You can change this anytime by starting over.
+          </p>
+          <div className="w-full max-w-sm grid grid-cols-2 gap-3">
+            {GUEST_RATING_TIERS.map((tier) => (
+              <button
+                key={tier.value}
+                onClick={() => handleGuestRatingSelect(tier.value)}
+                className="flex flex-col items-center gap-1.5 bg-gray-900/60 hover:bg-gray-800/80 border border-gray-800/50 hover:border-purple-500/50 rounded-2xl px-4 py-6 transition-all"
+              >
+                <span className="text-3xl">{tier.icon}</span>
+                <span className="text-white font-semibold">{tier.label}</span>
+                <span className="text-gray-500 text-xs text-center">{tier.desc}</span>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     );

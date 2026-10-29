@@ -6,9 +6,10 @@ import { isMovieAllowed } from "@/lib/ageRating";
 import db from "@/lib/db";
 
 const DEFAULT_RATING = 5; // explicit picks with no star rating supplied are assumed loved
+const VALID_RATINGS = new Set(["G", "PG", "PG-13", "R", "NC-17"]);
 
 export async function POST(req: NextRequest) {
-  const { movieTitles, moviePicks, memberId, category = "for-you", genreName, minDecade } = await req.json();
+  const { movieTitles, moviePicks, memberId, category = "for-you", genreName, minDecade, guestMaxRating } = await req.json();
 
   const picks: RatedMovie[] = Array.isArray(moviePicks) && moviePicks.length > 0
     ? moviePicks.map((p: { title: string; rating?: number }) => ({
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   const locale = req.cookies.get("locale")?.value;
 
-  let maxRating = null;
+  let maxRating = VALID_RATINGS.has(guestMaxRating) ? guestMaxRating : null;
   let watchedTitles: string[] = [];
   let dislikedTitles: string[] = [];
   let excludeIds = new Set<number>();

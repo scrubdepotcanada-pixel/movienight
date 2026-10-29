@@ -295,6 +295,7 @@ export interface DiscoverFilters {
   watchRegion?: string;
   personId?: number;
   language?: string;
+  maxRating?: string; // MPAA cap, e.g. "PG-13" — maps to TMDB's certification.lte
 }
 
 const GENRE_IDS: Record<string, number> = {
@@ -342,6 +343,10 @@ export async function discoverMovies(filters: DiscoverFilters, locale?: string, 
   }
   if (filters.minYear) {
     params.set("primary_release_date.gte", `${filters.minYear}-01-01`);
+  }
+  if (filters.maxRating && filters.maxRating !== "ALL") {
+    params.set("certification_country", "US");
+    params.set("certification.lte", filters.maxRating);
   }
 
   const res = await fetch(`${TMDB_BASE}/discover/movie?${params}`, { headers: headers() });
