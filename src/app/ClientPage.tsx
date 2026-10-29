@@ -116,6 +116,7 @@ export default function ClientPage() {
   const [selectedRatings, setSelectedRatings] = useState<Record<number, number>>({});
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [recBuffer, setRecBuffer] = useState<Movie[]>([]);
+  const [lastSwipe, setLastSwipe] = useState<{ movie: Movie; direction: "left" | "right"; replacement: Movie | null } | null>(null);
   const [loadingGrid, setLoadingGrid] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [gridPage, setGridPage] = useState(1);
@@ -510,6 +511,8 @@ export default function ClientPage() {
     setSwipingId(movie.id);
 
     setTimeout(() => {
+      let replacementMovie: Movie | null = null;
+
       setRecommendations((prev: Movie[]) => {
         const idx = prev.findIndex((m: Movie) => m.id === movie.id);
         if (idx === -1) return prev;
@@ -527,12 +530,14 @@ export default function ClientPage() {
         const passing = prev.filter((m: Movie) => passesDecade(m, minDecade));
         const pool = passing.length > 0 ? passing : prev;
         const replacement = sortByRating(pool)[0];
+        replacementMovie = replacement;
         const rest = prev.filter((m: Movie) => m.id !== replacement.id);
         setRecommendations((recs: Movie[]) => [...recs, replacement]);
         if (rest.length <= 2) fetchMoreRecs();
         return rest;
       });
 
+      setLastSwipe({ movie, direction, replacement: replacementMovie });
       setSwipingId(null);
     }, 300);
 
@@ -565,11 +570,39 @@ export default function ClientPage() {
     }
   }, [selectedMember, activeCategory, fetchMoreRecs, regenerateFromLikes, minDecade, contentType]);
 
+  const handleUndo = useCallback(() => {
+    if (!lastSwipe) return;
+    const { movie, direction, replacement } = lastSwipe;
+
+    setRecommendations((prev: Movie[]) => {
+      const withoutReplacement = replacement ? prev.filter((m: Movie) => m.id !== replacement.id) : prev;
+      if (withoutReplacement.some((m: Movie) => m.id === movie.id)) return withoutReplacement;
+      return [movie, ...withoutReplacement];
+    });
+
+    if (replacement) {
+      setRecBuffer((prev: Movie[]) => [replacement, ...prev]);
+    }
+
+    if (selectedMember) {
+      fetch("/api/movies/undo-swipe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: selectedMember.id, movie, category: activeCategory, contentType, direction }),
+      }).catch(() => {});
+    } else if (direction === "right") {
+      guestLikedTitlesRef.current = guestLikedTitlesRef.current.filter((t: string) => t !== movie.title);
+    }
+
+    setLastSwipe(null);
+  }, [lastSwipe, selectedMember, activeCategory, contentType]);
+
   const handleStartOver = () => {
     setSelectedIds(new Set());
     setSelectedRatings({});
     setRecommendations([]);
     setRecBuffer([]);
+    setLastSwipe(null);
     setShowMoreCount(0);
     setLikedStreak([]);
     seedTitlesRef.current = [];
@@ -1141,6 +1174,33 @@ export default function ClientPage() {
               </SwipeableCard>
             ))}
           </div>
+
+          {displayedRecommendations.length > 0 && (
+            <div className="flex items-center justify-center gap-4 mt-5">
+              <button
+                onClick={() => handleSwipe(displayedRecommendations[0], "left")}
+                disabled={swipingId !== null}
+                className="flex items-center gap-2 bg-gray-900 hover:bg-red-950/60 border border-gray-800 hover:border-red-800/60 text-red-400 font-semibold px-6 py-3 rounded-full transition-all disabled:opacity-50"
+              >
+                ✕ Nope
+              </button>
+              <button
+                onClick={handleUndo}
+                disabled={!lastSwipe}
+                title="Undo last swipe"
+                className="flex items-center justify-center w-11 h-11 rounded-full bg-gray-900 hover:bg-gray-800 border border-gray-800 text-gray-400 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                ↩
+              </button>
+              <button
+                onClick={() => handleSwipe(displayedRecommendations[0], "right")}
+                disabled={swipingId !== null}
+                className="flex items-center gap-2 bg-gray-900 hover:bg-green-950/60 border border-gray-800 hover:border-green-800/60 text-green-400 font-semibold px-6 py-3 rounded-full transition-all disabled:opacity-50"
+              >
+                ♥ Liked
+              </button>
+            </div>
+          )}
 
           {displayedRecommendations.length === 0 && !error && (
             <div className="text-center py-12">
