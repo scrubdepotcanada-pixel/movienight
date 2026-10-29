@@ -164,9 +164,13 @@ export default function ClientPage() {
     minRating?: number; maxRuntime?: number;
   }>({});
   const [showFilterBar, setShowFilterBar] = useState(false);
+  const [showPlatformSignInPrompt, setShowPlatformSignInPrompt] = useState(false);
   const [gridMovies, setGridMovies] = useState<Movie[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [selectedRatings, setSelectedRatings] = useState<Record<number, number>>({});
+  // Picks for the OTHER content type, stashed on toggle so switching
+  // Movies <-> Shows restores each type's picks instead of wiping them.
+  const [picksStash, setPicksStash] = useState<Record<"movie" | "show", Array<{ movie: Movie; rating: number }>>>({ movie: [], show: [] });
   const [recommendations, setRecommendations] = useState<Movie[]>([]);
   const [recBuffer, setRecBuffer] = useState<Movie[]>([]);
   const [lastSwipe, setLastSwipe] = useState<{ movie: Movie; direction: "left" | "right"; replacement: Movie | null } | null>(null);
@@ -219,36 +223,74 @@ export default function ClientPage() {
   const GUEST_STORAGE_KEY = "nextmovie_guest_session_v1";
   const GUEST_STORAGE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
+  function readGuestSnapshot(): Record<string, unknown> | null {
+    try {
+      const raw = localStorage.getItem(GUEST_STORAGE_KEY);
+      if (!raw) return null;
+      const snap = JSON.parse(raw);
+      if (!snap || Date.now() - (snap.savedAt || 0) > GUEST_STORAGE_MAX_AGE_MS) {
+        localStorage.removeItem(GUEST_STORAGE_KEY);
+        return null;
+      }
+      if (snap.step !== "pick" && snap.step !== "results") return null;
+      return snap;
+    } catch {
+      return null;
+    }
+  }
+
+  // Computed once, synchronously, before the first paint — so a returning
+  // guest with valid saved state never sees the sign-in gate flash while
+  // next-auth's useSession() is still resolving `status`. Only a genuine
+  // first-time visitor (no valid snapshot) falls through to the gate.
+  const [hasPendingGuestRestore] = useState(() => typeof window !== "undefined" && readGuestSnapshot() !== null);
+  // Escape hatch: once the restore attempt has actually run (success or
+  // not), stop treating the visit as "pending" — otherwise an edge case
+  // where the snapshot fails its second read would strand the user on an
+  // unbuttoned loading screen forever.
+  const [guestRestoreAttempted, setGuestRestoreAttempted] = useState(false);
+
+  // Safety net: if next-auth's session check hangs for any reason, don't
+  // strand a returning guest on an unbuttoned screen forever.
+  useEffect(() => {
+    if (!hasPendingGuestRestore) return;
+    const t = setTimeout(() => setGuestRestoreAttempted(true), 2500);
+    return () => clearTimeout(t);
+  }, [hasPendingGuestRestore]);
+
   useEffect(() => {
     if (hasRestoredGuestRef.current) return;
     if (status === "loading" || status === "authenticated") return;
     hasRestoredGuestRef.current = true;
-    try {
-      const raw = localStorage.getItem(GUEST_STORAGE_KEY);
-      if (!raw) return;
-      const snap = JSON.parse(raw);
-      if (!snap || Date.now() - (snap.savedAt || 0) > GUEST_STORAGE_MAX_AGE_MS) {
-        localStorage.removeItem(GUEST_STORAGE_KEY);
-        return;
-      }
-      if (snap.step !== "pick" && snap.step !== "results") return;
-      setGuestMode(true);
-      setGuestMaxRating(snap.guestMaxRating ?? "PG");
-      setGuestRatingTouched(Boolean(snap.guestRatingTouched));
-      setContentType(snap.contentType === "show" ? "show" : "movie");
-      setActiveGenre(snap.activeGenre ?? null);
-      setActiveCategory(snap.activeCategory || "for-you");
-      setMinDecade(snap.minDecade ?? null);
-      setSelectedIds(new Set(Array.isArray(snap.selectedIds) ? snap.selectedIds : []));
-      setSelectedRatings(snap.selectedRatings || {});
-      setGridMovies(Array.isArray(snap.gridMovies) ? snap.gridMovies : []);
-      setRecommendations(Array.isArray(snap.recommendations) ? snap.recommendations : []);
-      setRecBuffer(Array.isArray(snap.recBuffer) ? snap.recBuffer : []);
-      seedTitlesRef.current = Array.isArray(snap.seedTitles) ? snap.seedTitles : [];
-      shownIdsRef.current = new Set(Array.isArray(snap.shownIds) ? snap.shownIds : []);
-      guestLikedTitlesRef.current = Array.isArray(snap.guestLikedTitles) ? snap.guestLikedTitles : [];
-      setStep(snap.step);
-    } catch {}
+    setGuestRestoreAttempted(true);
+    const snap = readGuestSnapshot();
+    if (!snap) return;
+    setGuestMode(true);
+    setGuestMaxRating((snap.guestMaxRating as string) ?? "PG");
+    setGuestRatingTouched(Boolean(snap.guestRatingTouched));
+    setContentType(snap.contentType === "show" ? "show" : "movie");
+    setActiveGenre((snap.activeGenre as string) ?? null);
+    setActiveCategory((snap.activeCategory as string) || "for-you");
+    setMinDecade((snap.minDecade as string) ?? null);
+    setSelectedIds(new Set(Array.isArray(snap.selectedIds) ? (snap.selectedIds as number[]) : []));
+    setSelectedRatings((snap.selectedRatings as Record<number, number>) || {});
+    const restoredGrid = Array.isArray(snap.gridMovies) ? (snap.gridMovies as Movie[]) : [];
+    const restoredRecs = Array.isArray(snap.recommendations) ? (snap.recommendations as Movie[]) : [];
+    const restoredBuffer = Array.isArray(snap.recBuffer) ? (snap.recBuffer as Movie[]) : [];
+    setGridMovies(restoredGrid);
+    setRecommendations(restoredRecs);
+    setRecBuffer(restoredBuffer);
+    // Every title the restored state references must also exist in
+    // seenMoviesRef, or resolving picks later (handleGetRecommendations,
+    // toggling content type) would silently drop them.
+    rememberMovies([...restoredGrid, ...restoredRecs, ...restoredBuffer]);
+    const restoredStash = (snap.picksStash as Record<"movie" | "show", Array<{ movie: Movie; rating: number }>>) || { movie: [], show: [] };
+    setPicksStash(restoredStash);
+    rememberMovies([...(restoredStash.movie || []), ...(restoredStash.show || [])].map((p) => p.movie));
+    seedTitlesRef.current = Array.isArray(snap.seedTitles) ? (snap.seedTitles as string[]) : [];
+    shownIdsRef.current = new Set(Array.isArray(snap.shownIds) ? (snap.shownIds as number[]) : []);
+    guestLikedTitlesRef.current = Array.isArray(snap.guestLikedTitles) ? (snap.guestLikedTitles as string[]) : [];
+    setStep(snap.step as "pick" | "results");
   }, [status]);
 
   // Preferred streaming services — a durable per-device preference, set once
@@ -289,6 +331,7 @@ export default function ClientPage() {
         minDecade,
         selectedIds: Array.from(selectedIds),
         selectedRatings,
+        picksStash,
         gridMovies,
         recommendations,
         recBuffer,
@@ -298,7 +341,7 @@ export default function ClientPage() {
         savedAt: Date.now(),
       }));
     } catch {}
-  }, [guestMode, step, guestMaxRating, guestRatingTouched, contentType, activeGenre, activeCategory, minDecade, selectedIds, selectedRatings, gridMovies, recommendations, recBuffer]);
+  }, [guestMode, step, guestMaxRating, guestRatingTouched, contentType, activeGenre, activeCategory, minDecade, selectedIds, selectedRatings, picksStash, gridMovies, recommendations, recBuffer]);
 
   // A real sign-in supersedes any saved guest session — drop it so it can
   // never resurface stale picks after logging out and returning as a guest.
@@ -381,12 +424,25 @@ export default function ClientPage() {
 
   const handleContentTypeChange = (type: "movie" | "show") => {
     if (type === contentType) return;
+
+    // Stash the type we're leaving as full Movie objects (not just ids) so
+    // restoring them later can't be corrupted by a same-numeric-id title of
+    // the other content type overwriting seenMoviesRef while we're away.
+    const outgoingPicks = Array.from(selectedIds)
+      .map((id) => seenMoviesRef.current.get(id))
+      .filter((m): m is Movie => Boolean(m))
+      .map((m) => ({ movie: m, rating: selectedRatings[m.id] || 5 }));
+    setPicksStash((prev) => ({ ...prev, [contentType]: outgoingPicks }));
+
+    const incomingPicks = picksStash[type] || [];
+    rememberMovies(incomingPicks.map((p) => p.movie));
+
     setContentType(type);
     setActiveGenre(null);
     setGridPage(1);
     setShowMoreCount(0);
-    setSelectedIds(new Set());
-    setSelectedRatings({});
+    setSelectedIds(new Set(incomingPicks.map((p) => p.movie.id)));
+    setSelectedRatings(Object.fromEntries(incomingPicks.map((p) => [p.movie.id, p.rating])));
     setSearchMode("browse");
     setSearchQuery("");
     setSearchResults([]);
@@ -1028,30 +1084,41 @@ export default function ClientPage() {
   // ── Not signed in (also covers the brief session-check moment — same
   // branded screen either way, no bare "Loading..." flash) ──
   if (!isLoggedIn) {
+    // A returning guest with valid saved state never sees sign-in/guest
+    // buttons — they'd restore out from under a click anyway. Show a
+    // neutral version of the same branded screen until that finishes
+    // (bounded by the safety-net timeout above, so this never hangs).
+    const stillRestoringGuest = hasPendingGuestRestore && !guestRestoreAttempted;
     return (
       <div className="min-h-screen bg-[#0a0a1a] flex flex-col">
         <Header onSignIn={() => signIn("google")} />
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
           <div className="text-6xl mb-6">🍿</div>
           <h1 className="text-4xl font-bold text-white mb-3">Next Movie</h1>
-          <p className="text-gray-400 text-lg mb-2 max-w-md">
-            Pick 5 movies you love. We&apos;ll tell you what to watch next.
-          </p>
-          <p className="text-gray-600 text-sm mb-8">
-            Free to start — no account needed. <a href="/premium" className="text-purple-400 hover:text-purple-300">Premium</a> unlocks more.
-          </p>
-          <button
-            onClick={() => signIn("google")}
-            className="bg-white text-gray-900 font-semibold px-8 py-3 rounded-full text-lg hover:bg-gray-100 transition mb-4"
-          >
-            Sign in with Google
-          </button>
-          <button
-            onClick={handleGuestStart}
-            className="text-gray-500 hover:text-gray-300 transition text-sm"
-          >
-            Try without signing in
-          </button>
+          {stillRestoringGuest ? (
+            <p className="text-gray-500 text-sm mb-8">Restoring your picks…</p>
+          ) : (
+            <>
+              <p className="text-gray-400 text-lg mb-2 max-w-md">
+                Pick 5 movies you love. We&apos;ll tell you what to watch next.
+              </p>
+              <p className="text-gray-600 text-sm mb-8">
+                Free to start — no account needed. <a href="/premium" className="text-purple-400 hover:text-purple-300">Premium</a> unlocks more.
+              </p>
+              <button
+                onClick={() => signIn("google")}
+                className="bg-white text-gray-900 font-semibold px-8 py-3 rounded-full text-lg hover:bg-gray-100 transition mb-4"
+              >
+                Sign in with Google
+              </button>
+              <button
+                onClick={handleGuestStart}
+                className="text-gray-500 hover:text-gray-300 transition text-sm"
+              >
+                Try without signing in
+              </button>
+            </>
+          )}
         </div>
         <SiteFooter />
       </div>
@@ -1276,8 +1343,8 @@ export default function ClientPage() {
           >
             📺{" "}
             {preferredProviders.length > 0
-              ? `Ranking results for your ${preferredProviders.length} streaming service${preferredProviders.length > 1 ? "s" : ""} — change`
-              : "Tell us what you're subscribed to — we'll show watchable-tonight picks first"}
+              ? `Your results will rank ${preferredProviders.length} streaming service${preferredProviders.length > 1 ? "s" : ""} first — change`
+              : "Tell us what you're subscribed to — your results will rank watchable-tonight picks first"}
           </button>
 
           {/* Filters — platform, language, rating, runtime (movies only for now) */}
@@ -1298,7 +1365,7 @@ export default function ClientPage() {
                     isPremium={isPremium}
                     isGuest={guestMode}
                     onUpgrade={() => setUpsellFeature("Filter by language, rating, or runtime — see exactly the movies you want")}
-                    onSignIn={() => signIn("google")}
+                    onSignIn={() => setShowPlatformSignInPrompt(true)}
                     fields={["provider", "language", "rating", "runtime"]}
                   />
                   {hasActiveDiscoverFilter && (
@@ -1647,6 +1714,35 @@ export default function ClientPage() {
                 className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-2.5 rounded-full text-sm transition-all"
               >
                 {preferredProviders.length > 0 ? "Save" : "Skip for now"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Platform filter sign-in prompt — explain before navigating away */}
+        {showPlatformSignInPrompt && (
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowPlatformSignInPrompt(false); }}
+          >
+            <div className="bg-gray-900 border border-gray-700/50 rounded-3xl max-w-sm w-full p-6 shadow-2xl shadow-purple-900/30 text-center">
+              <button onClick={() => setShowPlatformSignInPrompt(false)} className="absolute float-right -mt-2 -mr-2 text-gray-500 hover:text-white text-xl">&times;</button>
+              <div className="text-4xl mb-3">📺</div>
+              <h2 className="text-xl font-bold text-white mb-2">Sign in to filter by platform</h2>
+              <p className="text-gray-400 text-sm mb-4">
+                Filtering by streaming service is free — it just needs an account so we can remember which services you have. Signing in with Google only shares your name and email; it never posts anything or touches your Google account otherwise.
+              </p>
+              <button
+                onClick={() => { setShowPlatformSignInPrompt(false); signIn("google"); }}
+                className="w-full bg-white text-gray-900 font-semibold py-3 rounded-2xl text-sm hover:bg-gray-100 transition-all mb-3"
+              >
+                Sign in with Google
+              </button>
+              <button
+                onClick={() => setShowPlatformSignInPrompt(false)}
+                className="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 py-2.5 rounded-2xl text-sm transition-colors"
+              >
+                Maybe later
               </button>
             </div>
           </div>

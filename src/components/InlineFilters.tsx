@@ -277,9 +277,9 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
       <div className="bg-gray-800/50 border border-gray-700/40 rounded-2xl px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
           {/* Country chip — always visible */}
-          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs bg-gray-700/50 border border-gray-600/40 text-gray-300 whitespace-nowrap" title={COUNTRY_NAMES[currentRegion] || currentRegion}>
+          <div className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs bg-gray-700/50 border border-gray-600/40 text-gray-300 whitespace-nowrap" title={`Streaming availability: ${COUNTRY_NAMES[currentRegion] || currentRegion}`}>
             <span>{COUNTRY_FLAGS[currentRegion] || "🌍"}</span>
-            <span>{currentRegion}</span>
+            <span>{COUNTRY_NAMES[currentRegion] || currentRegion}</span>
           </div>
 
           {/* Platform — free for signed-in users, sign-up prompt for guests */}
@@ -299,6 +299,58 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
           ) : (
             <button onClick={() => { trackFilter("platform", "locked:signin"); onSignIn?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Sign up free to filter by platform">
               <span>📺</span><span>Platform</span><span className="text-blue-400 text-xs">🔓</span>
+            </button>
+          ))}
+
+          {/* Language — premium only */}
+          {show("language") && (isPremium ? (
+            <FilterDropdown label="🌍 " value={filters.languageName || "Any"} active={!!filters.language}>
+              <DropdownItem label="Any language" selected={!filters.language} onClick={() => update({ language: undefined, languageName: undefined })} />
+              {LANGUAGES.map(l => (
+                <DropdownItem key={l.code} label={`${l.flag} ${l.name}`} selected={filters.language === l.code} onClick={() => update({ language: l.code, languageName: l.name })} />
+              ))}
+            </FilterDropdown>
+          ) : (
+            <button
+              onClick={() => { trackFilter("language", "locked:upgrade"); onUpgrade?.(); }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all"
+              title="Upgrade to Premium"
+            >
+              <span>🌍</span>
+              <span>Language</span>
+              <span className="text-yellow-600 text-xs">⭐</span>
+            </button>
+          ))}
+
+          {/* Rating — premium only */}
+          {show("rating") && (isPremium ? (
+            <FilterDropdown label="⭐ " value={filters.minRating ? `${filters.minRating}+` : "Any"} active={!!filters.minRating}>
+              {RATINGS.map(r => (
+                <DropdownItem
+                  key={r.value}
+                  label={r.label}
+                  selected={(filters.minRating || 0) === r.value}
+                  onClick={() => update({ minRating: r.value || undefined })}
+                />
+              ))}
+            </FilterDropdown>
+          ) : (
+            <button onClick={() => { trackFilter("rating", "locked:upgrade"); onUpgrade?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
+              <span>⭐</span><span>Rating</span><span className="text-yellow-600 text-xs">⭐</span>
+            </button>
+          ))}
+
+          {/* Runtime — premium only */}
+          {show("runtime") && (isPremium ? (
+            <FilterDropdown label="⏱ " value={filters.maxRuntime ? `<${filters.maxRuntime}m` : "Any"} active={!!filters.maxRuntime}>
+              <DropdownItem label="Any length" selected={!filters.maxRuntime} onClick={() => update({ maxRuntime: undefined })} />
+              <DropdownItem label="< 90 min" selected={filters.maxRuntime === 90} onClick={() => update({ maxRuntime: 90 })} />
+              <DropdownItem label="< 2 hrs" selected={filters.maxRuntime === 120} onClick={() => update({ maxRuntime: 120 })} />
+              <DropdownItem label="< 2.5 hrs" selected={filters.maxRuntime === 150} onClick={() => update({ maxRuntime: 150 })} />
+            </FilterDropdown>
+          ) : (
+            <button onClick={() => { trackFilter("runtime", "locked:upgrade"); onUpgrade?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
+              <span>⏱</span><span>Runtime</span><span className="text-yellow-600 text-xs">⭐</span>
             </button>
           ))}
 
@@ -337,58 +389,6 @@ export default function InlineFilters({ filters, onChange, onClear, isPremium = 
           ) : (
             <button onClick={() => { trackFilter("decade", "locked:upgrade"); onUpgrade?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
               <span>📅</span><span>Decade</span><span className="text-yellow-600 text-xs">⭐</span>
-            </button>
-          ))}
-
-          {/* Rating — premium only */}
-          {show("rating") && (isPremium ? (
-            <FilterDropdown label="⭐ " value={filters.minRating ? `${filters.minRating}+` : "Any"} active={!!filters.minRating}>
-              {RATINGS.map(r => (
-                <DropdownItem
-                  key={r.value}
-                  label={r.label}
-                  selected={(filters.minRating || 0) === r.value}
-                  onClick={() => update({ minRating: r.value || undefined })}
-                />
-              ))}
-            </FilterDropdown>
-          ) : (
-            <button onClick={() => { trackFilter("rating", "locked:upgrade"); onUpgrade?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
-              <span>⭐</span><span>Rating</span><span className="text-yellow-600 text-xs">⭐</span>
-            </button>
-          ))}
-
-          {/* Runtime — premium only */}
-          {show("runtime") && (isPremium ? (
-            <FilterDropdown label="⏱ " value={filters.maxRuntime ? `<${filters.maxRuntime}m` : "Any"} active={!!filters.maxRuntime}>
-              <DropdownItem label="Any length" selected={!filters.maxRuntime} onClick={() => update({ maxRuntime: undefined })} />
-              <DropdownItem label="< 90 min" selected={filters.maxRuntime === 90} onClick={() => update({ maxRuntime: 90 })} />
-              <DropdownItem label="< 2 hrs" selected={filters.maxRuntime === 120} onClick={() => update({ maxRuntime: 120 })} />
-              <DropdownItem label="< 2.5 hrs" selected={filters.maxRuntime === 150} onClick={() => update({ maxRuntime: 150 })} />
-            </FilterDropdown>
-          ) : (
-            <button onClick={() => { trackFilter("runtime", "locked:upgrade"); onUpgrade?.(); }} className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all" title="Upgrade to Premium">
-              <span>⏱</span><span>Runtime</span><span className="text-yellow-600 text-xs">⭐</span>
-            </button>
-          ))}
-
-          {/* Language — premium only */}
-          {show("language") && (isPremium ? (
-            <FilterDropdown label="🌍 " value={filters.languageName || "Any"} active={!!filters.language}>
-              <DropdownItem label="Any language" selected={!filters.language} onClick={() => update({ language: undefined, languageName: undefined })} />
-              {LANGUAGES.map(l => (
-                <DropdownItem key={l.code} label={`${l.flag} ${l.name}`} selected={filters.language === l.code} onClick={() => update({ language: l.code, languageName: l.name })} />
-              ))}
-            </FilterDropdown>
-          ) : (
-            <button
-              onClick={() => { trackFilter("language", "locked:upgrade"); onUpgrade?.(); }}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-medium bg-gray-700/40 border border-gray-600/40 text-gray-400 hover:text-gray-200 hover:border-gray-500 whitespace-nowrap transition-all"
-              title="Upgrade to Premium"
-            >
-              <span>🌍</span>
-              <span>Language</span>
-              <span className="text-yellow-600 text-xs">⭐</span>
             </button>
           ))}
 
