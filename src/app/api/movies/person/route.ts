@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOrCreateFamily } from "@/lib/session";
 import { getFamilyPremiumStatus } from "@/lib/premium";
 import { getPersonMovies, enrichWithCertifications } from "@/lib/tmdb";
+import { getMemberRestrictions } from "@/lib/member";
+import { isMovieAllowed } from "@/lib/ageRating";
 
 export async function GET(req: NextRequest) {
   const familyId = await getOrCreateFamily();
@@ -15,9 +17,13 @@ export async function GET(req: NextRequest) {
   const personId = req.nextUrl.searchParams.get("personId");
   if (!personId) return NextResponse.json({ error: "personId required" }, { status: 400 });
 
+  const memberId = req.nextUrl.searchParams.get("memberId");
+  const { maxRating } = memberId ? await getMemberRestrictions(memberId) : { maxRating: null };
+
   const locale = req.cookies.get("locale")?.value;
   const movies = await getPersonMovies(Number(personId), locale);
   const enriched = await enrichWithCertifications(movies.slice(0, 12), locale);
+  const allowed = enriched.filter((m) => isMovieAllowed(m.certification, maxRating));
 
-  return NextResponse.json(enriched);
+  return NextResponse.json(allowed);
 }

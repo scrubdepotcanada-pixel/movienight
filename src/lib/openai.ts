@@ -196,7 +196,7 @@ export async function getMoodRecommendationsAI(
 ): Promise<MovieSuggestion[]> {
   const excludeBlock = buildExcludeBlock(watchedTitles, dislikedTitles);
   const ratingBlock = ratingRestrictionPrompt(maxRating);
-  const count = 8 + bonusCount(maxRating);
+  const count = 20 + bonusCount(maxRating);
   const type = contentType === "show" ? "TV shows (series)" : "movies";
   const typeNote = contentType === "show" ? "Only suggest TV series, NOT movies." : "Only suggest movies, NOT TV shows.";
 

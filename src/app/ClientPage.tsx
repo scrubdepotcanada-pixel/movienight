@@ -151,6 +151,31 @@ export default function ClientPage() {
   const guestLikedTitlesRef = useRef<string[]>([]);
   const hasRestoredGuestRef = useRef(false);
 
+  // Every movie/show object the user has seen this pick session (browse grid,
+  // search results, a person's filmography) — handleGetRecommendations reads
+  // from this instead of just gridMovies, so a selection made while searching
+  // still resolves correctly after switching back to Browse.
+  const seenMoviesRef = useRef<Map<number, Movie>>(new Map());
+  const rememberMovies = (movies: Movie[]) => {
+    for (const m of movies) seenMoviesRef.current.set(m.id, m);
+  };
+
+  // ── Search, people, and mood ──
+  const [isPremium, setIsPremium] = useState(false);
+  const [searchMode, setSearchMode] = useState<"browse" | "search" | "person">("browse");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<Movie[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [personResults, setPersonResults] = useState<{ id: number; name: string; known_for_department: string; profile_path: string | null }[]>([]);
+  const [activePerson, setActivePerson] = useState<{ id: number; name: string } | null>(null);
+  const [personMovies, setPersonMovies] = useState<Movie[]>([]);
+  const [personLoading, setPersonLoading] = useState(false);
+  const [showMoodPanel, setShowMoodPanel] = useState(false);
+  const [moodText, setMoodText] = useState("");
+  const [moodLoading, setMoodLoading] = useState(false);
+  const [activeMood, setActiveMood] = useState<string | null>(null);
+  const [upsellFeature, setUpsellFeature] = useState<string | null>(null);
+
   // Guests have no DB-backed session — persist to localStorage so a refresh
   // or accidental tab close doesn't wipe out picks/results. Signed-in users
   // already get this for free via /api/session.
@@ -223,6 +248,7 @@ export default function ClientPage() {
   useEffect(() => {
     if (status !== "authenticated" && !guestMode) return;
     fetch("/api/members").then((r) => r.json()).then(setMembers).catch(() => {});
+    fetch("/api/premium").then((r) => r.json()).then((d) => setIsPremium(Boolean(d?.isPremium))).catch(() => {});
   }, [status, guestMode]);
 
   // Capture a ?genre=<id>[&type=show] link (from /genres' "Browse X" cards)
@@ -258,6 +284,7 @@ export default function ClientPage() {
       const res = await fetch(`${base}/popular-grid?${params}`);
       const data = await res.json();
       const newMovies: Movie[] = data.movies || [];
+      rememberMovies(newMovies);
       if (append) {
         setGridMovies((prev: Movie[]) => {
           const existingIds = new Set(prev.map((m: Movie) => m.id));
@@ -297,7 +324,136 @@ export default function ClientPage() {
     setShowMoreCount(0);
     setSelectedIds(new Set());
     setSelectedRatings({});
+    setSearchMode("browse");
+    setSearchQuery("");
+    setSearchResults([]);
+    setPersonResults([]);
+    setActivePerson(null);
+    setPersonMovies([]);
     loadGrid(1, false, null, type);
+  };
+
+  const runSearch = useCallback(async (query: string) => {
+    if (query.trim().length < 2) {
+      setSearchResults([]);
+      setPersonResults([]);
+      return;
+    }
+    setSearchLoading(true);
+    try {
+      const effectiveMaxRating = selectedMember?.max_rating || guestMaxRating;
+      const params = new URLSearchParams({ q: query });
+      if (effectiveMaxRating && effectiveMaxRating !== "ALL") params.set("maxRating", effectiveMaxRating);
+      const [titleRes, personRes] = await Promise.all([
+        fetch(`${apiBase}/search?${params}`),
+        contentType === "movie" ? fetch(`/api/people/search?q=${encodeURIComponent(query)}`) : Promise.resolve(null),
+      ]);
+      const titles: Movie[] = await titleRes.json();
+      rememberMovies(titles);
+      setSearchResults(titles);
+      if (personRes) {
+        const people = await personRes.json();
+        setPersonResults(Array.isArray(people) ? people : []);
+      } else {
+        setPersonResults([]);
+      }
+    } catch {
+      setSearchResults([]);
+      setPersonResults([]);
+    }
+    setSearchLoading(false);
+  }, [apiBase, contentType, selectedMember, guestMaxRating]);
+
+  useEffect(() => {
+    if (searchMode !== "search") return;
+    const handle = setTimeout(() => runSearch(searchQuery), 350);
+    return () => clearTimeout(handle);
+  }, [searchQuery, searchMode, runSearch]);
+
+  const handleSelectPerson = async (person: { id: number; name: string }) => {
+    if (!isPremium) {
+      setUpsellFeature(`Search by actor or director — see every ${person.name} title in one place`);
+      return;
+    }
+    setActivePerson(person);
+    setSearchMode("person");
+    setPersonLoading(true);
+    try {
+      const params = new URLSearchParams({ personId: String(person.id) });
+      if (selectedMember?.id) params.set("memberId", String(selectedMember.id));
+      const res = await fetch(`/api/movies/person?${params}`);
+      if (res.status === 403) {
+        setUpsellFeature(`Search by actor or director — see every ${person.name} title in one place`);
+        setSearchMode("search");
+        setPersonLoading(false);
+        return;
+      }
+      const movies: Movie[] = await res.json();
+      rememberMovies(movies);
+      setPersonMovies(movies);
+    } catch {
+      setPersonMovies([]);
+    }
+    setPersonLoading(false);
+  };
+
+  const handleBackToDiscovery = () => {
+    setSearchMode("browse");
+    setSearchQuery("");
+    setSearchResults([]);
+    setPersonResults([]);
+    setActivePerson(null);
+    setPersonMovies([]);
+  };
+
+  const MOOD_PRESETS: { display: string; value: string }[] = [
+    { display: "Make me laugh 😂", value: "Make me laugh" },
+    { display: "Scare me 😱", value: "Scare me" },
+    { display: "Make me cry 😭", value: "Make me cry" },
+    { display: "Date night 💕", value: "Date night" },
+    { display: "Mind-bending 🤯", value: "Mind-bending" },
+    { display: "Feel-good ☀️", value: "Feel-good" },
+    { display: "Edge of my seat 😬", value: "Edge of my seat" },
+    { display: "Cozy & comforting 🛋️", value: "Cozy & comforting" },
+    { display: "Something epic 🗡️", value: "Something epic" },
+    { display: "Nostalgic 📼", value: "Nostalgic" },
+    { display: "Weird & different 🌀", value: "Weird & different" },
+    { display: "Inspiring 💪", value: "Inspiring" },
+  ];
+
+  const handleMoodSubmit = async (mood: string) => {
+    if (!mood.trim()) return;
+    setMoodLoading(true);
+    setError(null);
+    setShowMoodPanel(false);
+    setStep("loading");
+    setActiveMood(mood);
+    setActiveCategory("mood");
+    setLikedStreak([]);
+    try {
+      const res = await fetch("/api/movies/mood", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          memberId: selectedMember?.id,
+          mood,
+          category: "mood",
+          contentType,
+          guestMaxRating,
+        }),
+      });
+      const data = await res.json();
+      const all = sortByRating(data.movies || []);
+      shownIdsRef.current = new Set(all.map((m: Movie) => m.id));
+      setRecommendations(all.slice(0, 10));
+      setRecBuffer(all.slice(10));
+      setStep(all.length > 0 ? "results" : "pick");
+      if (all.length === 0) setError("Couldn't find anything for that mood — try describing it differently.");
+    } catch {
+      setError("Something went wrong. Please try again.");
+      setStep("pick");
+    }
+    setMoodLoading(false);
   };
 
   const handleSelectMember = async (member: Member) => {
@@ -432,7 +588,9 @@ export default function ClientPage() {
   };
 
   const handleGetRecommendations = async () => {
-    const picked = gridMovies.filter((m: Movie) => selectedIds.has(m.id));
+    const picked = Array.from(selectedIds)
+      .map((id) => seenMoviesRef.current.get(id))
+      .filter((m): m is Movie => Boolean(m));
     const moviePicks = picked.map((m: Movie) => ({ title: m.title, rating: selectedRatings[m.id] || 5 }));
     const titles = picked.map((m: Movie) => m.title);
 
@@ -443,6 +601,7 @@ export default function ClientPage() {
 
     const category = activeGenre || "for-you";
     setActiveCategory(category);
+    setActiveMood(null);
     setLikedStreak([]);
     seedTitlesRef.current = titles;
 
@@ -476,7 +635,7 @@ export default function ClientPage() {
     if (fetchingMore) return;
     const effectiveDecade = decadeOverride !== undefined ? decadeOverride : minDecade;
 
-    if (!selectedMember && seedTitlesRef.current.length === 0) return;
+    if (!selectedMember && seedTitlesRef.current.length === 0 && guestLikedTitlesRef.current.length < 3) return;
 
     setFetchingMore(true);
     try {
@@ -657,6 +816,8 @@ export default function ClientPage() {
     setLastSwipe(null);
     setShowMoreCount(0);
     setLikedStreak([]);
+    setActiveMood(null);
+    handleBackToDiscovery();
     seedTitlesRef.current = [];
     shownIdsRef.current = new Set();
     guestLikedTitlesRef.current = [];
@@ -864,6 +1025,8 @@ export default function ClientPage() {
   if (step === "pick") {
     const count = selectedIds.size;
     const label = contentType === "show" ? "shows" : "movies";
+    const displayedGridMovies = searchMode === "person" ? personMovies : searchMode === "search" ? searchResults : gridMovies;
+    const gridIsLoading = searchMode === "person" ? personLoading : searchMode === "search" ? searchLoading : loadingGrid;
 
     const MOVIE_GENRE_FILTERS: { id: number; label: string }[] = [
       { id: 28, label: "Action" },
@@ -941,34 +1104,90 @@ export default function ClientPage() {
             </div>
           </div>
 
-          {/* Genre filter chips */}
-          <div className="flex gap-2 overflow-x-auto pb-4 mb-2 scrollbar-hide">
+          {/* Search + Mood */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setSearchMode(e.target.value.trim().length >= 2 ? "search" : "browse");
+                }}
+                placeholder={`Search ${label} or people...`}
+                className="w-full bg-gray-800/60 border border-gray-700/50 rounded-full pl-10 pr-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
+              />
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500">🔍</span>
+            </div>
             <button
-              onClick={() => handleGenreChange(null)}
-              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                !activeGenre
-                  ? "bg-purple-600 text-white"
-                  : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
-              }`}
+              onClick={() => setShowMoodPanel(true)}
+              className="shrink-0 flex items-center gap-1.5 bg-gray-800/60 hover:bg-gray-700 border border-gray-700/50 rounded-full px-4 py-2.5 text-sm font-medium text-gray-300 hover:text-white transition-all"
             >
-              All
+              ✨ Mood
             </button>
-            {GENRE_FILTERS.map((g) => (
+          </div>
+
+          {/* Genre filter chips */}
+          {searchMode === "browse" && (
+            <div className="flex gap-2 overflow-x-auto pb-4 mb-2 scrollbar-hide">
               <button
-                key={g.id}
-                onClick={() => handleGenreChange(activeGenre === String(g.id) ? null : String(g.id))}
+                onClick={() => handleGenreChange(null)}
                 className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  activeGenre === String(g.id)
+                  !activeGenre
                     ? "bg-purple-600 text-white"
                     : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
                 }`}
               >
-                {g.label}
+                All
               </button>
-            ))}
-          </div>
+              {GENRE_FILTERS.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => handleGenreChange(activeGenre === String(g.id) ? null : String(g.id))}
+                  className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                    activeGenre === String(g.id)
+                      ? "bg-purple-600 text-white"
+                      : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+          )}
 
-          {loadingGrid ? (
+          {/* Person results (only while searching, movies only) */}
+          {searchMode === "search" && personResults.length > 0 && (
+            <div className="flex gap-2 overflow-x-auto pb-3 mb-1 scrollbar-hide">
+              {personResults.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => handleSelectPerson(p)}
+                  className="shrink-0 flex items-center gap-2 bg-gray-800/60 hover:bg-gray-700 border border-gray-700/50 rounded-full pl-1.5 pr-3 py-1.5 transition-all"
+                >
+                  {p.profile_path ? (
+                    <img src={posterUrl(p.profile_path, "w92")} alt="" className="w-7 h-7 rounded-full object-cover" />
+                  ) : (
+                    <span className="w-7 h-7 rounded-full bg-gray-700 flex items-center justify-center text-xs">🎭</span>
+                  )}
+                  <span className="text-xs text-gray-200 font-medium">{p.name}</span>
+                  {!isPremium && <span className="text-[10px]">🔒</span>}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Person filmography mode header */}
+          {searchMode === "person" && activePerson && (
+            <div className="flex items-center justify-between mb-3 px-1">
+              <span className="text-white font-semibold text-sm">🎬 {activePerson.name}</span>
+              <button onClick={handleBackToDiscovery} className="text-purple-400 hover:text-purple-300 text-xs font-medium">
+                ← Back to search
+              </button>
+            </div>
+          )}
+
+          {gridIsLoading ? (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
               {Array.from({ length: 15 }).map((_, i) => (
                 <div key={i} className="w-full aspect-[2/3] rounded-xl bg-gray-800/60 animate-pulse" style={{ animationDelay: `${(i % 5) * 80}ms` }} />
@@ -977,7 +1196,7 @@ export default function ClientPage() {
           ) : (
             <>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                {gridMovies.map((movie: Movie) => {
+                {displayedGridMovies.map((movie: Movie) => {
                   const isSelected = selectedIds.has(movie.id);
                   const isFull = count >= 5 && !isSelected;
                   const rating = selectedRatings[movie.id] || 5;
@@ -1064,13 +1283,26 @@ export default function ClientPage() {
                 })}
               </div>
 
-              {gridMovies.length === 0 && (
+              {displayedGridMovies.length === 0 && searchMode === "browse" && (
                 <div className="text-center text-gray-500 py-12">
                   No {label} in this genre yet. Try &quot;Show More&quot; to load more.
                 </div>
               )}
 
-              {/* Show More button */}
+              {displayedGridMovies.length === 0 && searchMode === "search" && searchQuery.trim().length >= 2 && (
+                <div className="text-center text-gray-500 py-12">
+                  No {label} found for &quot;{searchQuery}&quot;.
+                </div>
+              )}
+
+              {displayedGridMovies.length === 0 && searchMode === "person" && (
+                <div className="text-center text-gray-500 py-12">
+                  No {label} found for {activePerson?.name}.
+                </div>
+              )}
+
+              {/* Show More button (browse mode only) */}
+              {searchMode === "browse" && (
               <div className="mt-6 text-center">
                 {showMoreCount < MAX_SHOW_MORE ? (
                   <button
@@ -1084,6 +1316,7 @@ export default function ClientPage() {
                   <p className="text-gray-600 text-sm">You&apos;ve loaded all available batches</p>
                 )}
               </div>
+              )}
             </>
           )}
         </div>
@@ -1118,6 +1351,86 @@ export default function ClientPage() {
             </button>
           </div>
         </div>
+
+        {/* Mood panel */}
+        {showMoodPanel && (
+          <div
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm px-4 pb-4 sm:pb-0"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowMoodPanel(false); }}
+          >
+            <div className="bg-gray-900 border border-gray-700/50 rounded-3xl p-6 w-full max-w-md shadow-2xl">
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="text-xl font-bold text-white">✨ What&apos;s the vibe?</h2>
+                <button onClick={() => setShowMoodPanel(false)} className="text-gray-500 hover:text-gray-300 text-xl leading-none">&times;</button>
+              </div>
+              <p className="text-gray-500 text-sm mb-4">Describe a mood or pick one — we&apos;ll find {label} that match, no picks needed.</p>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {MOOD_PRESETS.map((preset) => (
+                  <button
+                    key={preset.value}
+                    onClick={() => handleMoodSubmit(preset.value)}
+                    disabled={moodLoading}
+                    className="bg-gray-800 hover:bg-purple-600 text-gray-300 hover:text-white text-xs font-medium px-3 py-2 rounded-full transition-all disabled:opacity-50"
+                  >
+                    {preset.display}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={moodText}
+                  onChange={(e) => setMoodText(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleMoodSubmit(moodText); }}
+                  placeholder="Or describe it yourself..."
+                  disabled={moodLoading}
+                  className="flex-1 bg-gray-800/60 border border-gray-700/50 rounded-full px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 disabled:opacity-50"
+                />
+                <button
+                  onClick={() => handleMoodSubmit(moodText)}
+                  disabled={moodLoading || !moodText.trim()}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold px-5 py-2.5 rounded-full text-sm disabled:opacity-40 transition-all"
+                >
+                  {moodLoading ? "..." : "Go"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Premium upsell */}
+        {upsellFeature && (
+          <div
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setUpsellFeature(null); }}
+          >
+            <div className="bg-gray-900 border border-gray-700/50 rounded-3xl max-w-sm w-full p-6 shadow-2xl shadow-purple-900/30 text-center">
+              <button onClick={() => setUpsellFeature(null)} className="absolute float-right -mt-2 -mr-2 text-gray-500 hover:text-white text-xl">&times;</button>
+              <div className="inline-flex items-center gap-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-3">
+                Premium
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">Unlock Premium</h2>
+              <p className="text-gray-400 text-sm mb-4">{upsellFeature}</p>
+              <div className="flex items-center justify-center gap-2 mb-5 text-sm">
+                <span className="text-gray-400">From</span>
+                <span className="text-white text-2xl font-bold">$4.99</span>
+                <span className="text-gray-400">/month</span>
+              </div>
+              <a
+                href="/premium"
+                className="block w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white py-3 rounded-2xl font-bold transition-all hover:scale-[1.02] mb-3"
+              >
+                See Plans &amp; Features →
+              </a>
+              <button
+                onClick={() => setUpsellFeature(null)}
+                className="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 py-2.5 rounded-2xl text-sm transition-colors"
+              >
+                Maybe later
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -1170,7 +1483,9 @@ export default function ClientPage() {
             </div>
             <div className="text-center">
               <h2 className="text-xl font-bold text-white">Your Next Watch</h2>
-              {activeCategory && activeCategory !== "for-you" && (
+              {activeCategory === "mood" && activeMood ? (
+                <p className="text-purple-400 text-xs font-medium">✨ &quot;{activeMood}&quot;</p>
+              ) : activeCategory && activeCategory !== "for-you" && (
                 <p className="text-purple-400 text-xs font-medium">{genreLabel(activeCategory, contentType)}</p>
               )}
             </div>
