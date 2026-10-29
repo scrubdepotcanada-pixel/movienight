@@ -74,18 +74,18 @@ export default function Home() {
 
         <h2>Browse by Genre</h2>
         <nav>
-          <a href="/genres">Action Movies</a>
-          <a href="/genres">Comedy Movies</a>
-          <a href="/genres">Drama Movies</a>
-          <a href="/genres">Horror Movies</a>
-          <a href="/genres">Sci-Fi Movies</a>
-          <a href="/genres">Romance Movies</a>
-          <a href="/genres">Thriller Movies</a>
-          <a href="/genres">Kids Movies</a>
-          <a href="/genres">Documentary Films</a>
-          <a href="/genres">Fantasy Movies</a>
-          <a href="/genres">Mystery Movies</a>
-          <a href="/genres">Adventure Movies</a>
+          <a href="/?genre=28">Action Movies</a>
+          <a href="/?genre=35">Comedy Movies</a>
+          <a href="/?genre=18">Drama Movies</a>
+          <a href="/?genre=27">Horror Movies</a>
+          <a href="/?genre=878">Sci-Fi Movies</a>
+          <a href="/?genre=10749">Romance Movies</a>
+          <a href="/?genre=53">Thriller Movies</a>
+          <a href="/?genre=10751">Kids Movies</a>
+          <a href="/?genre=99">Documentary Films</a>
+          <a href="/?genre=14">Fantasy Movies</a>
+          <a href="/?genre=9648">Mystery Movies</a>
+          <a href="/?genre=12">Adventure Movies</a>
         </nav>
 
         <h2>Next Movie vs Other Movie Apps</h2>

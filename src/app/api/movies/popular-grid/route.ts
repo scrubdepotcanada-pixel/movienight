@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { discoverMovies, ANIMATION_GENRE_ID, type Movie } from "@/lib/tmdb";
+import { discoverMovies, enrichWithCertifications, ANIMATION_GENRE_ID, type Movie } from "@/lib/tmdb";
+import { isMovieAllowed, type MaxRating } from "@/lib/ageRating";
 
 const TOP_RATED_MIN_YEAR = 2000;
 const NEW_FILMS_MAX_AGE_YEARS = 2; // "new" = released in roughly the last 2 years
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
   const genreId = genre ? Number(genre) : undefined;
   const excludeGenre = genreId && genreId !== ANIMATION_GENRE_ID ? ANIMATION_GENRE_ID : undefined;
   const maxRatingParam = req.nextUrl.searchParams.get("maxRating");
-  const maxRating = maxRatingParam && VALID_RATINGS.has(maxRatingParam) ? maxRatingParam : undefined;
+  const maxRating: MaxRating | undefined = maxRatingParam && VALID_RATINGS.has(maxRatingParam) ? (maxRatingParam as MaxRating) : undefined;
 
   const newFilmsMinYear = new Date().getFullYear() - NEW_FILMS_MAX_AGE_YEARS;
 
@@ -54,5 +55,15 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ movies: combined });
+  // TMDB's certification.lte discover filter is unreliable on its own — many
+  // titles have no certification data for the queried country and slip
+  // through (this is the exact gap that let an R-rated title appear under a
+  // "Kids" cap). Re-check every result against the cap directly, same as
+  // every recommendation route already does.
+  if (!maxRating) {
+    return NextResponse.json({ movies: combined });
+  }
+  const enriched = await enrichWithCertifications(combined, locale);
+  const allowed = enriched.filter((m) => isMovieAllowed(m.certification, maxRating));
+  return NextResponse.json({ movies: allowed });
 }

@@ -178,6 +178,9 @@ export default function ClientPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [gridPage, setGridPage] = useState(1);
   const [showMoreCount, setShowMoreCount] = useState(0);
+  // True once a "Show More" fetch has come back with nothing new for the
+  // current genre/type — the real signal, not a fixed decrementing count.
+  const [gridExhausted, setGridExhausted] = useState(false);
   const [activeGenre, setActiveGenre] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("for-you");
   const [savedCategories, setSavedCategories] = useState<{ category: string; content_type: "movie" | "show"; count: number }[]>([]);
@@ -187,6 +190,9 @@ export default function ClientPage() {
   const [likedStreak, setLikedStreak] = useState<string[]>([]);
   const [refining, setRefining] = useState(false);
   const [minDecade, setMinDecade] = useState<string | null>(null);
+  // Which decade value we've already confirmed has nothing left to fetch —
+  // cleared whenever the era changes or a fresh results set starts.
+  const [eraExhausted, setEraExhausted] = useState<string | null>(null);
   const seedTitlesRef = useRef<string[]>([]);
   const shownIdsRef = useRef<Set<number>>(new Set());
   const guestLikedTitlesRef = useRef<string[]>([]);
@@ -379,8 +385,12 @@ export default function ClientPage() {
   }, [step]);
 
   const loadGrid = async (page = 1, append = false, genreId?: string | null, typeOverride?: "movie" | "show", maxRatingOverride?: string | null) => {
-    if (page === 1) setLoadingGrid(true);
-    else setLoadingMore(true);
+    if (page === 1) {
+      setLoadingGrid(true);
+      setGridExhausted(false);
+    } else {
+      setLoadingMore(true);
+    }
     try {
       const base = (typeOverride || contentType) === "show" ? "/api/shows" : "/api/movies";
       const effectiveMaxRating = maxRatingOverride !== undefined ? maxRatingOverride : (selectedMember?.max_rating || guestMaxRating);
@@ -392,10 +402,12 @@ export default function ClientPage() {
       const newMovies: Movie[] = data.movies || [];
       rememberMovies(newMovies);
       if (append) {
+        const existingIds = new Set(gridMovies.map((m: Movie) => m.id));
+        const unique = newMovies.filter((m: Movie) => !existingIds.has(m.id));
+        setGridExhausted(unique.length === 0);
         setGridMovies((prev: Movie[]) => {
-          const existingIds = new Set(prev.map((m: Movie) => m.id));
-          const unique = newMovies.filter((m: Movie) => !existingIds.has(m.id));
-          return [...prev, ...unique];
+          const prevIds = new Set(prev.map((m: Movie) => m.id));
+          return [...prev, ...newMovies.filter((m: Movie) => !prevIds.has(m.id))];
         });
       } else {
         setGridMovies(newMovies);
@@ -408,10 +420,12 @@ export default function ClientPage() {
     setLoadingMore(false);
   };
 
-  const MAX_SHOW_MORE = 10;
+  // Defensive ceiling only — never shown to the user as a countdown. Real
+  // exhaustion is driven by gridExhausted (the API actually running dry).
+  const MAX_SHOW_MORE_PAGES = 20;
 
   const handleShowMore = () => {
-    if (showMoreCount >= MAX_SHOW_MORE) return;
+    if (showMoreCount >= MAX_SHOW_MORE_PAGES || gridExhausted || loadingMore) return;
     setShowMoreCount((c: number) => c + 1);
     loadGrid(gridPage + 1, true, activeGenre);
   };
@@ -419,6 +433,7 @@ export default function ClientPage() {
   const handleGenreChange = (genreId: string | null) => {
     setActiveGenre(genreId);
     setGridPage(1);
+    setShowMoreCount(0);
     loadGrid(1, false, genreId);
   };
 
@@ -452,13 +467,19 @@ export default function ClientPage() {
     loadGrid(1, false, null, type);
   };
 
+  // Tracks the most recently typed query so a slow response for an older
+  // query can never overwrite the results of a newer one that's since
+  // superseded it (the debounce below cancels pending timers, but an
+  // already-in-flight fetch can still resolve out of order).
+  const latestSearchQueryRef = useRef("");
+
   const runSearch = useCallback(async (query: string) => {
     if (query.trim().length < 2) {
       setSearchResults([]);
       setPersonResults([]);
+      setSearchLoading(false);
       return;
     }
-    setSearchLoading(true);
     try {
       const effectiveMaxRating = selectedMember?.max_rating || guestMaxRating;
       const params = new URLSearchParams({ q: query });
@@ -468,23 +489,32 @@ export default function ClientPage() {
         contentType === "movie" ? fetch(`/api/people/search?q=${encodeURIComponent(query)}`) : Promise.resolve(null),
       ]);
       const titles: Movie[] = await titleRes.json();
+      if (query !== latestSearchQueryRef.current) return; // superseded — discard
       rememberMovies(titles);
       setSearchResults(titles);
       if (personRes) {
         const people = await personRes.json();
+        if (query !== latestSearchQueryRef.current) return;
         setPersonResults(Array.isArray(people) ? people : []);
       } else {
         setPersonResults([]);
       }
     } catch {
-      setSearchResults([]);
-      setPersonResults([]);
+      if (query === latestSearchQueryRef.current) {
+        setSearchResults([]);
+        setPersonResults([]);
+      }
     }
-    setSearchLoading(false);
+    if (query === latestSearchQueryRef.current) setSearchLoading(false);
   }, [apiBase, contentType, selectedMember, guestMaxRating]);
 
   useEffect(() => {
     if (searchMode !== "search") return;
+    latestSearchQueryRef.current = searchQuery;
+    // Loading state starts the instant the query changes, not after the
+    // debounce — otherwise stale results (or a false empty state) show
+    // for the whole 350ms gap before the new fetch even begins.
+    setSearchLoading(true);
     const handle = setTimeout(() => runSearch(searchQuery), 350);
     return () => clearTimeout(handle);
   }, [searchQuery, searchMode, runSearch]);
@@ -554,6 +584,8 @@ export default function ClientPage() {
     setActiveMood(mood);
     setActiveCategory("mood");
     setLikedStreak([]);
+    setMinDecade(null);
+    setEraExhausted(null);
     try {
       const res = await fetch("/api/movies/mood", {
         method: "POST",
@@ -595,6 +627,8 @@ export default function ClientPage() {
     setActiveMood(null);
     setActiveCategory("filtered");
     setLikedStreak([]);
+    setMinDecade(null);
+    setEraExhausted(null);
     try {
       const params = new URLSearchParams();
       if (discoverFilters.providerId) {
@@ -789,6 +823,8 @@ export default function ClientPage() {
 
     setStep("loading");
     setError(null);
+    setMinDecade(null);
+    setEraExhausted(null);
 
     const category = activeGenre || "for-you";
     setActiveCategory(category);
@@ -806,7 +842,7 @@ export default function ClientPage() {
           memberId: selectedMember?.id,
           category,
           genreName: activeGenre ? genreMapFor(contentType)[activeGenre] : undefined,
-          minDecade,
+          minDecade: null,
           guestMaxRating,
         }),
       });
@@ -826,13 +862,33 @@ export default function ClientPage() {
     if (fetchingMore) return;
     const effectiveDecade = decadeOverride !== undefined ? decadeOverride : minDecade;
 
-    if (!selectedMember && seedTitlesRef.current.length === 0 && guestLikedTitlesRef.current.length < 3) return;
+    if (!activeMood && !selectedMember && seedTitlesRef.current.length === 0 && guestLikedTitlesRef.current.length < 3) return;
 
     setFetchingMore(true);
+    setEraExhausted(null);
     try {
       let fresh: Movie[] = [];
 
-      if (selectedMember) {
+      if (activeMood) {
+        // Mood results have no "liked" seed history to query more-like with —
+        // re-ask the same mood, now scoped to the era and excluding what's
+        // already been shown.
+        const res = await fetch("/api/movies/mood", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            memberId: selectedMember?.id,
+            mood: activeMood,
+            category: activeCategory,
+            contentType,
+            guestMaxRating,
+            minDecade: effectiveDecade,
+            excludeIds: Array.from(shownIdsRef.current),
+          }),
+        });
+        const data = await res.json();
+        fresh = sortByRating(data.movies || []).filter((m: Movie) => !shownIdsRef.current.has(m.id));
+      } else if (selectedMember) {
         const res = await fetch(`${apiBase}/more-like`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -863,6 +919,13 @@ export default function ClientPage() {
         fresh = sortByRating(data.movies || []).filter((m: Movie) => !shownIdsRef.current.has(m.id));
       }
 
+      // Honest end-state: we fetched, and nothing new matches this era.
+      const existingIds = new Set([...recommendations, ...recBuffer].map((m) => m.id));
+      const newMatchingEra = fresh.filter((m) => !existingIds.has(m.id) && passesDecade(m, effectiveDecade));
+      if (effectiveDecade && newMatchingEra.length === 0) {
+        setEraExhausted(effectiveDecade);
+      }
+
       fresh.forEach((m: Movie) => shownIdsRef.current.add(m.id));
 
       setRecommendations((prev: Movie[]) => {
@@ -877,7 +940,7 @@ export default function ClientPage() {
       });
     } catch {}
     setFetchingMore(false);
-  }, [selectedMember, activeCategory, activeGenre, fetchingMore, minDecade, apiBase, contentType, guestMaxRating]);
+  }, [selectedMember, activeCategory, activeGenre, activeMood, fetchingMore, minDecade, apiBase, contentType, guestMaxRating, recommendations, recBuffer]);
 
   const LIKE_STREAK_THRESHOLD = 5;
 
@@ -913,8 +976,6 @@ export default function ClientPage() {
     setSwipingId(movie.id);
 
     setTimeout(() => {
-      let replacementMovie: Movie | null = null;
-
       setRecommendations((prev: Movie[]) => {
         const idx = prev.findIndex((m: Movie) => m.id === movie.id);
         if (idx === -1) return prev;
@@ -923,23 +984,28 @@ export default function ClientPage() {
         return next;
       });
 
-      setRecBuffer((prev: Movie[]) => {
-        if (prev.length === 0) {
-          fetchMoreRecs();
-          return prev;
-        }
-        // Promote the highest-rated buffer movie that fits the decade filter (fall back to best overall)
-        const passing = prev.filter((m: Movie) => passesDecade(m, minDecade));
-        const pool = passing.length > 0 ? passing : prev;
+      // The replacement is computed from a direct read of recBuffer (now a
+      // dependency) rather than from inside setRecBuffer's updater. Reading
+      // it via an outer `let` set as a side effect of that updater raced
+      // against React deferring the updater's execution, so lastSwipe.
+      // replacement was always null even when a replacement had been
+      // added — Undo could never remove it, and the list grew by one every
+      // swipe. Calling other setters from inside an updater would "fix"
+      // that but makes the updater impure, which breaks under Strict
+      // Mode's double-invocation; this avoids both problems.
+      if (recBuffer.length === 0) {
+        fetchMoreRecs();
+        setLastSwipe({ movie, direction, replacement: null });
+      } else {
+        const passing = recBuffer.filter((m: Movie) => passesDecade(m, minDecade));
+        const pool = passing.length > 0 ? passing : recBuffer;
         const replacement = sortByRating(pool)[0];
-        replacementMovie = replacement;
-        const rest = prev.filter((m: Movie) => m.id !== replacement.id);
+        setRecBuffer((prev: Movie[]) => prev.filter((m: Movie) => m.id !== replacement.id));
         setRecommendations((recs: Movie[]) => [...recs, replacement]);
-        if (rest.length <= 2) fetchMoreRecs();
-        return rest;
-      });
+        if (recBuffer.length - 1 <= 2) fetchMoreRecs();
+        setLastSwipe({ movie, direction, replacement });
+      }
 
-      setLastSwipe({ movie, direction, replacement: replacementMovie });
       setSwipingId(null);
     }, 300);
 
@@ -978,7 +1044,7 @@ export default function ClientPage() {
       // Guests have no DB — just remember this for seeding future "Load More" fetches
       guestLikedTitlesRef.current = [...guestLikedTitlesRef.current, movie.title].slice(-10);
     }
-  }, [selectedMember, activeCategory, fetchMoreRecs, regenerateFromLikes, minDecade, contentType]);
+  }, [selectedMember, activeCategory, fetchMoreRecs, regenerateFromLikes, minDecade, contentType, recBuffer]);
 
   const handleLessLikeThis = useCallback((movie: Movie) => {
     handleSwipe(movie, "left", "less_like_this");
@@ -1024,6 +1090,8 @@ export default function ClientPage() {
     setShowMoreCount(0);
     setLikedStreak([]);
     setActiveMood(null);
+    setMinDecade(null);
+    setEraExhausted(null);
     handleBackToDiscovery();
     seedTitlesRef.current = [];
     shownIdsRef.current = new Set();
@@ -1043,8 +1111,9 @@ export default function ClientPage() {
   const handleDecadeChange = (decade: string | null) => {
     const next = decade === minDecade ? null : decade;
     setMinDecade(next);
+    setEraExhausted(null);
     const remaining = recommendations.filter((m: Movie) => passesDecade(m, next));
-    if (remaining.length < 3) fetchMoreRecs(next);
+    if (next && remaining.length < 3) fetchMoreRecs(next);
   };
 
   const handleAddMember = async (name: string, avatar: string, age: number | null, maxRating: string) => {
@@ -1224,6 +1293,8 @@ export default function ClientPage() {
       { id: 16, label: "Animation" },
       { id: 14, label: "Fantasy" },
       { id: 99, label: "Documentary" },
+      { id: 10751, label: "Family" },
+      { id: 9648, label: "Mystery" },
     ];
 
     const SHOW_GENRE_FILTERS: { id: number; label: string }[] = [
@@ -1556,7 +1627,20 @@ export default function ClientPage() {
 
               {displayedGridMovies.length === 0 && searchMode === "browse" && (
                 <div className="text-center text-gray-500 py-12">
-                  No {label} in this genre yet. Try &quot;Show More&quot; to load more.
+                  {gridExhausted ? (
+                    <p>No {label} in this genre at that rating.</p>
+                  ) : (
+                    <>
+                      <p className="mb-3">No {label} on this page yet.</p>
+                      <button
+                        onClick={handleShowMore}
+                        disabled={loadingMore}
+                        className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white font-medium px-6 py-2.5 rounded-full text-sm transition-all disabled:opacity-50"
+                      >
+                        {loadingMore ? "Loading..." : "Try Loading More"}
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
 
@@ -1573,18 +1657,20 @@ export default function ClientPage() {
               )}
 
               {/* Show More button (browse mode only) */}
-              {searchMode === "browse" && (
+              {searchMode === "browse" && displayedGridMovies.length > 0 && (
               <div className="mt-6 text-center">
-                {showMoreCount < MAX_SHOW_MORE ? (
+                {gridExhausted || showMoreCount >= MAX_SHOW_MORE_PAGES ? (
+                  <p className="text-gray-600 text-sm">
+                    That&apos;s everything{activeGenre ? ` in ${GENRE_FILTERS.find((g) => String(g.id) === activeGenre)?.label || "this genre"}` : ""}.
+                  </p>
+                ) : (
                   <button
                     onClick={handleShowMore}
                     disabled={loadingMore}
                     className="bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white font-medium px-6 py-2.5 rounded-full text-sm transition-all disabled:opacity-50"
                   >
-                    {loadingMore ? "Loading..." : `Show More ${contentType === "show" ? "Shows" : "Movies"} (${MAX_SHOW_MORE - showMoreCount} left)`}
+                    {loadingMore ? "Loading..." : `Show More ${contentType === "show" ? "Shows" : "Movies"}`}
                   </button>
-                ) : (
-                  <p className="text-gray-600 text-sm">You&apos;ve loaded all available batches</p>
                 )}
               </div>
               )}
@@ -1954,12 +2040,31 @@ export default function ClientPage() {
               ) : hiddenByDecade ? (
                 <>
                   <p className="text-gray-400 mb-4">No {label} from that era in your current picks yet.</p>
-                  <button
-                    onClick={() => fetchMoreRecs()}
-                    className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold px-8 py-3 rounded-full hover:from-purple-500 hover:to-pink-500 transition shadow-lg shadow-purple-500/25"
-                  >
-                    Find More {minDecade ? `${minDecade}s+ ` : ""}{contentType === "show" ? "Shows" : "Movies"}
-                  </button>
+                  {eraExhausted === minDecade ? (
+                    <>
+                      <button
+                        disabled
+                        className="bg-gray-800 text-gray-500 font-semibold px-8 py-3 rounded-full cursor-not-allowed"
+                      >
+                        No more {minDecade}s+ {label} {activeMood ? "for this mood" : "here"} — try All
+                      </button>
+                      <div className="mt-3">
+                        <button
+                          onClick={() => handleDecadeChange(null)}
+                          className="text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors"
+                        >
+                          Show All eras
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => fetchMoreRecs()}
+                      className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold px-8 py-3 rounded-full hover:from-purple-500 hover:to-pink-500 transition shadow-lg shadow-purple-500/25"
+                    >
+                      Find More {minDecade ? `${minDecade}s+ ` : ""}{contentType === "show" ? "Shows" : "Movies"}
+                    </button>
+                  )}
                 </>
               ) : (
                 <button
