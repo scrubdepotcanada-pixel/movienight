@@ -4,6 +4,12 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import MemberSelector from "@/components/MemberSelector";
 
+interface WatchProvider {
+  provider_id: number;
+  provider_name: string;
+  logo_path: string;
+}
+
 interface Movie {
   id: number;
   title: string;
@@ -14,7 +20,10 @@ interface Movie {
   certification?: string;
   genre_ids?: number[];
   providers?: {
-    flatrate?: { provider_id: number; provider_name: string; logo_path: string }[];
+    flatrate?: WatchProvider[];
+    rent?: WatchProvider[];
+    buy?: WatchProvider[];
+    link?: string;
   };
 }
 
@@ -69,6 +78,25 @@ function passesDecade(movie: Movie, minDecade: string | null): boolean {
 
 function sortByRating(movies: Movie[]): Movie[] {
   return [...movies].sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+}
+
+// TMDB lists near-duplicate entries per service ("Netflix" vs "Netflix
+// Standard with Ads", "Amazon Prime Video" vs "...with Ads") as distinct
+// provider ids. Collapse those down to one logo per real service.
+function dedupeProviders(providers: WatchProvider[]): WatchProvider[] {
+  const seen = new Set<string>();
+  const out: WatchProvider[] = [];
+  for (const p of providers) {
+    const key = p.provider_name
+      .replace(/\s*(standard|basic|premium)?\s*with ads\b/i, "")
+      .replace(/\s*\(.*?\)\s*/g, "")
+      .trim()
+      .toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(p);
+  }
+  return out;
 }
 
 export default function ClientPage() {
@@ -1426,20 +1454,35 @@ function FlippableCard({ movie, index, contentType = "movie" }: { movie: Movie; 
               )}
             </div>
             <div className="flex items-center justify-between">
-              {movie.providers?.flatrate && movie.providers.flatrate.length > 0 ? (
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-500 text-xs">Stream</span>
-                  {movie.providers.flatrate.slice(0, 4).map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
-                    <img
-                      key={p.provider_id}
-                      src={`${TMDB_IMG}/w45${p.logo_path}`}
-                      alt={p.provider_name}
-                      title={p.provider_name}
-                      className="w-7 h-7 rounded"
-                    />
-                  ))}
-                </div>
-              ) : <div />}
+              {(() => {
+                const flat = dedupeProviders(movie.providers?.flatrate || []);
+                const rentBuy = dedupeProviders([...(movie.providers?.rent || []), ...(movie.providers?.buy || [])]);
+                const list = flat.length > 0 ? flat : rentBuy;
+                const label = flat.length > 0 ? "Stream" : rentBuy.length > 0 ? "Rent/Buy" : null;
+                if (!label || !movie.providers?.link) {
+                  return <span className="text-gray-600 text-xs">Not streaming in Canada</span>;
+                }
+                return (
+                  <a
+                    href={movie.providers.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                  >
+                    <span className="text-gray-500 text-xs">{label}</span>
+                    {list.slice(0, 4).map((p) => (
+                      <img
+                        key={p.provider_id}
+                        src={`${TMDB_IMG}/w45${p.logo_path}`}
+                        alt={p.provider_name}
+                        title={p.provider_name}
+                        className="w-7 h-7 rounded"
+                      />
+                    ))}
+                  </a>
+                );
+              })()}
               <span className="text-purple-400 text-xs font-medium">Tap for more →</span>
             </div>
           </div>
@@ -1494,22 +1537,43 @@ function FlippableCard({ movie, index, contentType = "movie" }: { movie: Movie; 
           </div>
 
           {/* Compact footer */}
-          <div className="px-4 py-2.5 border-t border-gray-800/50 flex items-center justify-between">
-            {movie.providers?.flatrate && movie.providers.flatrate.length > 0 ? (
-              <div className="flex items-center gap-1.5">
-                <span className="text-gray-600 text-xs">Stream</span>
-                {movie.providers.flatrate.slice(0, 4).map((p: { provider_id: number; provider_name: string; logo_path: string }) => (
-                  <img
-                    key={p.provider_id}
-                    src={`${TMDB_IMG}/w45${p.logo_path}`}
-                    alt={p.provider_name}
-                    title={p.provider_name}
-                    className="w-6 h-6 rounded"
-                  />
-                ))}
-              </div>
-            ) : <div />}
-            <span className="text-purple-400 text-xs font-medium">← Tap to flip back</span>
+          <div className="px-4 py-2.5 border-t border-gray-800/50">
+            {(() => {
+              const flat = dedupeProviders(movie.providers?.flatrate || []);
+              const rentBuy = dedupeProviders([...(movie.providers?.rent || []), ...(movie.providers?.buy || [])]);
+              const list = flat.length > 0 ? flat : rentBuy;
+              const label = flat.length > 0 ? "Stream on" : rentBuy.length > 0 ? "Rent or buy on" : null;
+              if (!label || !movie.providers?.link) {
+                return (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 text-xs">Not streaming in Canada right now</span>
+                    <span className="text-purple-400 text-xs font-medium">← Tap to flip back</span>
+                  </div>
+                );
+              }
+              return (
+                <a
+                  href={movie.providers.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="block hover:opacity-80 transition-opacity"
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-gray-500 text-xs">{label} &middot; Canada</span>
+                    <span className="text-purple-400 text-xs font-medium">View all →</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {list.slice(0, 4).map((p) => (
+                      <span key={p.provider_id} className="flex items-center gap-1 bg-gray-800/60 rounded-full pl-1 pr-2 py-0.5">
+                        <img src={`${TMDB_IMG}/w45${p.logo_path}`} alt="" className="w-5 h-5 rounded-full" />
+                        <span className="text-gray-300 text-xs">{p.provider_name.replace(/\s*(standard|basic|premium)?\s*with ads\b/i, "")}</span>
+                      </span>
+                    ))}
+                  </div>
+                </a>
+              );
+            })()}
           </div>
         </div>
       </div>
