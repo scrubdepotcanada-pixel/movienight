@@ -530,15 +530,8 @@ export default function ClientPage() {
     );
   };
 
-  // ── Not signed in ──
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen bg-[#0a0a1a] flex items-center justify-center">
-        <div className="text-gray-400 text-lg">Loading...</div>
-      </div>
-    );
-  }
-
+  // ── Not signed in (also covers the brief session-check moment — same
+  // branded screen either way, no bare "Loading..." flash) ──
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen bg-[#0a0a1a] flex flex-col">
@@ -789,8 +782,10 @@ export default function ClientPage() {
           </div>
 
           {loadingGrid ? (
-            <div className="flex items-center justify-center py-20">
-              <div className="text-gray-400">Loading {label}...</div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+              {Array.from({ length: 15 }).map((_, i) => (
+                <div key={i} className="w-full aspect-[2/3] rounded-xl bg-gray-800/60 animate-pulse" style={{ animationDelay: `${(i % 5) * 80}ms` }} />
+              ))}
             </div>
           ) : (
             <>
