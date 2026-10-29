@@ -184,6 +184,7 @@ export async function initDB() {
     "ALTER TABLE disliked_movies ADD COLUMN feedback_type TEXT DEFAULT 'disliked'",
     "ALTER TABLE watched_movies ADD COLUMN feedback_type TEXT DEFAULT 'watched'",
     "ALTER TABLE recommendations ADD COLUMN reason TEXT",
+    "ALTER TABLE members ADD COLUMN preferred_providers TEXT",
   ];
   for (const sql of migrations) {
     try {

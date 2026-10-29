@@ -10,6 +10,12 @@ function sanitizeMaxRating(value: unknown): string | null {
   return VALID_RATINGS.includes(value) ? value : null;
 }
 
+function sanitizePreferredProviders(value: unknown): string | null {
+  if (!Array.isArray(value)) return null;
+  const ids = value.filter((v) => typeof v === "number" && Number.isFinite(v)).slice(0, 15);
+  return JSON.stringify(ids);
+}
+
 // Get all family members
 export async function GET() {
   const familyId = await getOrCreateFamily();
@@ -82,7 +88,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const familyId = await getOrCreateFamily();
   if (!familyId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  const { memberId, name, avatar, age, maxRating } = await req.json();
+  const { memberId, name, avatar, age, maxRating, preferredProviders } = await req.json();
 
   const existing = await db.execute({
     sql: "SELECT id FROM members WHERE id = ? AND family_id = ?",
@@ -110,6 +116,10 @@ export async function PATCH(req: NextRequest) {
   if (maxRating !== undefined) {
     updates.push("max_rating = ?");
     args.push(sanitizeMaxRating(maxRating));
+  }
+  if (preferredProviders !== undefined) {
+    updates.push("preferred_providers = ?");
+    args.push(sanitizePreferredProviders(preferredProviders));
   }
 
   if (updates.length === 0) {

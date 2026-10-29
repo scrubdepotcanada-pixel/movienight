@@ -35,11 +35,35 @@ interface Member {
   avatar: string;
   age?: number | null;
   max_rating?: string | null;
+  preferred_providers?: string | null;
 }
 
 const TMDB_IMG = "https://image.tmdb.org/t/p";
 const MAX_PICKS = 5;
 const MIN_PICKS = 3;
+const PREFERRED_PROVIDERS_KEY = "nextmovie_preferred_providers_v1";
+
+// TMDB watch-provider IDs — stable across regions. Lets a user say "I have
+// these" once so results rank what's actually watchable tonight first.
+const STREAMING_PLATFORMS: { id: number; name: string; logo: string }[] = [
+  { id: 8, name: "Netflix", logo: "🔴" },
+  { id: 337, name: "Disney+", logo: "🔵" },
+  { id: 9, name: "Prime Video", logo: "🟡" },
+  { id: 350, name: "Apple TV+", logo: "⚫" },
+  { id: 1899, name: "Max", logo: "🟣" },
+  { id: 15, name: "Hulu", logo: "🟢" },
+  { id: 230, name: "Crave", logo: "🟤" },
+];
+
+function sortForDisplay(movies: Movie[], preferredProviderIds: number[]): Movie[] {
+  const byRating = [...movies].sort((a, b) => (b.vote_average || 0) - (a.vote_average || 0));
+  if (preferredProviderIds.length === 0) return byRating;
+  const preferredSet = new Set(preferredProviderIds);
+  const isWatchableNow = (m: Movie) => (m.providers?.flatrate || []).some((p) => preferredSet.has(p.provider_id));
+  const available = byRating.filter(isWatchableNow);
+  const rest = byRating.filter((m) => !isWatchableNow(m));
+  return [...available, ...rest];
+}
 
 const GENRE_MAP: Record<string, string> = {
   "28": "Action", "35": "Comedy", "18": "Drama", "27": "Horror",
@@ -131,6 +155,8 @@ export default function ClientPage() {
   const apiBase = contentType === "show" ? "/api/shows" : "/api/movies";
   const [guestMaxRating, setGuestMaxRating] = useState<string | null>("PG"); // safe default until the guest actively confirms
   const [guestRatingTouched, setGuestRatingTouched] = useState(false);
+  const [preferredProviders, setPreferredProviders] = useState<number[]>([]);
+  const [showProvidersPanel, setShowProvidersPanel] = useState(false);
   const [gridMovies, setGridMovies] = useState<Movie[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [selectedRatings, setSelectedRatings] = useState<Record<number, number>>({});
@@ -217,6 +243,30 @@ export default function ClientPage() {
       setStep(snap.step);
     } catch {}
   }, [status]);
+
+  // Preferred streaming services — a durable per-device preference, set once
+  // and reused for every future results page regardless of sign-in state.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PREFERRED_PROVIDERS_KEY);
+      if (!raw) return;
+      const ids = JSON.parse(raw);
+      if (Array.isArray(ids)) setPreferredProviders(ids.filter((n) => typeof n === "number"));
+    } catch {}
+  }, []);
+
+  const handleSavePreferredProviders = (ids: number[]) => {
+    setPreferredProviders(ids);
+    setShowProvidersPanel(false);
+    try { localStorage.setItem(PREFERRED_PROVIDERS_KEY, JSON.stringify(ids)); } catch {}
+    if (selectedMember) {
+      fetch("/api/members", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId: selectedMember.id, preferredProviders: ids }),
+      }).catch(() => {});
+    }
+  };
 
   useEffect(() => {
     if (!guestMode) return;
@@ -473,6 +523,13 @@ export default function ClientPage() {
     setSelectedRatings({});
     setRecommendations([]);
     setRecBuffer([]);
+
+    if (member.preferred_providers) {
+      try {
+        const ids = JSON.parse(member.preferred_providers);
+        if (Array.isArray(ids) && ids.length > 0) setPreferredProviders(ids.filter((n) => typeof n === "number"));
+      } catch {}
+    }
 
     // A genre link (e.g. from /genres) takes priority over "Welcome back" —
     // clicking "Browse Action" is an explicit intent to go straight to it.
@@ -1148,9 +1205,20 @@ export default function ClientPage() {
             </button>
           </div>
 
-          <p className="text-gray-600 text-xs text-center mb-4">
+          <p className="text-gray-600 text-xs text-center mb-3">
             ⭐ Tap the stars on a pick to rate it — higher ratings shape your recommendations more
           </p>
+
+          {/* Watchable tonight — one-time streaming service preference */}
+          <button
+            onClick={() => setShowProvidersPanel(true)}
+            className="w-full flex items-center justify-center gap-1.5 text-xs font-medium text-gray-400 hover:text-white bg-gray-900/40 hover:bg-gray-800/60 border border-gray-800/50 rounded-full py-2 mb-4 transition-all"
+          >
+            📺{" "}
+            {preferredProviders.length > 0
+              ? `Ranking results for your ${preferredProviders.length} streaming service${preferredProviders.length > 1 ? "s" : ""} — change`
+              : "Tell us what you're subscribed to — we'll show watchable-tonight picks first"}
+          </button>
 
           {/* Search */}
           <div className="relative mb-3">
@@ -1444,6 +1512,50 @@ export default function ClientPage() {
           </div>
         )}
 
+        {/* Streaming services panel — set once, ranks "watchable tonight" picks first */}
+        {showProvidersPanel && (
+          <div
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm px-4 pb-4 sm:pb-0"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowProvidersPanel(false); }}
+          >
+            <div className="bg-gray-900 border border-gray-700/50 rounded-3xl p-6 w-full max-w-md shadow-2xl">
+              <div className="flex items-center justify-between mb-1">
+                <h2 className="text-xl font-bold text-white">📺 What do you have?</h2>
+                <button onClick={() => setShowProvidersPanel(false)} className="text-gray-500 hover:text-gray-300 text-xl leading-none">&times;</button>
+              </div>
+              <p className="text-gray-500 text-sm mb-4">Pick your streaming services and we&apos;ll rank what&apos;s watchable tonight first. Set it once — we&apos;ll remember.</p>
+              <div className="grid grid-cols-2 gap-2 mb-5">
+                {STREAMING_PLATFORMS.map((p) => {
+                  const isSelected = preferredProviders.includes(p.id);
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() =>
+                        setPreferredProviders((prev) =>
+                          prev.includes(p.id) ? prev.filter((id) => id !== p.id) : [...prev, p.id]
+                        )
+                      }
+                      className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                        isSelected
+                          ? "bg-purple-600 text-white ring-2 ring-purple-400"
+                          : "bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700"
+                      }`}
+                    >
+                      <span>{p.logo}</span> {p.name}
+                    </button>
+                  );
+                })}
+              </div>
+              <button
+                onClick={() => handleSavePreferredProviders(preferredProviders)}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-2.5 rounded-full text-sm transition-all"
+              >
+                {preferredProviders.length > 0 ? "Save" : "Skip for now"}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Premium upsell */}
         {upsellFeature && (
           <div
@@ -1506,8 +1618,9 @@ export default function ClientPage() {
   // ── Results ──
   if (step === "results") {
     const label = contentType === "show" ? "shows" : "movies";
-    const displayedRecommendations = sortByRating(
-      recommendations.filter((m: Movie) => passesDecade(m, minDecade))
+    const displayedRecommendations = sortForDisplay(
+      recommendations.filter((m: Movie) => passesDecade(m, minDecade)),
+      preferredProviders
     );
     const hiddenByDecade = recommendations.length > 0 && displayedRecommendations.length === 0;
 
