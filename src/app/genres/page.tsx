@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Browse Movie Genres — Find the Best Movies by Category",
@@ -22,72 +23,84 @@ export const metadata: Metadata = {
 const GENRES = [
   {
     name: "Action",
+    id: 28,
     emoji: "💥",
     description:
       "High-energy movies packed with stunts, chases, and fight scenes. Think explosions, heroes on a mission, and edge-of-your-seat thrills from start to finish.",
   },
   {
     name: "Comedy",
+    id: 35,
     emoji: "😂",
     description:
       "Movies that make you laugh out loud. From slapstick and rom-coms to dry wit and satire, comedy is the perfect pick when you want to unwind and have fun.",
   },
   {
     name: "Drama",
+    id: 18,
     emoji: "🎭",
     description:
       "Character-driven stories that pull you in emotionally. Drama covers everything from family struggles to courtroom battles, with performances that stick with you long after the credits.",
   },
   {
     name: "Horror",
+    id: 27,
     emoji: "👻",
     description:
       "Scares, suspense, and things that go bump in the night. Horror movies range from creepy slow burns to jump-scare thrill rides. Not for the faint of heart.",
   },
   {
     name: "Sci-Fi",
+    id: 878,
     emoji: "🚀",
     description:
       "Futuristic worlds, space travel, and mind-bending technology. Sci-fi movies explore big ideas about humanity, AI, and the unknown. Great for fans of imagination and wonder.",
   },
   {
     name: "Romance",
+    id: 10749,
     emoji: "💕",
     description:
       "Love stories that warm your heart. Whether it is a first crush or a second chance, romance movies deliver butterflies, grand gestures, and happy endings.",
   },
   {
     name: "Thriller",
+    id: 53,
     emoji: "🔪",
     description:
       "Tense, gripping stories full of twists and suspense. Thrillers keep you guessing until the very last scene. Perfect for movie nights when you want to be on the edge of your seat.",
   },
   {
     name: "Animation",
+    id: 16,
     emoji: "🎨",
     description:
       "Colorful, creative movies for all ages. From Pixar classics to anime epics, animated films tell powerful stories with stunning visuals. Families love this genre.",
   },
   {
     name: "Documentary",
+    id: 99,
     emoji: "🎥",
     description:
       "Real stories from the real world. Documentaries cover true crime, nature, history, sports, and more. Learn something new while being thoroughly entertained.",
   },
   {
     name: "Fantasy",
+    id: 14,
     emoji: "🧙",
     description:
       "Magic, mythical creatures, and epic quests. Fantasy movies transport you to other worlds with rich lore and unforgettable adventures. A favorite for families and dreamers.",
   },
   {
     name: "Family",
+    id: 10751,
     emoji: "👨‍👩‍👧‍👦",
     description:
       "Movies the whole family can enjoy together. Family films are age-appropriate, heartwarming, and fun for kids and adults alike. The go-to genre for movie night.",
   },
   {
     name: "Mystery",
+    id: 9648,
     emoji: "🔍",
     description:
       "Whodunits, puzzles, and hidden clues. Mystery movies challenge you to solve the case before the characters do. Great for viewers who love to think and piece things together.",
@@ -146,7 +159,7 @@ export default function GenresPage() {
                 {genre.description}
               </p>
               <Link
-                href="/"
+                href={`/?genre=${genre.id}`}
                 className="inline-flex items-center justify-center bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white rounded-xl px-5 py-2.5 text-sm font-bold transition-all shadow-md shadow-purple-900/30"
               >
                 Browse {genre.name}
@@ -187,32 +200,7 @@ export default function GenresPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800/50 py-8 px-4 mt-12">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-sm">🎬</span>
-            <span className="text-sm font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Next Movie
-            </span>
-          </Link>
-          <div className="flex items-center gap-4 text-gray-600 text-xs">
-            <Link href="/faq" className="hover:text-gray-400 transition-colors">FAQ</Link>
-            <Link href="/premium" className="hover:text-gray-400 transition-colors">Premium</Link>
-            <a href="mailto:support@nextmovie.app" className="hover:text-gray-400 transition-colors">Contact</a>
-          </div>
-          <p className="text-gray-600 text-xs">
-            &copy; {new Date().getFullYear()} nextmovie.app
-          </p>
-          <a
-            href="https://thewebguys.ca"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-600 hover:text-purple-400 text-xs transition-colors"
-          >
-            Built by thewebguys.ca
-          </a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import MemberSelector from "@/components/MemberSelector";
+import SiteFooter from "@/components/SiteFooter";
 
 interface WatchProvider {
   provider_id: number;
@@ -97,6 +98,21 @@ function dedupeProviders(providers: WatchProvider[]): WatchProvider[] {
     out.push(p);
   }
   return out;
+}
+
+const PENDING_GENRE_KEY = "nextmovie_pending_genre";
+
+function consumePendingGenre(): { genreId: string; type: "movie" | "show" } | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_GENRE_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(PENDING_GENRE_KEY);
+    const parsed = JSON.parse(raw);
+    if (!parsed?.genreId || !/^\d+$/.test(parsed.genreId)) return null;
+    return { genreId: parsed.genreId, type: parsed.type === "show" ? "show" : "movie" };
+  } catch {
+    return null;
+  }
 }
 
 export default function ClientPage() {
@@ -209,6 +225,23 @@ export default function ClientPage() {
     fetch("/api/members").then((r) => r.json()).then(setMembers).catch(() => {});
   }, [status, guestMode]);
 
+  // Capture a ?genre=<id>[&type=show] link (from /genres' "Browse X" cards)
+  // into sessionStorage so it survives both the guest-rating gate and a full
+  // page navigation through Google sign-in, then clean the URL.
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const genre = params.get("genre");
+      if (genre && /^\d+$/.test(genre)) {
+        sessionStorage.setItem(PENDING_GENRE_KEY, JSON.stringify({
+          genreId: genre,
+          type: params.get("type") === "show" ? "show" : "movie",
+        }));
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [step]);
@@ -273,6 +306,17 @@ export default function ClientPage() {
     setSelectedRatings({});
     setRecommendations([]);
     setRecBuffer([]);
+
+    // A genre link (e.g. from /genres) takes priority over "Welcome back" —
+    // clicking "Browse Action" is an explicit intent to go straight to it.
+    const pending = consumePendingGenre();
+    if (pending) {
+      setContentType(pending.type);
+      setActiveGenre(pending.genreId);
+      setStep("pick");
+      loadGrid(1, false, pending.genreId, pending.type);
+      return;
+    }
 
     try {
       const res = await fetch(`/api/session/categories?memberId=${member.id}`);
@@ -353,8 +397,16 @@ export default function ClientPage() {
 
   const handleGuestRatingSelect = (rating: string) => {
     setGuestMaxRating(rating);
-    setStep("pick");
-    loadGrid(1, false, null, undefined, rating);
+    const pending = consumePendingGenre();
+    if (pending) {
+      setContentType(pending.type);
+      setActiveGenre(pending.genreId);
+      setStep("pick");
+      loadGrid(1, false, pending.genreId, pending.type, rating);
+    } else {
+      setStep("pick");
+      loadGrid(1, false, null, undefined, rating);
+    }
   };
 
   const toggleMovie = (id: number) => {
@@ -670,8 +722,11 @@ export default function ClientPage() {
         <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
           <div className="text-6xl mb-6">🍿</div>
           <h1 className="text-4xl font-bold text-white mb-3">Next Movie</h1>
-          <p className="text-gray-400 text-lg mb-10 max-w-md">
+          <p className="text-gray-400 text-lg mb-2 max-w-md">
             Pick 5 movies you love. We&apos;ll tell you what to watch next.
+          </p>
+          <p className="text-gray-600 text-sm mb-8">
+            Free to start — no account needed. <a href="/premium" className="text-purple-400 hover:text-purple-300">Premium</a> unlocks more.
           </p>
           <button
             onClick={() => signIn("google")}
@@ -686,6 +741,7 @@ export default function ClientPage() {
             Try without signing in
           </button>
         </div>
+        <SiteFooter />
       </div>
     );
   }

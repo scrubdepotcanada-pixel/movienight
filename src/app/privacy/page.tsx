@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -158,11 +159,9 @@ export default function PrivacyPage() {
       </main>
 
       <footer className="border-t border-gray-800/50 py-6 px-4 text-center text-gray-600 text-xs">
-        &copy; {new Date().getFullYear()} nextmovie.app &middot;{" "}
-        <Link href="/" className="hover:text-gray-400 transition-colors">Home</Link>
-        {" "}&middot;{" "}
         <Link href="/privacy/data-deletion" className="hover:text-gray-400 transition-colors">Data Deletion</Link>
       </footer>
+      <SiteFooter />
     </div>
   );
 }

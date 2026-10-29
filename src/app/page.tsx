@@ -115,8 +115,8 @@ export default function Home() {
         </p>
         <h3>Is Next Movie free?</h3>
         <p>
-          Yes — 100% free. No credit card needed. No app to download.
-          Just go to nextmovie.app and start. Premium adds extra filters for $4.99/month.
+          The core experience is free — no credit card needed, no app to download.
+          Just go to nextmovie.app and start. Premium adds extra filters starting at $4.99/month.
         </p>
         <h3>Is there a Next Movie app?</h3>
         <p>

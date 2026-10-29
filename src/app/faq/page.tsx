@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import SiteFooter from "@/components/SiteFooter";
 
 export const metadata: Metadata = {
   title: "FAQ — Common Questions About Next Movie",
@@ -28,7 +29,7 @@ const FAQS = [
   {
     question: "Is Next Movie really free?",
     answer:
-      "Yes, Next Movie is 100% free. You do not need a credit card or even an account to start. Just open nextmovie.app, pick a genre, and get recommendations instantly. There is an optional Premium plan with extra filters, but the core experience costs nothing.",
+      "The core experience is free — no credit card, no account required. Just open nextmovie.app, pick 5 movies you love, and get recommendations instantly. Premium ($4.99/month, $49.99/year, or $99.99 lifetime) adds language filters, actor/director search, unlimited history, watchlists, and Family Swipe mode, but everything you need to get a great recommendation is free.",
   },
   {
     question: "How is Next Movie different from JustWatch or IMDb?",
@@ -167,32 +168,7 @@ export default function FAQPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-800/50 py-8 px-4 mt-12">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-sm">🎬</span>
-            <span className="text-sm font-semibold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-              Next Movie
-            </span>
-          </Link>
-          <div className="flex items-center gap-4 text-gray-600 text-xs">
-            <Link href="/genres" className="hover:text-gray-400 transition-colors">Genres</Link>
-            <Link href="/premium" className="hover:text-gray-400 transition-colors">Premium</Link>
-            <a href="mailto:support@nextmovie.app" className="hover:text-gray-400 transition-colors">Contact</a>
-          </div>
-          <p className="text-gray-600 text-xs">
-            &copy; {new Date().getFullYear()} nextmovie.app
-          </p>
-          <a
-            href="https://thewebguys.ca"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-gray-600 hover:text-purple-400 text-xs transition-colors"
-          >
-            Built by thewebguys.ca
-          </a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

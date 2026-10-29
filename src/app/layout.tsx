@@ -202,7 +202,7 @@ export default function RootLayout({
                   name: "Is Next Movie free?",
                   acceptedAnswer: {
                     "@type": "Answer",
-                    text: "Yes, Next Movie is 100% free. No credit card required. You can use it as a guest or sign in with Google to save your preferences across devices.",
+                    text: "The core experience is free, with no credit card required — use it as a guest or sign in with Google to save your preferences across devices. An optional Premium plan ($4.99/month, $49.99/year, or $99.99 lifetime) adds extra features.",
                   },
                 },
                 {
