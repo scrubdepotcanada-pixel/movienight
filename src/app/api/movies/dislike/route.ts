@@ -4,28 +4,33 @@ import db from "@/lib/db";
 const VALID_FEEDBACK_TYPES = new Set(["disliked", "less_like_this"]);
 
 // Mark a movie or show as not interested (swipe left on Your Next Watch),
-// or a softer "Less like this" (feedbackType: "less_like_this") — same
-// exclusion effect, but tracked distinctly so negative-context prompts can
-// phrase it as a weaker style signal rather than "never show this again".
+// a softer "Less like this" (feedbackType: "less_like_this"), or "Already
+// watched" (action: "already_watched") — all three exclude the title from
+// future recommendations, but only the first two are negative taste signals.
+// "Already watched" is neutral: it's recorded in watched_movies only, never
+// in disliked_movies, so it's never treated as something the user disliked.
 export async function POST(req: NextRequest) {
-  const { memberId, movie, category = "general", contentType = "movie", feedbackType = "disliked" } = await req.json();
+  const { memberId, movie, category = "general", contentType = "movie", feedbackType = "disliked", action = "dislike" } = await req.json();
 
   if (!memberId || !movie) {
     return NextResponse.json({ error: "Missing memberId or movie" }, { status: 400 });
   }
 
-  const ft = VALID_FEEDBACK_TYPES.has(feedbackType) ? feedbackType : "disliked";
+  const isAlreadyWatched = action === "already_watched";
 
-  await db.execute({
-    sql: "INSERT OR IGNORE INTO disliked_movies (member_id, tmdb_id, title, category, content_type, feedback_type) VALUES (?, ?, ?, ?, ?, ?)",
-    args: [memberId, movie.id, movie.title, category, contentType, ft],
-  });
+  if (!isAlreadyWatched) {
+    const ft = VALID_FEEDBACK_TYPES.has(feedbackType) ? feedbackType : "disliked";
+    await db.execute({
+      sql: "INSERT OR IGNORE INTO disliked_movies (member_id, tmdb_id, title, category, content_type, feedback_type) VALUES (?, ?, ?, ?, ?, ?)",
+      args: [memberId, movie.id, movie.title, category, contentType, ft],
+    });
+  }
 
-  // Not interested = exclude from future recommendations
+  // Exclude from future recommendations either way
   await db.execute({
-    sql: `INSERT OR IGNORE INTO watched_movies (member_id, tmdb_id, title, poster_path, vote_average, certification, content_type)
-          VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification || "NR", contentType],
+    sql: `INSERT OR IGNORE INTO watched_movies (member_id, tmdb_id, title, poster_path, vote_average, certification, content_type, feedback_type)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [memberId, movie.id, movie.title, movie.poster_path, movie.vote_average, movie.certification || "NR", contentType, isAlreadyWatched ? "already_watched" : "watched"],
   });
 
   await db.execute({

@@ -736,7 +736,7 @@ export default function ClientPage() {
     setRefining(false);
   }, [selectedMember, activeCategory, activeGenre, minDecade, apiBase, contentType]);
 
-  const handleSwipe = useCallback((movie: Movie, direction: "left" | "right", feedbackType: "disliked" | "less_like_this" = "disliked") => {
+  const handleSwipe = useCallback((movie: Movie, direction: "left" | "right", feedbackType: "disliked" | "less_like_this" | "already_watched" = "disliked") => {
     setSwipingId(movie.id);
 
     setTimeout(() => {
@@ -787,10 +787,18 @@ export default function ClientPage() {
           return next;
         });
       } else {
+        const isAlreadyWatched = feedbackType === "already_watched";
         fetch("/api/movies/dislike", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ memberId: selectedMember.id, movie, category: activeCategory, contentType, feedbackType }),
+          body: JSON.stringify({
+            memberId: selectedMember.id,
+            movie,
+            category: activeCategory,
+            contentType,
+            feedbackType: isAlreadyWatched ? "disliked" : feedbackType,
+            action: isAlreadyWatched ? "already_watched" : "dislike",
+          }),
         }).catch(() => {});
       }
     } else if (direction === "right") {
@@ -801,6 +809,10 @@ export default function ClientPage() {
 
   const handleLessLikeThis = useCallback((movie: Movie) => {
     handleSwipe(movie, "left", "less_like_this");
+  }, [handleSwipe]);
+
+  const handleAlreadyWatched = useCallback((movie: Movie) => {
+    handleSwipe(movie, "left", "already_watched");
   }, [handleSwipe]);
 
   const handleUndo = useCallback(() => {
@@ -1606,13 +1618,22 @@ export default function ClientPage() {
                   ♥ Liked
                 </button>
               </div>
-              <div className="text-center mt-2">
+              <div className="flex items-center justify-center gap-4 mt-2">
                 <button
                   onClick={() => handleLessLikeThis(displayedRecommendations[0])}
                   disabled={swipingId !== null}
                   className="text-gray-500 hover:text-gray-300 text-xs font-medium transition-colors disabled:opacity-50"
                 >
                   👎 Less like this
+                </button>
+                <span className="text-gray-700 text-xs">·</span>
+                <button
+                  onClick={() => handleAlreadyWatched(displayedRecommendations[0])}
+                  disabled={swipingId !== null}
+                  title="Seen it — won't count against or for your taste, just won't show it again"
+                  className="text-gray-500 hover:text-gray-300 text-xs font-medium transition-colors disabled:opacity-50"
+                >
+                  👀 Already watched
                 </button>
               </div>
             </>
