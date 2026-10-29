@@ -29,7 +29,7 @@ const FAQS = [
   {
     question: "Is Next Movie really free?",
     answer:
-      "The core experience is free — no credit card, no account required. Just open nextmovie.app, pick 5 movies you love, and get recommendations instantly. Premium ($4.99/month, $49.99/year, or $99.99 lifetime) adds language filters, actor/director search, unlimited history, watchlists, and Family Swipe mode, but everything you need to get a great recommendation is free.",
+      "The core experience is free — no credit card, no account required. Just open nextmovie.app, pick 3-5 movies you love, and get recommendations instantly. Premium ($4.99/month, $49.99/year, or $99.99 lifetime) adds actor and director search and unlimited family members, but everything you need to get a great recommendation is free.",
   },
   {
     question: "How is Next Movie different from JustWatch or IMDb?",
@@ -64,22 +64,22 @@ const FAQS = [
   {
     question: "How does Next Movie compare to Letterboxd for families?",
     answer:
-      "Letterboxd is great for movie logging and reviews. Next Movie focuses on finding your next watch as a family. It adds AI taste learning, age-based filters, and Family Swipe mode so everyone agrees on a movie. Think of it as a family-first movie picker rather than a social film diary.",
+      "Letterboxd is great for movie logging and reviews. Next Movie focuses on finding your next watch as a family. It adds AI taste learning and age-based filters, so everyone in the family gets picks that fit them. Think of it as a family-first movie picker rather than a social film diary.",
   },
   {
     question: "Can I find movies in other languages like Korean or French?",
     answer:
-      "Yes. With Next Movie Premium, you can filter by language. Find Korean thrillers, French dramas, Bollywood hits, anime, and more. The AI still learns your taste within each language, so your picks stay personal.",
+      "Not as a filter yet. You can search for a specific Korean or French title, or ask for one in mood search, and the AI will still learn your taste. A language filter for Premium is built and coming soon — it is not included today.",
   },
   {
     question: "What is Family Swipe mode?",
     answer:
-      "Family Swipe mode lets every family member swipe on movie suggestions, like a group vote. Next Movie finds the title that everyone agrees on. It is the fastest way to end the 'what should we watch' debate. This feature is available on nextmovie.app Premium.",
+      "Family Swipe mode is coming soon. It will let every family member swipe on movie suggestions, like a group vote, so Next Movie can find the title everyone agrees on. It is not available yet and is not included in Premium today.",
   },
   {
     question: "Does Next Movie have a premium version?",
     answer:
-      "Yes. Next Movie Premium adds language filters, actor and director search, streaming platform filters, unlimited history, personal watchlists, and Family Swipe mode. The free version still gives you AI picks, genre browsing, and age-safe filters at no cost.",
+      "Yes. Next Movie Premium adds actor and director search and unlimited family members. The free version gives you AI picks, mood and title search, genre browsing, and age-safe filters at no cost.",
   },
 ];
 

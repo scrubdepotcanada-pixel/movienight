@@ -70,7 +70,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "The fastest way to agree is to vote at the same time. Apps like Next Movie have a Family Swipe mode where everyone swipes on options simultaneously. The app finds the title everyone approved. No arguments, no veto wars.",
+        text: "The fastest way to agree is to vote at the same time. Next Movie is building a Family Swipe mode where everyone swipes on options simultaneously and the app finds the title everyone approved — it's coming soon. In the meantime, mood search is the next best thing: agree on a vibe, let the AI narrow the list.",
       },
       {
         type: "h2",
@@ -92,7 +92,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "The best family movie is one everyone can watch and no one resents. That means age-appropriate content, a mood everyone is in for, and a decision process that feels fair. Next Movie is built around exactly this problem — free AI picks filtered by age rating, with Family Swipe mode so the whole group gets a vote.",
+        text: "The best family movie is one everyone can watch and no one resents. That means age-appropriate content, a mood everyone is in for, and a decision process that feels fair. Next Movie is built around exactly this problem — free AI picks filtered by age rating for every family member.",
       },
     ],
   },
@@ -147,7 +147,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "Next Movie is a free AI movie picker built specifically for families. Each family member gets a taste profile. The AI learns your preferences across 12 genres. You can filter by age rating, language, streaming platform, actor, decade, and runtime. The Family Swipe mode lets the whole group vote on picks simultaneously.",
+        text: "Next Movie is a free AI movie picker built specifically for families. Each family member gets a taste profile. The AI learns your preferences across 12 genres. You can filter by age rating and decade for free, and Premium adds actor and director search. Language and streaming-platform filters, plus a Family Swipe mode for group voting, are coming soon.",
       },
       {
         type: "paragraph",
@@ -430,7 +430,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "An AI movie picker with language filters solves this. Next Movie Premium lets you filter recommendations specifically to Korean-language content. The AI still learns your taste — if you love thrillers but hate slow-burn dramas, it will find Korean thrillers for you specifically.",
+        text: "An AI movie picker solves this. On Next Movie, search a Korean title directly or describe the mood you're after, and the AI still learns your taste — if you love thrillers but hate slow-burn dramas, it will steer you toward Korean thrillers specifically. A dedicated language filter for Premium is coming soon.",
       },
       {
         type: "h2",
@@ -562,7 +562,7 @@ export const BLOG_POSTS: BlogPost[] = [
       },
       {
         type: "paragraph",
-        text: "Mainstream streaming apps bury Indian-language content behind English titles. Next Movie Premium solves this with a language filter that covers Hindi, Tamil, Telugu, Malayalam, Bengali, Kannada, Marathi, and Punjabi. Select your language and the AI recommends films specifically in that language — personalized to your taste, not just what is trending.",
+        text: "Mainstream streaming apps bury Indian-language content behind English titles. On Next Movie, search a title in Hindi, Tamil, Telugu, Malayalam, Bengali, Kannada, Marathi, or Punjabi directly, or describe the mood — the AI still personalizes to your taste, not just what is trending. A dedicated language filter for Premium is built and coming soon.",
       },
       {
         type: "paragraph",

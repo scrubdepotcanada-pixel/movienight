@@ -8,36 +8,15 @@ import SiteFooter from "@/components/SiteFooter";
 export const metadata: Metadata = {
   title: "Premium Features",
   description:
-    "Unlock the full Next Movie experience. Language filters, actor search, unlimited history, watchlists, and more.",
+    "Next Movie Premium adds actor and director search and unlimited family members. Everything else — AI picks, mood search, and more — stays free.",
 };
 
 const FEATURES = [
-  {
-    icon: "🌍",
-    title: "Multi-Language Picks",
-    description:
-      "Find movies in 20+ languages. Korean dramas, French films, Bollywood hits, anime — all in one place.",
-    tag: "Filter",
-  },
   {
     icon: "🎬",
     title: "Search by Actor or Director",
     description:
       "Love Tom Hanks? Type his name and filter every result to show only his films. Works for directors too.",
-    tag: "Filter",
-  },
-  {
-    icon: "📺",
-    title: "Filter by Streaming Platform",
-    description:
-      "Only show movies on Netflix, Disney+, Prime, or whatever you pay for. No more finding a great movie you can't watch.",
-    tag: "Filter",
-  },
-  {
-    icon: "🎚️",
-    title: "Advanced Filters",
-    description:
-      "Narrow by decade, minimum rating, or runtime. Want 90s comedies rated 7+? Done in two taps.",
     tag: "Filter",
   },
   {
@@ -47,34 +26,23 @@ const FEATURES = [
       "Free users get 2 profiles. Premium lets the whole family join — grandparents, cousins, everyone.",
     tag: "Family",
   },
-  {
-    icon: "📋",
-    title: "Personal Watchlist",
-    description:
-      "Save movies for later with one tap. Your list stays with you across devices when you sign in.",
-    tag: "Organize",
-  },
-  {
-    icon: "📊",
-    title: "Taste Profile & Stats",
-    description:
-      "See your top genres, how many movies you've rated, and how your taste has changed over time.",
-    tag: "Insights",
-  },
-  {
-    icon: "🕰️",
-    title: "Unlimited History",
-    description:
-      "Free users see their last 3 searches. Premium keeps your full history so you can always pick up where you left off.",
-    tag: "Organize",
-  },
-  {
-    icon: "🔀",
-    title: "Family Swipe Mode",
-    description:
-      "Everyone in the family swipes on movies. We find the one title you all agree on. No more arguments.",
-    tag: "Family",
-  },
+];
+
+const COMING_SOON = [
+  "Language filters — find movies in 20+ languages",
+  "Streaming-platform filter — show only movies on a service you pick",
+  "Rating and runtime filters",
+  "Personal watchlist",
+  "Taste profile & stats",
+  "Family Swipe Mode — everyone swipes, we find the title you all agree on",
+];
+
+const FREE_FEATURES = [
+  "AI movie and TV picks from 3–5 movies you love",
+  "Mood search and title search",
+  "Age-safe rating caps for each family member",
+  "Tell us your streaming services — picks you can watch tonight rank first",
+  "Decade filter, genre browsing, and a reason on every pick: why we chose it for you",
 ];
 
 export default function PremiumPage() {
@@ -120,13 +88,13 @@ export default function PremiumPage() {
             </span>
           </h1>
           <p className="text-gray-400 text-lg max-w-xl mx-auto">
-            Everything you love about Next Movie, plus powerful filters,
-            unlimited history, and tools built for serious movie fans.
+            Everything you love about Next Movie, plus actor and director
+            search and room for the whole family.
           </p>
         </div>
 
         {/* Feature grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-10 max-w-2xl mx-auto">
           {FEATURES.map((f) => (
             <div
               key={f.title}
@@ -150,9 +118,46 @@ export default function PremiumPage() {
           ))}
         </div>
 
+        {/* Coming soon — built, not included yet */}
+        <div className="max-w-2xl mx-auto mb-10 bg-gray-800/20 border border-gray-700/30 rounded-2xl p-6">
+          <h2 className="text-lg font-bold text-white mb-2">Coming soon</h2>
+          <p className="text-gray-500 text-sm mb-4">
+            These are built and on the way. They are not included in Premium
+            today, and we will not charge you for them as if they were — when
+            each one launches, it will be added to Premium at no extra cost.
+          </p>
+          <ul className="space-y-2">
+            {COMING_SOON.map((item) => (
+              <li key={item} className="flex items-start gap-2 text-gray-400 text-sm">
+                <span className="text-gray-600 mt-0.5">•</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Free for everyone */}
+        <div className="max-w-2xl mx-auto mb-16 bg-purple-900/10 border border-purple-700/20 rounded-2xl p-6">
+          <h2 className="text-lg font-bold text-white mb-4">
+            Free for everyone, no account needed to start
+          </h2>
+          <ul className="space-y-2">
+            {FREE_FEATURES.map((item) => (
+              <li key={item} className="flex items-start gap-2 text-gray-300 text-sm">
+                <span className="text-green-500 mt-0.5">✓</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         {/* Pricing */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold text-center mb-8">Choose your plan</h2>
+          <h2 className="text-2xl font-bold text-center mb-3">Choose your plan</h2>
+          <p className="text-gray-500 text-sm text-center max-w-xl mx-auto mb-8">
+            Premium today means: actor and director search, plus unlimited
+            family members. Everything in &quot;Free for everyone&quot; stays free.
+          </p>
           <PricingCards />
         </div>
 
@@ -173,18 +178,17 @@ export default function PremiumPage() {
               genre browsing, and age-safe filters. It works great for casual movie nights.
             </p>
             <p>
-              Premium takes it further. Filter by language to find Korean thrillers
-              or French dramas. Search by actor or director to see only their films.
-              Pick your streaming platform so every pick is one you can actually watch.
+              Premium adds two things today. Search by actor or director, so
+              if you love Tom Hanks or Greta Gerwig you can see only their
+              films. And unlimited family members, so grandparents, cousins,
+              and everyone else get their own profile and taste — free
+              covers 2 profiles.
             </p>
             <p>
-              Your full search history stays with you. Save movies to a personal
-              watchlist. See stats about your taste — which genres you love most,
-              how many films you&apos;ve rated, and more.
-            </p>
-            <p>
-              Plus, the AI gets smarter the more you use it. Premium unlocks
-              deeper taste learning so your picks keep getting better over time.
+              More is coming — language and streaming-platform filters, a
+              watchlist, taste stats, and Family Swipe Mode are built and on
+              the way. They are not included yet, and when they launch they
+              will be added to Premium at no extra cost.
             </p>
           </div>
         </section>

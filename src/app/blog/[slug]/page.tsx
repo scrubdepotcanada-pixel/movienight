@@ -188,7 +188,7 @@ export default async function BlogPostPage({ params }: Props) {
             Ready to find your next movie?
           </p>
           <p className="text-gray-400 text-sm mb-6">
-            Next Movie is free. AI-powered picks, age-safe filters, and Family Swipe mode.
+            Next Movie is free. AI-powered picks, mood search, and age-safe filters for the whole family.
           </p>
           <Link
             href="/"

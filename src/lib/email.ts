@@ -73,11 +73,8 @@ export async function sendPremiumGiftEmail(to: string, name: string | null) {
 
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
       ${[
-        ["🌍", "Language filters", "Hindi, Tamil, Telugu, Korean, Japanese, and 20+ more"],
         ["🎬", "Actor & Director search", "Filter every result to one person's filmography"],
-        ["📺", "Streaming platform filter", "Only see movies on services you pay for"],
-        ["📋", "Personal watchlist", "Save movies for later across all your devices"],
-        ["🔀", "Family Swipe mode", "Everyone votes — the app picks the winner"],
+        ["👨‍👩‍👧‍👦", "Unlimited family members", "Add the whole family — no 2-profile cap"],
       ].map(([icon, title, desc]) => `
         <tr>
           <td style="padding:8px 0;vertical-align:top;width:32px;font-size:18px;">${icon}</td>
@@ -117,11 +114,8 @@ You're one of the first people to use Next Movie and we really appreciate it.
 We've gifted you a free month of Premium — it's already active on your account.
 
 What's unlocked:
-- Language filters (Hindi, Tamil, Telugu, Korean, and 20+ more)
 - Actor & Director search
-- Streaming platform filter
-- Personal watchlist
-- Family Swipe mode
+- Unlimited family members
 
 Start movie night: https://nextmovie.app
 
