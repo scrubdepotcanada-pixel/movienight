@@ -5,6 +5,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import MemberSelector from "@/components/MemberSelector";
 import SiteFooter from "@/components/SiteFooter";
 import InlineFilters from "@/components/InlineFilters";
+import AdBanner from "@/components/AdBanner";
 
 interface WatchProvider {
   provider_id: number;
@@ -42,6 +43,12 @@ interface Member {
 const TMDB_IMG = "https://image.tmdb.org/t/p";
 const MAX_PICKS = 5;
 const MIN_PICKS = 3;
+
+// TODO: replace with the real ad-unit slot ids from AdSense (Ads > By ad
+// unit > Display ads) — these are the client/publisher id only, not slots.
+// Use a DIFFERENT slot for each placement.
+const AD_SLOT_PICK_GRID = "0000000000";
+const AD_SLOT_RESULTS = "0000000000";
 const PREFERRED_PROVIDERS_KEY = "nextmovie_preferred_providers_v1";
 
 // TMDB watch-provider IDs — stable across regions. Lets a user say "I have
@@ -1674,6 +1681,13 @@ export default function ClientPage() {
                 )}
               </div>
               )}
+
+              <AdBanner
+                slot={AD_SLOT_PICK_GRID}
+                isPremium={isPremium}
+                maxRating={selectedMember?.max_rating || guestMaxRating}
+                className="mt-6"
+              />
             </>
           )}
         </div>
@@ -2027,6 +2041,13 @@ export default function ClientPage() {
                   👀 Already watched
                 </button>
               </div>
+
+              <AdBanner
+                slot={AD_SLOT_RESULTS}
+                isPremium={isPremium}
+                maxRating={selectedMember?.max_rating || guestMaxRating}
+                className="mt-5"
+              />
             </>
           )}
 
